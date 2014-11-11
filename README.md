@@ -7,7 +7,7 @@ This is my IRC bot I threw together hastily night by night to add some fun inter
 
 I'm using an arduino currently to drive some leds/servo's/vibration motors, but I plan on expanding this.
 
-The code is VERY ugly, its literally cobbled together every night about 30 minutes before I stream to add a few features/fix a few bugs here and there.
+The code is VERY ugly, VERY buggy, and is changed just about daily... Its literally cobbled together every night about 30 minutes before I stream to add a few features/fix a few bugs here and there. (I avoid large re-writes because it would mean downtime for the stream) which makes it even uglier lol...
 
 Current list of added features:
   Midi Drum input
