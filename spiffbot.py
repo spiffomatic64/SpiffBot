@@ -12,27 +12,42 @@ import requests
 import logging
 import win32api as win32
 import win32con
+import twitch_auth
 
 #Prints to console, and a log file
 def printer(string):
     print "%s: %s" % (time.strftime("%d-%m-%Y_%H-%M-%S"),string)
     logging.info("%s: %s" % (time.strftime("%d-%m-%Y_%H-%M-%S"),string)) 
 
+#converts a 6 character long (3 bytes) hex string into 3 integers
+def hex2chr(input):
+    rgb = []
+    rgb.append(int(input[0:2], 16))
+    rgb.append(int(input[2:4], 16))
+    rgb.append(int(input[4:6], 16))
+    #print ':'.join(x.encode('hex') for x in rgb)
+    return rgb
+
+#used to print and write to serial (for debug purposes)
+def debugserial(input):
+	global ser
+	
+	printer(input)
+	ser.write(input)
+    
+def irc_msg(msg):   
+    global irc
+    printer('PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg))
+    irc.send ( 'PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg) )  
+    
 #Not used at the moment, used to map a number from one range, to another
 #similar to arduino's map function
 def translate(value, leftMin, leftMax, rightMin, rightMax):
-    # Figure out how 'wide' each range is
-    leftSpan = leftMax - leftMin
-    rightSpan = rightMax - rightMin
-
-    # Convert the left range into a 0-1 range (float)
-    valueScaled = float(value - leftMin) / float(leftSpan)
-
-    # Convert the 0-1 range into a value in the right range.
-    return rightMin + (valueScaled * rightSpan)
+    valueScaled = float(value - leftMin) / float(leftMax - leftMin)
+    return rightMin + (valueScaled * (rightMax - rightMin))
 
 #List and select midi device
-def getMidiSport(midi):
+def getMidi(midi):
     c = 0
     for x in range( 0, pygame.midi.get_count() ):
         printer(pygame.midi.get_device_info(x)[1])
@@ -40,65 +55,65 @@ def getMidiSport(midi):
             return c
         c = c + 1
 
-#Not used currently (and not finished) will be used to output a dimmed rgb value      
-def midiVolume(vol, red, green, blue):
+#Not used currently will be used to output a dimmed rgb value      
+def rgb_dim(vol, red, green, blue):
     red = round(red * (255/vol))
     green = round(red * (255/vol))
     blue = round(red * (255/vol))
+    return [ red, green, blue ]
 
 #Midi thread, gets midi data, translates to html rgb values, 
 #and lights leds based on that color for 50ms, then turns all leds off
-#todo: go back to original color
+#todo: go back to original colors
 def midiThread():
     global inp #midi input device
     global ser #serial device 
     
     drums = { 38 : "ffffff",    #snare
         40 : "ffffff",          #snare rim
-        26 : "ffff00",         #highhat edge
-        46 : "ffff00",   #highhat crown
-        55 : "00ff00",           #crash edge
-        49 : "00ff00",     #crash crown
-        48 : "0000ff",        #left tom
-        45 : "ff00ff",       #right tom
-        59 : "00ffff",            #ride edge
-        51 : "00ffff",      #ride crown
-        41 : "ff8000",       #floor tom
-        36 : "ff0000" }           #bass
+        26 : "ffff00",          #highhat edge
+        46 : "ffff00",          #highhat crown
+        55 : "00ff00",          #crash edge
+        49 : "00ff00",          #crash crown
+        48 : "0000ff",          #left tom
+        45 : "ff00ff",          #right tom
+        59 : "00ffff",          #ride edge
+        51 : "00ffff",          #ride crown
+        41 : "ff8000",          #floor tom
+        36 : "ff0000" }         #bass
     
     # run the event loop
-    # Todo: ability to stop, or disable the thread
+    # Todo: ability to start/stop, or enable/disable the thread
     while True:
         if inp.poll():
-            # no way to find number of messages in queue
-            # so we just specify a high max value
+            #read 1000 bytes from midi device
             events = inp.read(1000)
-            #print events
             for e in events:
-                if e[0][2] != 64:
-                    printer("%s:%s" % (e[0][1],e[0][2])) #debug comment this out while playing, slows down the thread
+                if e[0][2] != 64: #ignore note off packets
+                    #printer("%s:%s" % (e[0][1],e[0][2])) #debug, comment this out while playing, slows down the thread
                     intensity = abs(e[0][2]) * 2
                     if intensity > 255:
                         intensity = 255
                         
                     if e[0][1] in drums:
-                        #print drums[e[0][1]]
+                        #printer(drums[e[0][1]]) #debug, comment this out while playing, slows down the thread
                         value = drums[e[0][1]]
-
-                    ser.write("0,%s,%s,%s\n" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
+                    rgb = hex2chr(value)
+                    before = get_pixels()
+                    ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
                     pygame.time.wait(50)
-                    ser.write("0,0,0,0\n")
+                    ser.write("#%c%c%c\xff!" % (before[0],before[1],before[2]))
 
         # wait 10ms - this is arbitrary, but wait(0) still resulted
         # in 100% cpu utilization
         pygame.time.wait(10)
 
 #gets a "live" list of viewers in chat
+#todo, look up moderators
 def get_viewers():
     global optout
     
-    url = 'https://tmi.twitch.tv/group/user/spiffomatic64/chatters'
-    
+    url = "https://tmi.twitch.tv/group/user/%s/chatters" % twitch_auth.get_streamer()
     printer("Checking viewers...")
     data = requests.get(url=url)
     binary = data.content
@@ -113,7 +128,6 @@ def get_viewers():
 #Thread responsible for switching control
 def mastertimer():
     global counter
-    global irc
     global master
     global warn_timer
     global optout
@@ -124,13 +138,13 @@ def mastertimer():
             elapsed = time.time() - counter
             #every 2.5 minutes warn the user in control
             if elapsed>150 and warn_timer == 0:
-                if master!="spiffbot":
-                    irc.send ( "PRIVMSG #spiffomatic64 :2.5 Minutes left %s! \r\n" % master)  
+                if master!=twitch_auth.get_bot():
+                    irc_msg( "2.5 Minutes left %s!" % master)  
                 warn_timer = 1
-            #every 5 minutes switch control, and opt out the user
+            #every 5 minutes switch control, and add master to optout list
             if elapsed>300 and warn_timer == 1:
-                if master!="spiffbot":
-                    irc.send ( 'PRIVMSG #spiffomatic64 :5 Minutes elapsed! Switching control, and opting %s out!\r\n' % master )  
+                if master!=twitch_auth.get_bot():
+                    irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                     printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
                     optout.append(master)
                 switch()
@@ -149,7 +163,7 @@ def switch(user=""):
     if warn_timer != -1:
         warn_timer = -1
         viewers = get_viewers()
-        #remove the current controller from viewers to prevent switching to the same person
+        #remove the current controller from available viewers to prevent switching to the same person
         if master in viewers:
             viewers.remove(master)
         old = master
@@ -163,23 +177,22 @@ def switch(user=""):
                 master = random.choice(viewers)
             else:
                 printer("No valid viewers to switch to")
-                master="spiffbot"
+                master=twitch_auth.get_bot()
         #reset counter and notify chat that a new viewer is in control
         printer("%s is now in control!" % master)
-        irc.send ( 'PRIVMSG #spiffomatic64 :%s is now in control!\r\n' % master) 
+        irc_msg("%s is now in control!" % master) 
         printer("Switching from %s to %s" % (old,master))
         counter = time.time()
         warn_timer = 0
 
 #commands that will only work for me (and moderators in the future)
-#todo, look up moderators
 def admin_commands(user,data):
     global master
     global irc
     global optout
     global mode
     
-    if user.lower() == "spiffomatic64":
+    if user.lower() == twitch_auth.get_streamer():
         #split irc messages into parts by white space 
         parts = data.lower().split()
         printer("admin")
@@ -199,7 +212,7 @@ def admin_commands(user,data):
             if command == "!optout":
                 if parts[1] not in optout:
                     optout.append(parts[1])
-                    irc.send ( 'PRIVMSG #spiffomatic64 :%s has been opted out!\r\n' % parts[1])
+                    irc_msg("%s has been opted out!" % parts[1])
                     #if the user is currently in control, switch
                     if parts[1].lower() == master:
                         switch()
@@ -208,20 +221,20 @@ def admin_commands(user,data):
                 #check that user is already opted out
                 if parts[1] in optout:
                     optout.remove(parts[1])
-                    irc.send ( 'PRIVMSG #spiffomatic64 :%s has been opted back in!\r\n' % parts[1])
+                    irc_msg("%s has been opted back in!" % parts[1])
             #change mode from scary to normal
             if command == "!mode":
                 if parts[1] == "scary":
                     mode = 0
                     printer("Scary time!")
                     counter = time.time()
-                    master="spiffomatic64"
-                    irc.send ( 'PRIVMSG #spiffomatic64 :ITS SCARY TIME!!!\r\n')
+                    master=twitch_auth.get_streamer()
+                    irc_msg("ITS SCARY TIME!!!")
                     modedefault()
                 if parts[1] == "normal":
                     mode = 1
                     printer("Normal time!")
-                    irc.send ( 'PRIVMSG #spiffomatic64 :Playing normal games\r\n')
+                    irc_msg("Playing normal games")
 
 #Not used, for debugging to list all monitors
 def printAllScreen():
@@ -260,7 +273,7 @@ def master_commands(user,data):
     global sounds
     global ser
     
-    if user.lower() == master.lower(): #check that the user is the master
+    if user.lower() == master.lower() or user.lower()==twitch_auth.get_streamer(): #check that the user is the master
         parts = data.lower().split()
         command = parts[0][1:]
         
@@ -271,7 +284,7 @@ def master_commands(user,data):
                 if user.lower() != parts[1].lower():
                     switch(parts[1])
                 else:
-                    irc.send ( 'PRIVMSG #spiffomatic64 :You cant pass to yourself!\r\n')
+                    irc_msg("You cant pass to yourself!")
                     printer("%s tried to pass to them-self" % user.lower())
             if len(parts) == 1:
                 switch()
@@ -316,37 +329,41 @@ def master_commands(user,data):
             switch()
             return
             
-        actions = ['quiet', "rattle", "heart"]
         
+        
+        #select a random scare command
         if command == "!randomscare":
-            data = random.choice(actions)
+            data = random.choice(['quiet', "rattle", "heart"])
             
         #Drop the box on me by moving the arm down for 1 second, then waiting 20 seconds and switching
         if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
+            printer("Dropping box")
             warn_timer = 2
-            ser.write("-5,1\n")
+            ser.write("#\x01\x00\x00\xfe")
             time.sleep(1)
-            ser.write("-5,0\n")
+            ser.write("#\x00\x00\x00\xfe")
             time.sleep(20)
             switch()
             return
         
         #rattle the vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'rumble' ) != -1 or data.find ( 'vibe' ) != -1:
+            printer("Desk Vibe")
             warn_timer = 2
-            ser.write("-6,1\n")
+            ser.write("#\x0b\x01\x00\xfd")
             time.sleep(2)
-            ser.write("-6,0\n")
+            ser.write("#\x0b\x00\x00\xfd")
             time.sleep(20)
             switch()
             return
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
+            printer("Chest Vibe")
             warn_timer = 2
-            ser.write("-7,1\n")
+            ser.write("#\x03\x01\x00\xfd")
             time.sleep(2)
-            ser.write("-7,0\n")
+            ser.write("#\x03\x00\x00\xfd")
             time.sleep(20)
             switch()
             return
@@ -355,83 +372,146 @@ def master_commands(user,data):
             flip()
             switch()
             return
-        
+            
+#get current pixel colors and return into a list of lists
+def get_pixels():
+	pixels = {}
+	ser.flushInput()
+	ser.write("#000%c0" % chr(252))
+	for x in range( 0, 30 ):
+		line = ser.readline().split(",")
+		pixels.update( {line[0] : [ int(line[1]),int(line[2]),int(line[3]) ] } )
+	return pixels
+
+#fade from current color to new color using a number of "frames"
+def fade(red,green,blue,steps,wait=2):
+    diff = {}
+    pixels = get_pixels()
+    for x in range(0,30):
+        temp = [red-pixels["%s"%x][0],green-pixels["%s"%x][1],blue-pixels["%s"%x][2]]
+        diff.update({x:temp})
+    for x in range(0, steps+1):
+        for y in range(0, 30):
+            r=int(round(pixels["%s"%y][0] + ((diff[y][0]/steps)*x)))
+            if r<0:
+                r=0
+            g=int(round(pixels["%s"%y][1] + ((diff[y][1]/steps)*x)))
+            if g<0:
+                g=0
+            b=int(round(pixels["%s"%y][2] + ((diff[y][2]/steps)*x)))
+            if b<0:
+                b=0
+            ser.write("#%c%c%c%c" % (r,g,b,y))
+        ser.write("!")
+        pygame.time.wait(wait)
+    
 #set the leds to black if in scary mode, fade up from black to white if normal mode
 def modedefault():
     if mode == 0:
-        ser.write("0,0,0,0\n")
+        fade(0,0,0,100)
     if mode == 1:
-        for y in range(0, 255):
-            ser.write("0,%s,%s,%s\n" % (y,y,y))
-            pygame.time.wait(5)
+        fade(255,255,255,100)
     return
+    
+#return a color from a 255 rainbow palette
+def Wheel(WheelPos):
+    WheelPos = 255 - WheelPos;
+    if WheelPos < 85:
+        return [255 - WheelPos * 3, 0, WheelPos * 3];
+    elif WheelPos < 170:
+        WheelPos -= 85;
+        return [0, WheelPos * 3, 255 - WheelPos * 3];
+    else:
+        WheelPos -= 170;
+        return [WheelPos * 3, 255 - WheelPos * 3, 0];
+
             
 def disco():
     global ser
-    global mode
     
-    irc.send ( 'PRIVMSG #spiffomatic64 :DISCO PARTY!!!!!!!!\r\n' )
+    irc_msg("DISCO PARTY!!!!!!!!")
     for x in range(0, 5): #loop 5 mins
         for y in range(0, 255): #loop through all 255 colors
-            ser.write("-1,%s\n" % y)
-            pygame.time.wait(1)
+            rgb = Wheel(y)
+            ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
+            pygame.time.wait(5)
     modedefault()
     return
     
 def strobe():
-    irc.send ( 'PRIVMSG #spiffomatic64 :SEIZURE PARTY!!!!!!!!\r\n' )
-    for x in range(0, 200): #flicker 200 times, for 30 ms on, then 30ms off
-        ser.write("0,255,255,255\n")
+    global ser
+    
+    irc_msg("SEIZURE PARTY!!!!!!!!")
+    for x in range(0, 100): #flicker 200 times, for 30 ms on, then 30ms off
+        ser.write("#\xff\xff\xff\xff!")
         pygame.time.wait(30)
-        ser.write("0,0,0,0\n")
+        ser.write("#\x00\x00\x00\xff!")
         pygame.time.wait(30)
-    ser.flushInput()
     modedefault()
     return
 
 def discostrobe():
-    irc.send ( 'PRIVMSG #spiffomatic64 :DISCO SEIZURES!!!!!!!!\r\n' )
-    for x in range(0, 255): #flicker 255 colors on and off for 30 ms each
-        ser.write("-1,%s\n" % x)
+    global ser
+    
+    irc_msg("DISCO SEIZURES!!!!!!!!")
+    for y in range(0, 255): #loop through all 255 colors
+        rgb = Wheel(y)
+        ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
         pygame.time.wait(30)
-        ser.write("0,0,0,0\n")
+        ser.write("#\x00\x00\x00\xff!")
         pygame.time.wait(30)
-    ser.flushInput()
     modedefault()
     return    
 
-def fire():
-    irc.send ( 'PRIVMSG #spiffomatic64 :FIRE!!!\r\n' )
-    for x in range(0, 100):
-        ser.write("-2\n")
-        pygame.time.wait(60)
-    modedefault()
-    return
-
 def chase(r, g, b,num=6):
+    global ser
+    
     printer("%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
-            ser.write("-3,%s,%s,%s,%s\n" %(r,g,b,y))
-            #printer("-3,%s,%s,%s,%s\n" %(r,g,b,y))
-            pygame.time.wait(30)
+            for z in range(0,30): #draw the pixels
+                if z>y-3 and z<y+3:
+                    ser.write("#%c%c%c%c" % (r,g,b,z))
+                else:
+                    ser.write("#\x00\x00\x00%c" % z)
+            ser.write("!")
+            pygame.time.wait(10)
         pygame.time.wait(500)
     return
     
 def alternate(r1,g1,b1,r2,g2,b2):
+    global ser
+    
     printer("%s,%s,%s,%s,%s,%s" %(r1,g1,b1,r2,g2,b2))
-    for x in range(0,10):
-        ser.write("-4,%s,%s,%s,%s,%s,%s\n" %(r1,g1,b1,r2,g2,b2))
-        pygame.time.wait(500)
+    for y in range( 0, 10 ):
+        r1,r2 = r2,r1 #swap colors
+        g1,g2 = g2,g1
+        b1,b2 = b2,b1
+        for x in range( 0, 30 ):
+            if x<15: #draw the first color to 0-14
+                ser.write("#%c%c%c%c" % (r1,g1,b1,x)) 
+            else: #and the second to 15-30
+                ser.write("#%c%c%c%c" % (r2,g2,b2,x))
+        ser.write("!")
+        time.sleep(0.5)
     modedefault()
     return
 
 #fire animation using 2 colors
+#todo add gradients
 def fire(r1,g1,b1,r2,g2,b2):
-    printer("%s,%s,%s,%s,%s,%s" %(r1,g1,b1,r2,g2,b2))
-    for x in range(0,100):
-        ser.write("-2,%s,%s,%s,%s,%s,%s\n" %(r1,g1,b1,r2,g2,b2))
-        pygame.time.wait(60)
+    global irc
+    global ser
+    irc_msg("FIRE!!!")
+    for y in range( 0, 30 ):
+        for x in range( 0, 30 ):
+            r = random.randrange(2)
+            if r==1:
+                ser.write("#%c%c%c%c" % (r1,g1,b1,x) )
+            else:
+                ser.write("#%c%c%c%c" % (r2,g2,b2,x) )
+        ser.write("!")
+        time.sleep(0.1)
     modedefault()
     return
 
@@ -460,18 +540,18 @@ def user_commands(user,data):
     
     #start commands
     if data.find ( 'test' ) != -1:
-        irc.send ( 'PRIVMSG #spiffomatic64 :test to you too!\r\n' )
+        irc_msg("test to you too!")
     
     #Scary mode only commands
     if mode == 0:
         if command == "!whosgotit":
-            irc.send ( 'PRIVMSG #spiffomatic64 :%s is in control!\r\n' % master)
+            irc_msg("%s is in control!" % master)
             return
         #opt a user out, and switch if they were in control
         if command == "!optout":
-            if user not in optout and user != "spiffomatic64":
+            if user not in optout and user != twitch_auth.get_streamer():
                 optout.append(user)
-                irc.send ( 'PRIVMSG #spiffomatic64 :%s has opted out!\r\n' % user)
+                irc_msg("%s has opted out!" % user)
                 if user == master:
                     switch()
             return
@@ -479,12 +559,12 @@ def user_commands(user,data):
         if command == "!optin":
             if user in optout:
                 optout.remove(user)
-                irc.send ( 'PRIVMSG #spiffomatic64 :%s has opted back in!\r\n' % user)
+                irc_msg("%s has opted back in!" % user)
             return
         #let viewers know how much time is left    
         if command == "!timeleft":
             timeleft = 300 - (time.time() - counter)
-            irc.send ( 'PRIVMSG #spiffomatic64 :%s has %s seconds left!\r\n' % (master,round(timeleft)))
+            irc_msg("%s has %s seconds left!" % (master,round(timeleft)))
             return
         
     #disco rainbow colors
@@ -510,7 +590,7 @@ def user_commands(user,data):
     if m:
         if m.group(3):
             printer("%s,%s,%s" %(m.group(1),m.group(2),m.group(3)))
-            ser.write("0,%s,%s,%s\n" %(m.group(1),m.group(2),m.group(3)))
+            ser.write("#%c%c%c\xff!" % (m.group(1),m.group(2),m.group(3)))
             time.sleep(5)
             modedefault()
             return
@@ -537,6 +617,7 @@ def user_commands(user,data):
             chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),2)
         modedefault()
         return
+        
     #Chase 2 colors (html codes)
     m = re.search('chase\((\w+),(\w+)\)',data,re.IGNORECASE)
     if m:
@@ -548,6 +629,7 @@ def user_commands(user,data):
             chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),3)
         modedefault()
         return
+        
     #Chase 1 color (html codes)
     m = re.search('chase\((\w+)\)',data,re.IGNORECASE)
     if m:
@@ -563,6 +645,7 @@ def user_commands(user,data):
         if m.group(6):
             alternate(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6))
             return
+            
     #Alternate animation (html)
     m = re.search('alternate\((\w+),(\w+)\)',data,re.IGNORECASE)
     if m:
@@ -571,12 +654,14 @@ def user_commands(user,data):
             value2 = colors[m.group(2)]
             alternate(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),int("0x"+value2[0:2],0),int("0x"+value2[2:4],0),int("0x"+value2[4:6],0))
             return
+            
     #fire animation (rgb)
     m = re.search('fire\((\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3})\)',data,re.IGNORECASE)
     if m:
         if m.group(6):
             fire(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6))
             return
+            
     #fire animation (html)
     m = re.search('fire\((\w+),(\w+)\)',data,re.IGNORECASE)
     if m:
@@ -590,8 +675,8 @@ def user_commands(user,data):
     for key, value in colors.iteritems():
         if data.find ( key.lower() ) != -1:
             printer("key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
-            irc.send ( 'PRIVMSG #spiffomatic64 :%s!!!\r\n' % key.upper())
-            ser.write("0,%s,%s,%s\n" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
+            irc_msg("%s!!!" % key.upper())
+            ser.write("#%c%c%c\xff!" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
             time.sleep(5)
             modedefault()
             return
@@ -743,7 +828,7 @@ colors = dict((k.lower(), v) for k,v in colorsup.iteritems())
     
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
-"screach" : "SOUND_1288.ogg",
+"screech" : "SOUND_1288.ogg",
 "heatbeat" : "SOUND_1323.ogg",
 "crash" : "SOUND_1399.ogg",
 "bam" : "SOUND_1463.ogg",
@@ -775,17 +860,15 @@ log = time.strftime("%m-%d-%Y_%H-%M-%S.log")
 logging.basicConfig(filename=log,level=logging.INFO)    
 logging.info('Setting up serial connection...')   
 
+#serial stuff
+#todo: add code to find arduino dynamically
+ser = serial.Serial("Com4", 115200)
+
 #Midi initialization 
 #pygame.init()
 #pygame.midi.init()
-#inp = pygame.midi.Input(getMidiSport("MIDISPORT 1x1 In"))
-
-#serial stuff
-#todo: add code to find arduino dynamically
-ser = serial.Serial("Com4", 9600)
-
-
-	
+#inp = pygame.midi.Input(getMidi("MIDISPORT 1x1 In"))
+    
 #start IRC
 network = 'irc.twitch.tv'
 port = 6667
@@ -793,17 +876,16 @@ irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
 irc.connect ( ( network, port ) )
 printer("connected")
 #IRC auth
-#todo: move this to a seperate file
-irc.send ( 'PASS oauth:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\n' )
-irc.send ( 'NICK spiffbot\r\n' )
-irc.send ( 'USER spiffbot spiffbot spiffbot :Python IRC\r\n' )
+irc.send("PASS oauth:%s\r\n" % twitch_auth.get_oauth())
+irc.send("NICK %s\r\n" % twitch_auth.get_bot())
+irc.send("USER %s %s %s :Python IRC\r\n" % (twitch_auth.get_bot(),twitch_auth.get_bot(),twitch_auth.get_bot()))
 #wait before reading data (needed for twitch)
 time.sleep(0.5)
 printer(irc.recv ( 4096 ))
 printer("Got stuff")
 #wait before joining (needed for twitch)
 time.sleep(0.5)
-irc.send ( 'JOIN #spiffomatic64\r\n' )
+irc.send("JOIN #%s\r\n" % twitch_auth.get_streamer())
 
 #Midi Thread start
 #t = threading.Thread(target=midiThread)
@@ -814,24 +896,22 @@ irc.send ( 'JOIN #spiffomatic64\r\n' )
 t2 = threading.Thread(target=mastertimer)
 t2.daemon = True
 counter = time.time()
-master = "spiffomatic64"
+master = twitch_auth.get_streamer()
 warn_timer = 0
-mode = 1
+mode = 1 #start in normal mode
 t2.start()
 
-#instead of calling functions directly, add them to a global queue with a processing thread
+#todo: instead of calling functions directly, add them to a global queue with a processing thread
 #the thread will 
 
 optout = []
-#not used yet, will be using these global variables to keep track of the "current color"
-r = 0
-g = 0
-b = 0
 
 #Main loop
+printer("Starting Main loop")
 while True:
-    ser.flushInput() #ignore serial input, TODO log serial input without locking loop
+    ser.flushInput() #ignore serial input, todo: log serial input without locking loop
     orig = irc.recv ( 4096 ) #recieve irc data
+    printer(orig)
     parts = orig.split() #Split irc data by white space
     if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
         irc.send ( 'PONG ' + orig.split() [ 1 ] + '\r\n' )
@@ -855,4 +935,3 @@ while True:
             master_commands(user,data)  
         #check for normal user commands
         user_commands(user,data)
-    printer(orig)

@@ -1,175 +1,98 @@
 #include <Adafruit_NeoPixel.h>
 #include <PWMServo.h> 
 
-#define PIN            6
-#define NUMPIXELS      30
+#define PIN 6
+#define LEDS 30
 
-PWMServo drop;
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDS, PIN, NEO_GRB + NEO_KHZ800);
+
+int count=-1;
+unsigned char color[6];
 boolean alt = 0;
-
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+PWMServo drop;
 
 void setup() {
-  Serial.begin(9600);
-  randomSeed(analogRead(0));
+  color[5]=0;                               //char array null terminal for printing
+  Serial.begin(115200);
+  strip.begin();
+  strip.show();                             // Initialize all strip to 'off'
   
-  drop.attach(10);
-  drop.write(40);
+  drop.attach(10);                          //initialize servo  
+  drop.write(40);                           //set to "up" position
   delay(100);
-  drop.detach(); //(probably not needed after moving to pwmservo) was used to stop interferring neopixel/servo
-  //Needed to prevent the floating ground
-  pinMode(10, OUTPUT);
+  drop.detach();                            //stop interfering neopixel/servo libraries
+  pinMode(10, OUTPUT);                      //Needed to prevent the floating ground
   digitalWrite(10, LOW); 
   
-  pinMode(11, OUTPUT); 
-  digitalWrite(11, LOW); 
-  
-  pinMode(3, OUTPUT);
-  digitalWrite(3, LOW); 
-  
-  pixels.begin(); // This initializes the NeoPixel library.
+  Serial.println("Ready");
 }
 
 void loop() {
+  unsigned char c;
+
   while (Serial.available() > 0) {
-    int command = Serial.parseInt();
-    int red2,green2,blue2;
-    int toggle;
-    
-    //TODO completely redo this logic
-    
-    if (command == -1) {
-      toggle = Serial.parseInt();
-      rainbow(toggle);
-    } else if (command == -5) {
-         Serial.println("got -5, dropping");
-         toggle = Serial.parseInt();
-         drop.attach(10);
-         if (toggle==1) drop.write(130);
-         else drop.write(40);
-         delay(100);
-         drop.detach();
-     } else if (command == -6) {
-         toggle = Serial.parseInt();
-         Serial.println("got -6 big vibe");
-         if (toggle==1) analogWrite(11, 128); 
-         else analogWrite(11, 0); 
-     } else if (command == -7) {
-         toggle = Serial.parseInt();
-         Serial.println("got -7 little vibe");
-         Serial.println(toggle);
-         if (toggle==1) analogWrite(3, 128); 
-         else analogWrite(3, 0); 
-     } else {
-      int red = Serial.parseInt(); 
-      int green = Serial.parseInt(); 
-      int blue = Serial.parseInt(); 
-      if (command == -4) {
-        Serial.println("got 4, getting second set of rgb");
-        red2 = Serial.parseInt(); 
-        green2 = Serial.parseInt(); 
-        blue2 = Serial.parseInt(); 
-      }
-      if (command == -2) {
-        Serial.println("got 4, getting second set of rgb");
-        red2 = Serial.parseInt(); 
-        green2 = Serial.parseInt(); 
-        blue2 = Serial.parseInt(); 
-      }
-      if (command == -3) toggle = Serial.parseInt();
-      if (Serial.read() == '\n') {
-        int ocommand = command;
-        command = constrain(command, 0, NUMPIXELS+1);
-        red = constrain(red, 0, 255);
-        green = constrain(green, 0, 255);
-        blue = constrain(blue, 0, 255);
-        if (ocommand == -3) {
-          Serial.println("chase111");
-          Serial.println(toggle);
-          chasecolor(toggle,red,green,blue); 
-        } else if (ocommand == -4) {
-          Serial.println("got 4");
-          red2 = constrain(red2, 0, 255);
-          green2 = constrain(green2, 0, 255);
-          blue2 = constrain(blue2, 0, 255);
-          alternate(red,green,blue,red2,green2,blue2); 
-        } else if (ocommand == -2) {
-          Serial.println("got 8");
-          red2 = constrain(red2, 0, 255);
-          green2 = constrain(green2, 0, 255);
-          blue2 = constrain(blue2, 0, 255);
-          fire(red,green,blue,red2,green2,blue2); 
-        } else if (command == 0) {
-          for(int i=0;i<NUMPIXELS;i++){
-            // pixels.Color takes RGB values, from 0,0,0 up to 255,255,255
-            pixels.setPixelColor(i, pixels.Color(red,green,blue));
-          }
-        } else {
-          pixels.setPixelColor(command-1, pixels.Color(red,green,blue));
-        }
-        // print the three numbers in one string as hexadecimal:
-        Serial.print(command);
-        Serial.print(":");
-        Serial.print(red, HEX);
-        Serial.print(green, HEX);
-        Serial.println(blue, HEX);
-        pixels.show();
-      }
+    c=Serial.read();
+    if (c=='#') count=0;                    //# resets buffer
+    if (count<=4 && count>=0) {             //as long as we have not already read more than 4 bytes
+        color[count]=c;
+        count++;
+    } else {                                //if buffer is full
+      count=-1;                             //reset count to prevent reading any more data into buffer
+      if (c=='!') strip.show();             //if buffer is full, ! refresh's pixels
+    }
+    if (count==5) {                         //if counter is at 5 bytes, fill buffer
+      int p = int(color[4]);
+      int r = int(color[1]);
+      int g = int(color[2]);
+      int b = int(color[3]);
+      
+      //Start special commands
+      //Explanation: In order to keep data to a minimum over serial, a hex based data system is used
+      //the first 3 hex sets are parameters, and the last is a "command"
+      //if the command is 0-29, the 3 parameters are used to light an individual pixel with rgb
+      //the rest should be self explanitory (based on the function names)
+      if (p<=29) strip.setPixelColor(p, strip.Color(r,g,b));
+      if (p==255) allLeds(r,g,b); //light all leds the same color
+      if (p==254) dropServo(r); 
+      if (p==253) vibrate(r,g); 
+      if (p==252) getpixels(); 
     }
   }
 }
 
-//returns a rgb primary color TODO Move to python
-uint32_t Wheel(byte WheelPos) {
-  WheelPos = 255 - WheelPos;
-  if(WheelPos < 85) {
-   return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  } else if(WheelPos < 170) {
-    WheelPos -= 85;
-   return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-  } else {
-   WheelPos -= 170;
-   return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-  }
-}
-
-void rainbow(uint8_t color) {
-  for(uint16_t i=0; i<pixels.numPixels(); i++) {
-    pixels.setPixelColor(i, Wheel((color) & 255));
-  }
-  pixels.show(); 
-}
-
-void fire(int r1, int g1, int b1, int r2, int g2, int b2) {
-  int rand;
-  for(uint16_t i=0; i<pixels.numPixels(); i++) {
-    rand = random(2);
-    if (rand==1) pixels.setPixelColor(i, pixels.Color(r1,g1,b1));
-    else pixels.setPixelColor(i, pixels.Color(r2,g2,b2));
-  }
-  pixels.show();
-}
-
-
-void chasecolor(int led, int red, int green, int blue) {
-  led=led % pixels.numPixels();
-  for (int i=0; i < pixels.numPixels(); i=i++) {
-    if (led>i-3 && led<i+3) pixels.setPixelColor(i, pixels.Color(red,green,blue));
-    else pixels.setPixelColor(i, 0);
-  }
-  pixels.show();
-}
-
-void alternate(int red, int green, int blue, int red2, int green2, int blue2) {
-  for (int j=0; j < pixels.numPixels(); j=j++) {
-    if (alt) {
-      if (j<pixels.numPixels()/2 ) pixels.setPixelColor(j, pixels.Color(red,green,blue));
-      else pixels.setPixelColor(j, pixels.Color(red2,green2,blue2));
-    } else {
-      if (j>pixels.numPixels()/2 ) pixels.setPixelColor(j, pixels.Color(red,green,blue));
-      else pixels.setPixelColor(j, pixels.Color(red2,green2,blue2));
+//function to return the current color status of all pixels
+void getpixels() {
+  for (int i=0;i<strip.numPixels();i++) {
+      Serial.print(i);
+      Serial.print(",");
+      Serial.print((strip.getPixelColor(i) & 0x00FF0000) >> 16);
+      Serial.print(",");
+      Serial.print((strip.getPixelColor(i) &  0x0000FF00) >>  8);
+      Serial.print(",");
+      Serial.println(strip.getPixelColor(i) & 0x000000FF     );
     }
+}
+
+//control a motor on a specific pin
+void vibrate(int pin, boolean onoff) {
+   if (onoff==true) analogWrite(pin, 128); 
+   else analogWrite(pin, 0); 
+}
+
+//control drop servo
+void dropServo(boolean updown) {
+   drop.attach(10);
+   if (updown==true) drop.write(130);
+   else drop.write(40);
+   delay(100);
+   drop.detach();
+   pinMode(10, OUTPUT);
+   digitalWrite(10, LOW); 
+}
+
+//light all leds 
+void allLeds(int red, int green, int blue) {
+  for(int i=0;i<LEDS;i++){
+    strip.setPixelColor(i, strip.Color(red,green,blue));
   }
-  alt = !alt;
-  pixels.show();
 }
