@@ -11,10 +11,12 @@ import json
 import requests
 import logging
 import win32api as win32
+import win32gui
 import win32con
 import twitch_auth
 import string
 import html_colors
+import os 
 
 #Prints to console, and a log file
 def printer(string):
@@ -363,6 +365,26 @@ def flip(duration=20):
     dm.Fields = dm.Fields & win32con.DM_DISPLAYORIENTATION
     win32.ChangeDisplaySettingsEx(device.DeviceName,dm)
     return
+    
+#Slow strobe the monitor effect
+def flicker(times=20):
+    pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
+    
+    for i in range(0,times):
+        pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
+        while True:
+            time.sleep(0.001)
+            try:
+                hwnd = win32gui.FindWindow(None,"pygame window")
+                #print hwnd
+                if hwnd:
+                    break
+            except win32gui.error:
+                print 'not found'
+        win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1280,1024,0)
+        time.sleep(0.5)
+        pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
+        time.sleep(0.05)
       
 #commands only accessible by the user in control      
 def master_commands(user,data):
@@ -493,6 +515,14 @@ def master_commands(user,data):
         if data.find ( 'flip' ) != -1:
             scare = 1
             flip()
+            scare = 0
+            switch()
+            return
+            
+        #flip the main monitor and switch control
+        if data.find ( 'flicker' ) != -1:
+            scare = 1
+            flicker()
             scare = 0
             switch()
             return
