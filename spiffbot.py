@@ -200,20 +200,23 @@ def mastertimer():
     while True:
         if mode == 0:
             elapsed = time.time() - counter
-            #every 2.5 minutes warn the user in control 150
-            if elapsed>150 and warn_timer == 0:
-                if master!=twitch_auth.get_bot():
-                    irc_msg( "2.5 Minutes left %s!" % master)  
-                warn_timer = 1
             #every 5 minutes switch control, and add master to optout list 300
-            if elapsed>300 and warn_timer == 1:
+            if elapsed>30 and warn_timer < 2:
                 if master!=twitch_auth.get_bot():
                     while scare == 1:
                         time.sleep(1)
                     irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                     printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
                     optout.append(master)
+                printer("master switch")
+                counter = time.time()
                 switch()
+            #every 2.5 minutes warn the user in control 150
+            elif elapsed>15 and warn_timer == 0:
+                if master!=twitch_auth.get_bot():
+                    irc_msg( "2.5 Minutes left %s!" % master)  
+                warn_timer = 1
+            
             printer(elapsed)
         time.sleep(1)
 
@@ -225,10 +228,12 @@ def switch(user=""):
     global warn_timer
     global next
     
+    printer("Switching with user: %s" % user)
     #if warn timer is not -1, set warn timer to -1, then back to 0 at the end of the function
     #This is used to lock the switch thread (to prevent double switching)
     if warn_timer != -1:
         warn_timer = -1
+        printer("getting viewers")
         viewers = get_viewers()
         #remove the current controller from available viewers to prevent switching to the same person
         if master in viewers:
@@ -261,6 +266,8 @@ def switch(user=""):
         printer("Switching from %s to %s" % (old,master))
         counter = time.time()
         warn_timer = 0
+    else:
+        printer("Another switch is in progress")
 
 #commands that will only work for me (and moderators in the future)
 def admin_commands(user,data):
@@ -430,6 +437,7 @@ def master_commands(user,data):
             ser.write("#\x0a\x00\x00\xfe")
             time.sleep(20)
             scare = 0
+            printer("scare switch")
             switch()
             return
             
