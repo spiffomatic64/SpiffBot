@@ -784,9 +784,9 @@ def user_commands(user,data):
                         print type(rgb[0])
                         chase(rgb[0],rgb[1],rgb[2],int(num))
                         time.sleep(1)
-                        modedefault()
                     else:
                         printer("Invalid color: %s" % part)
+                modedefault()
                 return
             else:
                 printer("Not enough colors to chase!")
