@@ -168,7 +168,6 @@ def midiThread():
         pygame.time.wait(10)
 
 #gets a "live" list of viewers in chat
-#todo, look up moderators
 def get_viewers():
     global optout
     
@@ -183,10 +182,21 @@ def get_viewers():
             viewers.append(viewer)
             printer(viewer)
     for viewer in output['chatters']['moderators']:
-        if viewer not in optout and viewer!="spiffbot" and viewer!="spiffomatic64":
+        if viewer not in optout and viewer!=twitch_auth.get_bot() and viewer!=twitch_auth.get_streamer():
             viewers.append(viewer)
             printer(viewer)
     return viewers
+    
+def get_game():
+    global optout
+    
+    url = "https://api.twitch.tv/kraken/streams/%s" % twitch_auth.get_streamer()
+    printer("Checking game...")
+    data = requests.get(url=url)
+    binary = data.content
+    output = json.loads(binary)
+    game = output['stream']['game']
+    return game
     
 #Thread responsible for switching control
 def mastertimer():
@@ -707,7 +717,11 @@ def user_commands(user,data):
             timeleft = 300 - (time.time() - counter)
             irc_msg("%s has %s seconds left!" % (master,round(timeleft)))
             return
-        
+
+    #Get current streaming game
+    if command == "!game":
+        irc_msg("The current game is: %s" % get_game())
+
     #disco rainbow colors
     if data.find ( 'disco' ) != -1:
         if data.find ( 'strobe' ) != -1:
@@ -879,7 +893,7 @@ while True:
     if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
         irc.send ( 'PONG ' + orig.split() [ 1 ] + '\r\n' )
     
-    if parts[1].lower()=="privmsg" and parts[2].lower()=="#spiffomatic64":
+    if parts[1].lower()=="privmsg" and parts[2][1:].lower()==twitch_auth.get_streamer():
         if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
             user = parts.pop(0) 
             user = user[1:user.find("!")] #get the username from the first "part"
