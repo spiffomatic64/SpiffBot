@@ -13,6 +13,7 @@ import logging
 import win32api as win32
 import win32con
 import twitch_auth
+import string
 
 #Prints to console, and a log file
 def printer(string):
@@ -27,6 +28,62 @@ def hex2chr(input):
     rgb.append(int(input[4:6], 16))
     #print ':'.join(x.encode('hex') for x in rgb)
     return rgb
+    
+def is_hex(s):
+     hex_digits = set(string.hexdigits)
+     # if s is long, then it is faster to check against a set
+     return all(c in hex_digits for c in s)
+     
+def bounds(input):
+    if input<0:
+        input = 0
+    if input>255:
+        input = 255
+    return input
+
+#parse a string for a single color (returned as a list)
+def convertcolor(input):
+    input = input.lower()
+    stuff = []
+    #look for html color
+    for key, value in sorted(colors.iteritems()):
+        if input.find ( key.lower() ) != -1:
+            stuff.append(bounds(int("0x"+value[0:2],0)))
+            stuff.append(bounds(int("0x"+value[2:4],0)))
+            stuff.append(bounds(int("0x"+value[4:6],0)))
+            return stuff
+    
+    #look for 3 x,x,x
+    parts = input.split(",")
+    if len(parts)==3:
+        #255,255,255
+        for part in parts:
+            if part.isdigit():
+                stuff.append(bounds(int(part)))
+        if len(stuff)==3:
+            return stuff
+        stuff = []
+        
+        #ff,ff,ff
+        for part in parts:
+            if len(part)==2 and is_hex(part):
+                stuff.append(bounds(int(part, 16)))
+        if len(stuff)==3:
+            return stuff
+            
+    else:
+        # #ffffff
+        stuff = []
+        if input[0]=="#":
+            input = input[1:]
+        # 0xffffff
+        if input[0:2]=="0x":
+            input = input[2:]
+        if len(input)==6 and is_hex(input):
+            stuff.append(bounds(int(input[0:2], 16)))
+            stuff.append(bounds(int(input[2:4], 16)))
+            stuff.append(bounds(int(input[4:6], 16)))
+            return stuff
 
 #used to print and write to serial (for debug purposes)
 def debugserial(input):
@@ -52,6 +109,7 @@ def getMidi(midi):
     for x in range( 0, pygame.midi.get_count() ):
         printer(pygame.midi.get_device_info(x)[1])
         if pygame.midi.get_device_info(x)[1] == midi:
+            printer("Found midi: %s" % c)
             return c
         c = c + 1
 
@@ -123,6 +181,10 @@ def get_viewers():
         if viewer not in optout:
             viewers.append(viewer)
             printer(viewer)
+    for viewer in output['chatters']['moderators']:
+        if viewer not in optout:
+            viewers.append(viewer)
+            printer(viewer)
     return viewers
     
 #Thread responsible for switching control
@@ -132,18 +194,21 @@ def mastertimer():
     global warn_timer
     global optout
     global mode
+    global scare
     
     while True:
         if mode == 0:
             elapsed = time.time() - counter
-            #every 2.5 minutes warn the user in control
+            #every 2.5 minutes warn the user in control 150
             if elapsed>150 and warn_timer == 0:
                 if master!=twitch_auth.get_bot():
                     irc_msg( "2.5 Minutes left %s!" % master)  
                 warn_timer = 1
-            #every 5 minutes switch control, and add master to optout list
+            #every 5 minutes switch control, and add master to optout list 300
             if elapsed>300 and warn_timer == 1:
                 if master!=twitch_auth.get_bot():
+                    while scare == 1:
+                        time.sleep(1)
                     irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                     printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
                     optout.append(master)
@@ -157,6 +222,7 @@ def switch(user=""):
     global irc
     global master
     global warn_timer
+    global next
     
     #if warn timer is not -1, set warn timer to -1, then back to 0 at the end of the function
     #This is used to lock the switch thread (to prevent double switching)
@@ -166,9 +232,19 @@ def switch(user=""):
         #remove the current controller from available viewers to prevent switching to the same person
         if master in viewers:
             viewers.remove(master)
+        #add logic for fairness
+        #use stack queue
         old = master
+        #if a "next" user is specified, switch to that user
+        if next:
+            printer("next was set to: %s" % next)
+            if user=="":
+                printer("user is not set")
+                user = next
+                next = None
         #Switch to user if specified
         if user in viewers:
+            printer("User is set: %s" % user)
             master = user
         else:
             #if there are more than 0 viewers, pick a random viewer
@@ -191,6 +267,7 @@ def admin_commands(user,data):
     global irc
     global optout
     global mode
+    global next
     
     if user.lower() == twitch_auth.get_streamer():
         #split irc messages into parts by white space 
@@ -205,7 +282,6 @@ def admin_commands(user,data):
                 switch()
         #if there are at least 2 words in the message
         if len(parts) == 2:
-            printer(len(parts))
             for part in parts:
                 printer(part)
             #add user to optout list
@@ -235,6 +311,10 @@ def admin_commands(user,data):
                     mode = 1
                     printer("Normal time!")
                     irc_msg("Playing normal games")
+                    modedefault()
+            if command == "!switchnext":
+                printer("Setting next user to: %s" % parts[1])
+                next=parts[1]
 
 #Not used, for debugging to list all monitors
 def printAllScreen():
@@ -247,9 +327,9 @@ def printAllScreen():
         except:
             break;
     return i
-                    
+                   
 #Flip the monitor using winapi's
-def flip(duration=10):
+def flip(duration=20):
     #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
     device = win32.EnumDisplayDevices(None,1);
     printer("Rotate device %s (%s)"%(device.DeviceString,device.DeviceName));
@@ -272,6 +352,7 @@ def master_commands(user,data):
     global irc
     global sounds
     global ser
+    global scare
     
     if user.lower() == master.lower() or user.lower()==twitch_auth.get_streamer(): #check that the user is the master
         parts = data.lower().split()
@@ -306,8 +387,8 @@ def master_commands(user,data):
            
             #setup disco animation in a thread
             printer("Disco animation")
-            t3 = threading.Thread(target=disco)
-            t3.daemon = True
+            #t3 = threading.Thread(target=disco)
+            #t3.daemon = True
             
             #setup audio
             pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
@@ -319,13 +400,15 @@ def master_commands(user,data):
             printer("Playing sound %s" % song)
             pygame.mixer.music.load(song)
             pygame.mixer.music.play()
+            scare = 1
 
             clock = pygame.time.Clock()
-            t3.start() #start disco animation thread
+            #t3.start() #start disco animation thread
             while pygame.mixer.music.get_busy():
                # check if playback has finished
                clock.tick(30)
             pygame.mixer.quit() 
+            scare = 0
             switch()
             return
             
@@ -337,39 +420,60 @@ def master_commands(user,data):
             
         #Drop the box on me by moving the arm down for 1 second, then waiting 20 seconds and switching
         if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
+            scare = 1
             printer("Dropping box")
             warn_timer = 2
-            ser.write("#\x01\x00\x00\xfe")
+            ser.write("#\x0a\x01\x00\xfe")
             time.sleep(1)
-            ser.write("#\x00\x00\x00\xfe")
+            ser.write("#\x0a\x00\x00\xfe")
             time.sleep(20)
+            scare = 0
+            switch()
+            return
+            
+        #Drop the box on me by moving the arm down for 1 second, then waiting 20 seconds and switching
+        if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
+            scare = 1
+            printer("Moving leg servo")
+            warn_timer = 2
+            ser.write("#\x09\x01\x00\xfe")
+            time.sleep(1)
+            ser.write("#\x09\x00\x00\xfe")
+            time.sleep(20)
+            scare = 0
             switch()
             return
         
         #rattle the vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'rumble' ) != -1 or data.find ( 'vibe' ) != -1:
+            scare = 1
             printer("Desk Vibe")
             warn_timer = 2
             ser.write("#\x0b\x01\x00\xfd")
             time.sleep(2)
             ser.write("#\x0b\x00\x00\xfd")
             time.sleep(20)
+            scare = 0
             switch()
             return
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
+            scare = 1
             printer("Chest Vibe")
             warn_timer = 2
             ser.write("#\x03\x01\x00\xfd")
             time.sleep(2)
             ser.write("#\x03\x00\x00\xfd")
             time.sleep(20)
+            scare = 0
             switch()
             return
         #flip the main monitor and switch control
         if data.find ( 'flip' ) != -1:
+            scare = 1
             flip()
+            scare = 0
             switch()
             return
             
@@ -404,6 +508,7 @@ def fade(red,green,blue,steps,wait=2):
             ser.write("#%c%c%c%c" % (r,g,b,y))
         ser.write("!")
         pygame.time.wait(wait)
+    ser.write("#%c%c%c\xff!" % (red,green,blue))
     
 #set the leds to black if in scary mode, fade up from black to white if normal mode
 def modedefault():
@@ -442,11 +547,11 @@ def strobe():
     global ser
     
     irc_msg("SEIZURE PARTY!!!!!!!!")
-    for x in range(0, 100): #flicker 200 times, for 30 ms on, then 30ms off
+    for x in range(0, 50): #flicker 200 times, for 30 ms on, then 30ms off
         ser.write("#\xff\xff\xff\xff!")
-        pygame.time.wait(30)
+        pygame.time.wait(40)
         ser.write("#\x00\x00\x00\xff!")
-        pygame.time.wait(30)
+        pygame.time.wait(40)
     modedefault()
     return
 
@@ -454,12 +559,12 @@ def discostrobe():
     global ser
     
     irc_msg("DISCO SEIZURES!!!!!!!!")
-    for y in range(0, 255): #loop through all 255 colors
-        rgb = Wheel(y)
+    for y in range(0, 85): #loop through all 255 colors
+        rgb = Wheel(y*3)
         ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
-        pygame.time.wait(30)
+        pygame.time.wait(40)
         ser.write("#\x00\x00\x00\xff!")
-        pygame.time.wait(30)
+        pygame.time.wait(40)
     modedefault()
     return    
 
@@ -478,6 +583,38 @@ def chase(r, g, b,num=6):
             pygame.time.wait(10)
         pygame.time.wait(500)
     return
+    
+def bounce(r, g, b,num=6):
+    global ser
+    
+    printer("%s,%s,%s" %(r,g,b))
+    for x in range(0, num): #chase animation num times
+        for y in range(0, 30): #chase across all 30 leds
+            for z in range(0,30): #draw the pixels
+                if z>y-3 and z<y+3:
+                    ser.write("#%c%c%c%c" % (r,g,b,z))
+                else:
+                    ser.write("#\x00\x00\x00%c" % z)
+            ser.write("!")
+            pygame.time.wait(10)
+        pygame.time.wait(500)
+    return    
+    
+def centerchase(r, g, b,num=6):
+    global ser
+    
+    printer("%s,%s,%s" %(r,g,b))
+    for x in range(0, num): #chase animation num times
+        for y in range(0, 30): #chase across all 30 leds
+            for z in range(0,30): #draw the pixels
+                if z>y-3 and z<y+3:
+                    ser.write("#%c%c%c%c" % (r,g,b,z))
+                else:
+                    ser.write("#\x00\x00\x00%c" % z)
+            ser.write("!")
+            pygame.time.wait(10)
+        pygame.time.wait(500)
+    return    
     
 def alternate(r1,g1,b1,r2,g2,b2):
     global ser
@@ -514,17 +651,12 @@ def fire(r1,g1,b1,r2,g2,b2):
         time.sleep(0.1)
     modedefault()
     return
-
-#not used right now, will convert input(r,g,b) or html color, or #rrggbb into rgb values to be used by all functions
-def convertcolor(input):
-    input = input.lower()
-    value = []
-    for key, value in colors.iteritems():
-        if input.find ( key.lower() ) != -1:
-            value[0] = int("0x"+value[0:2],0)
-            value[1] = int("0x"+value[2:4],0)
-            value[2] = int("0x"+value[4:6],0)
-        return
+    
+def allleds(r,g,b):
+    ser.write("#%c%c%c\xff!" % (r,g,b) )
+    time.sleep(1)
+    modedefault()
+    
 
 #commands accessible by all users
 def user_commands(user,data):
@@ -545,7 +677,7 @@ def user_commands(user,data):
     #Scary mode only commands
     if mode == 0:
         if command == "!whosgotit":
-            irc_msg("%s is in control!" % master)
+            irc_msg("%s is in currently control!" % master)
             return
         #opt a user out, and switch if they were in control
         if command == "!optout":
@@ -584,93 +716,55 @@ def user_commands(user,data):
     #if data.find ( 'fire' ) != -1:
         #fire()
         #return
-    
-    #rgb all pixels one color
-    m = re.search('rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)',data,re.IGNORECASE)
+    printer("yay")
+    m = re.search('(\w+)\((.+(?:\|[a-zA-Z0-9#]+)*)\)',data,re.IGNORECASE)
     if m:
-        if m.group(3):
-            printer("%s,%s,%s" %(m.group(1),m.group(2),m.group(3)))
-            ser.write("#%c%c%c\xff!" % (m.group(1),m.group(2),m.group(3)))
-            time.sleep(5)
-            modedefault()
-            return
-
-    #Chase animation (rgb)
-    m = re.search('chase\((\d{1,3}),(\d{1,3}),(\d{1,3})\)',data,re.IGNORECASE)
-    if m:
-        if m.group(3):
-            chase(m.group(1),m.group(2),m.group(3))
-            modedefault()
-            return
-            
-    #Chase 3 colors (html codes)
-    m = re.search('chase\((\w+),(\w+),(\w+)\)',data,re.IGNORECASE)
-    if m:
-        if m.group(1) and m.group(1) in colors:
-            value = colors[m.group(1)]
-            chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),2)
-        if m.group(2) and m.group(2) in colors:
-            value = colors[m.group(2)]
-            chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),2)
-        if m.group(3) and m.group(3) in colors:
-            value = colors[m.group(3)]
-            chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),2)
-        modedefault()
-        return
-        
-    #Chase 2 colors (html codes)
-    m = re.search('chase\((\w+),(\w+)\)',data,re.IGNORECASE)
-    if m:
-        if m.group(1) and m.group(1) in colors:
-            value = colors[m.group(1)]
-            chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),3)
-        if m.group(2) and m.group(2) in colors:
-            value = colors[m.group(2)]
-            chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),3)
-        modedefault()
-        return
-        
-    #Chase 1 color (html codes)
-    m = re.search('chase\((\w+)\)',data,re.IGNORECASE)
-    if m:
-        if m.group(1) and m.group(1) in colors:
-            value = colors[m.group(1)]
-            chase(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0))
-            modedefault()
-            return
-
-    #Alternate animation (rgb)
-    m = re.search('alternate\((\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3})\)',data,re.IGNORECASE)
-    if m:
-        if m.group(6):
-            alternate(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6))
-            return
-            
-    #Alternate animation (html)
-    m = re.search('alternate\((\w+),(\w+)\)',data,re.IGNORECASE)
-    if m:
-        if m.group(2) and  m.group(1) in colors and  m.group(2) in colors:
-            value = colors[m.group(1)]
-            value2 = colors[m.group(2)]
-            alternate(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),int("0x"+value2[0:2],0),int("0x"+value2[2:4],0),int("0x"+value2[4:6],0))
-            return
-            
-    #fire animation (rgb)
-    m = re.search('fire\((\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3}),(\d{1,3})\)',data,re.IGNORECASE)
-    if m:
-        if m.group(6):
-            fire(m.group(1),m.group(2),m.group(3),m.group(4),m.group(5),m.group(6))
-            return
-            
-    #fire animation (html)
-    m = re.search('fire\((\w+),(\w+)\)',data,re.IGNORECASE)
-    if m:
-        if m.group(2) and  m.group(1) in colors and  m.group(2) in colors:
-            value = colors[m.group(1)]
-            value2 = colors[m.group(2)]
-            fire(int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0),int("0x"+value2[0:2],0),int("0x"+value2[2:4],0),int("0x"+value2[4:6],0))
-            return
-            
+        printer("regex passed")
+        parts = m.group(2).split("|")
+        if m.group(1).lower()=="chase":
+            if len(parts)>0:
+                while len(parts)>6:
+                    parts.pop(6)
+                for part in parts:
+                    rgb = convertcolor(part)
+                    if rgb:
+                        num = round(6/len(parts))
+                        print type(rgb[0])
+                        chase(rgb[0],rgb[1],rgb[2],int(num))
+                        time.sleep(1)
+                        modedefault()
+                    else:
+                        printer("Invalid color: %s" % part)
+                return
+            else:
+                printer("Not enough colors to chase!")
+        if len(parts)==1:
+            rgb = convertcolor(parts[0])
+            if rgb:
+                if m.group(1).lower()=="rgb":
+                    allleds(rgb[0],rgb[1],rgb[2])
+                    time.sleep(1)
+                    modedefault()
+        if len(parts)==2:
+            rgb = convertcolor(parts[0])
+            rgb2 = convertcolor(parts[1])
+            if rgb: 
+                if rgb2:
+                    if m.group(1).lower()=="fire":
+                        fire(rgb[0],rgb[1],rgb[2],rgb2[0],rgb2[1],rgb2[2])
+                        time.sleep(1)
+                        modedefault()
+                        return
+                    if m.group(1).lower()=="alternate":
+                        alternate(rgb[0],rgb[1],rgb[2],rgb2[0],rgb2[1],rgb2[2])
+                        time.sleep(1)
+                        modedefault()
+                        return
+                else:
+                    printer("Invalid color: %s" % parts[1])
+            else:
+                printer("Invalid color: %s" % parts[0])
+                return
     #html color keys (single color, no animation)
     for key, value in colors.iteritems():
         if data.find ( key.lower() ) != -1:
@@ -868,6 +962,8 @@ ser = serial.Serial("Com4", 115200)
 #pygame.init()
 #pygame.midi.init()
 #inp = pygame.midi.Input(getMidi("MIDISPORT 1x1 In"))
+#midi = getMidi("USB MS1x1 MIDI Interface")
+#inp = pygame.midi.Input(midi)
     
 #start IRC
 network = 'irc.twitch.tv'
@@ -908,6 +1004,10 @@ optout = []
 
 #Main loop
 printer("Starting Main loop")
+ser.write("#\xff\xff\xff\xff!")
+time.sleep(2)
+modedefault()
+scare = 0
 while True:
     ser.flushInput() #ignore serial input, todo: log serial input without locking loop
     orig = irc.recv ( 4096 ) #recieve irc data
@@ -916,7 +1016,6 @@ while True:
     if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
         irc.send ( 'PONG ' + orig.split() [ 1 ] + '\r\n' )
     if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
-        printer("Len parts %s" % len(parts))
         user = parts.pop(0) 
         user = user[1:user.find("!")] #get the username from the first "part"
         parts.pop(0) #throw away the next two parts
