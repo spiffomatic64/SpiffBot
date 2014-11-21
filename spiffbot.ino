@@ -17,12 +17,7 @@ void setup() {
   strip.begin();
   strip.show();                             // Initialize all strip to 'off'
   
-  drop.attach(10);                          //initialize servo  
-  drop.write(40);                           //set to "up" position
-  delay(100);
-  drop.detach();                            //stop interfering neopixel/servo libraries
-  pinMode(10, OUTPUT);                      //Needed to prevent the floating ground
-  digitalWrite(10, LOW); 
+  moveServo(10,false);
   
   Serial.println("Ready");
 }
@@ -53,7 +48,7 @@ void loop() {
       //the rest should be self explanitory (based on the function names)
       if (p<=29) strip.setPixelColor(p, strip.Color(r,g,b));
       if (p==255) allLeds(r,g,b); //light all leds the same color
-      if (p==254) dropServo(r); 
+      if (p==254) moveServo(r,g); 
       if (p==253) vibrate(r,g); 
       if (p==252) getpixels(); 
     }
@@ -80,14 +75,14 @@ void vibrate(int pin, boolean onoff) {
 }
 
 //control drop servo
-void dropServo(boolean updown) {
-   drop.attach(10);
+void moveServo(int pin, boolean updown) {
+   drop.attach(pin);
    if (updown==true) drop.write(130);
    else drop.write(40);
    delay(100);
    drop.detach();
-   pinMode(10, OUTPUT);
-   digitalWrite(10, LOW); 
+   pinMode(pin, OUTPUT);
+   digitalWrite(pin, LOW); 
 }
 
 //light all leds 
