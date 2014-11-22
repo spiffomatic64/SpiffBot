@@ -46,14 +46,18 @@ def bounds(input):
 
 #parse a string for a single color (returned as a list)
 def convertcolor(input):
+    global random_color
+    
     input = input.lower()
     stuff = []
     
     if input == "random":
-        value = random.choice(html_colors.colors.values())
-        stuff.append(bounds(int("0x"+value[0:2],0)))
-        stuff.append(bounds(int("0x"+value[2:4],0)))
-        stuff.append(bounds(int("0x"+value[4:6],0)))
+        random_color = ((random.randint(1, 32)+random_color)*7)%255
+        printer("Random color: %s" % random_color)
+        value = Wheel(random_color)
+        stuff.append(value[0])
+        stuff.append(value[1])
+        stuff.append(value[2])
         return stuff
     
     #look for html color
@@ -626,7 +630,7 @@ def strobe():
     modedefault()
     return
 
-def discostrobe():
+def disco_strobe():
     global ser
     
     irc_msg("DISCO SEIZURES!!!!!!!!")
@@ -723,6 +727,21 @@ def fire(r1,g1,b1,r2,g2,b2):
     modedefault()
     return
     
+#disco fire
+#todo add gradients
+def disco_fire():
+    global irc
+    global ser
+    irc_msg("FIRE!!!")
+    for y in range( 0, 30 ):
+        for x in range( 0, 30 ):
+            c = Wheel(((random.randint(1, 32)+random_color)*7)%255)
+            ser.write("#%c%c%c%c" % (c[0],c[1],c[2],x) )
+        ser.write("!")
+        time.sleep(0.1)
+    modedefault()
+    return
+    
 def allleds(r,g,b):
     ser.write("#%c%c%c\xff!" % (r,g,b) )
     time.sleep(1)
@@ -776,7 +795,9 @@ def user_commands(user,data):
     #disco rainbow colors
     if data.find ( 'disco' ) != -1:
         if data.find ( 'strobe' ) != -1:
-            discostrobe()
+            disco_strobe()
+        elif data.find ( 'fire' ) != -1:
+            disco_fire()
         else :
             disco()
         return
@@ -937,6 +958,7 @@ time.sleep(2)
 modedefault()
 scare = 0
 pass_counter = 3
+random_color=1
 
 while True:
     ser.flushInput() #ignore serial input, todo: log serial input without locking loop
