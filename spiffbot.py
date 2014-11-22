@@ -48,6 +48,14 @@ def bounds(input):
 def convertcolor(input):
     input = input.lower()
     stuff = []
+    
+    if input == "random":
+        value = random.choice(html_colors.colors.values())
+        stuff.append(bounds(int("0x"+value[0:2],0)))
+        stuff.append(bounds(int("0x"+value[2:4],0)))
+        stuff.append(bounds(int("0x"+value[4:6],0)))
+        return stuff
+    
     #look for html color
     for key, value in sorted(html_colors.colors.iteritems()):
         if input.find ( key.lower() ) != -1:
