@@ -213,7 +213,7 @@ def mastertimer():
         if mode == 0:
             elapsed = time.time() - counter
             #every 5 minutes switch control, and add master to optout list 300
-            if elapsed>30 and warn_timer < 2:
+            if elapsed>300 and warn_timer < 2:
                 if master!=twitch_auth.get_bot():
                     while scare == 1:
                         time.sleep(1)
@@ -224,21 +224,22 @@ def mastertimer():
                 counter = time.time()
                 switch()
             #every 2.5 minutes warn the user in control 150
-            elif elapsed>15 and warn_timer == 0:
+            elif elapsed>150 and warn_timer == 0:
                 if master!=twitch_auth.get_bot():
                     irc_msg( "2.5 Minutes left %s!" % master)  
                 warn_timer = 1
             
             printer(elapsed)
         time.sleep(1)
-
+        
 #switch control to a random person (or specific person if specified)
-def switch(user=""):
+def switch(user="",pass_control=0):
     global counter
     global irc
     global master
     global warn_timer
     global next
+    global pass_counter
     
     printer("Switching with user: %s" % user)
     #if warn timer is not -1, set warn timer to -1, then back to 0 at the end of the function
@@ -247,6 +248,17 @@ def switch(user=""):
         warn_timer = -1
         printer("getting viewers")
         viewers = get_viewers()
+        #pass limiting logic
+        printer("Pass Counter: %s" % pass_counter)
+        if pass_control==0: #reset pass counter
+            pass_counter = 0
+        elif pass_control==1: #increment pass_counter
+            pass_counter = pass_counter +1
+        if pass_counter>2 and pass_control!=-1:
+            irc_msg("Too many passes to specific users, use a scare command, or !pass without a username") 
+            warn_timer = 1
+            return
+            
         #remove the current controller from available viewers to prevent switching to the same person
         if master in viewers:
             viewers.remove(master)
@@ -297,7 +309,7 @@ def admin_commands(user,data):
         if command == "!switch":
             #if there is something after switch command, try to switch to that user
             if len(parts) == 2:
-                switch(parts[1])
+                switch(parts[1],-1)
             if len(parts) == 1:
                 switch()
         #if there are at least 2 words in the message
@@ -404,7 +416,8 @@ def master_commands(user,data):
         if command == "!pass":
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
-                    switch(parts[1])
+                    printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
+                    switch(parts[1],1)
                 else:
                     irc_msg("You cant pass to yourself!")
                     printer("%s tried to pass to them-self" % user.lower())
@@ -915,6 +928,8 @@ ser.write("#\xff\xff\xff\xff!")
 time.sleep(2)
 modedefault()
 scare = 0
+pass_counter = 3
+
 while True:
     ser.flushInput() #ignore serial input, todo: log serial input without locking loop
     orig = irc.recv ( 4096 ) #recieve irc data
