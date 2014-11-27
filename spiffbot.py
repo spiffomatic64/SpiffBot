@@ -22,6 +22,10 @@ import time
 def wait_serial():
     while writing==1:
         pygame.time.wait(10)
+        
+def wait_animating():
+    while animating==1:
+        pygame.time.wait(10)
 
 def writing_serial(input):
     global writing
@@ -495,8 +499,10 @@ def get_pixels():
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
+    global animating
     diff = {}
     pixels = get_pixels()
+    twitch_bot_utils.printer("Fading")
     for x in range(0,30):
         temp = [red-pixels["%s"%x][0],green-pixels["%s"%x][1],blue-pixels["%s"%x][2]]
         diff.update({x:temp})
@@ -519,6 +525,7 @@ def fade(red,green,blue,steps,wait=2):
             return
         pygame.time.wait(wait)
     writing_serial("#%c%c%c\xff!" % (red,green,blue))
+    animating = 0
     
 #set the leds to black if in scary mode, fade up from black to white if normal mode
 def modedefault():
@@ -532,7 +539,6 @@ def modedefault():
         fade_thread = threading.Thread(target=fade,args=(255,255,255,100))
         fade_thread.daemon = True
         fade_thread.start() 
-    animating = 0
     return
     
 #return a color from a 255 rainbow palette
@@ -550,6 +556,7 @@ def Wheel(WheelPos):
             
 def disco():
     global animating
+    wait_animating()
     animating = 1
     irc_msg("DISCO PARTY!!!!!!!!")
     for x in range(0, 5): #loop 5 mins
@@ -565,6 +572,7 @@ def disco():
     
 def strobe():
     global animating
+    wait_animating()
     animating = 1
     irc_msg("SEIZURE PARTY!!!!!!!!")
     for x in range(0, 50): #flicker 200 times, for 30 ms on, then 30ms off
@@ -580,6 +588,7 @@ def strobe():
 
 def disco_strobe():
     global animating
+    wait_animating()
     animating = 1
     irc_msg("DISCO SEIZURES!!!!!!!!")
     for y in range(0, 85): #loop through all 255 colors
@@ -596,6 +605,7 @@ def disco_strobe():
 
 def chase(r, g, b,num=6):
     global animating
+    wait_animating()
     animating = 1
     twitch_bot_utils.printer("%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
@@ -611,10 +621,12 @@ def chase(r, g, b,num=6):
                 return
             pygame.time.wait(10)       
         pygame.time.wait(500)
+    animating = 0
     return
     
 def bounce(r, g, b,num=6):
     global animating
+    wait_animating()
     animating = 1
     twitch_bot_utils.printer("%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
@@ -634,6 +646,7 @@ def bounce(r, g, b,num=6):
     
 def centerchase(r, g, b,num=6):
     global animating
+    wait_animating()
     animating = 1
     twitch_bot_utils.printer("%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
@@ -652,10 +665,12 @@ def centerchase(r, g, b,num=6):
                 return
             pygame.time.wait(10)       
         pygame.time.wait(500)
+    animating = 0
     return
     
 def alternate(r1,g1,b1,r2,g2,b2):
     global animating
+    wait_animating()
     animating = 1
     twitch_bot_utils.printer("%s,%s,%s,%s,%s,%s" %(r1,g1,b1,r2,g2,b2))
     for y in range( 0, 10 ):
@@ -674,11 +689,36 @@ def alternate(r1,g1,b1,r2,g2,b2):
         time.sleep(0.5)
     modedefault()
     return
+    
+def disco_alternate():
+    global animating
+    wait_animating()
+    animating = 1
+    w=0
+    x=128
+    for y in range(0, 255): #loop through all 255 colors
+        if (y%24)==0:
+            w,x = x,w
+        rgb = Wheel((y+x)%255)
+        rgb2 = Wheel((y+w)%255)
+        for z in range( 0, 30 ):
+            if z<15: #draw the first color to 0-14
+                writing_serial("#%c%c%c%c" % (rgb[0],rgb[1],rgb[2],z)) 
+            else: #and the second to 15-30
+                writing_serial("#%c%c%c%c" % (rgb2[0],rgb2[1],rgb2[2],z)) 
+        if scaring==1:
+            printer("Scare! Stopping user command")
+            return
+        writing_serial("!")    
+        pygame.time.wait(5)
+    modedefault()
+    return
 
 #fire animation using 2 colors
 #todo add gradients
 def fire(r1,g1,b1,r2,g2,b2):
     global animating
+    wait_animating()
     animating = 1
     irc_msg("FIRE!!!")
     for y in range( 0, 30 ):
@@ -700,6 +740,7 @@ def fire(r1,g1,b1,r2,g2,b2):
 #todo add gradients
 def disco_fire():
     global animating
+    wait_animating()
     animating = 1
     irc_msg("FIRE!!!")
     for y in range( 0, 30 ):
@@ -716,11 +757,22 @@ def disco_fire():
     
 def allleds(r,g,b):
     global animating
+    wait_animating()
     animating = 1
     writing_serial("#%c%c%c\xff!" % (r,g,b) )
     user_wait(5)
     modedefault()
-    
+
+def user_stack_consumer():
+    global user_stack
+    while True:
+        while len(user_stack)>0:
+            while scaring==0 and animating==0:
+                twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
+                data = user_stack.pop(0)
+                twitch_bot_utils.printer("Checking a buffered string: %s" % data)
+                user_commands(user,data)
+        time.sleep(1)
 
 #commands accessible by all users
 def user_commands(user,data):
@@ -781,6 +833,8 @@ def user_commands(user,data):
                 disco_strobe()
             elif data.find ( 'fire' ) != -1:
                 disco_fire()
+            elif data.find ( 'alternate' ) != -1:
+                disco_alternate()
             else:
                 disco()
             return
@@ -938,6 +992,7 @@ mode = 0 #twitch_bot_utils.scaryDay()
 scaring = 0
 switching = 0
 writing = 0
+animating = 0
 t2.start()
 
 #todo: instead of calling functions directly, add them to a global queue with a processing thread
@@ -957,6 +1012,9 @@ pass_counter = 3
 random_color=1
 user_stack = []
 
+user_stack_thread = threading.Thread(target=user_stack_consumer)
+user_stack_thread.daemon = True
+user_stack_thread.start()
 
 while True:
     #ser.flushInput() #ignore serial input, todo: log serial input without locking loop
@@ -992,8 +1050,3 @@ while True:
                 #check for normal user commands
                 user_commands(user,data)
                 twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
-                while len(user_stack)>0 and scaring==0 and animating==0:
-                    twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
-                    data = user_stack.pop(0)
-                    twitch_bot_utils.printer("Checking a buffered string: %s" % data)
-                    user_commands(user,data)
