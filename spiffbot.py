@@ -19,6 +19,18 @@ import os
 import twitch_bot_utils
 import time
 
+def wait_serial():
+    while writing==1:
+        pygame.time.wait(10)
+
+def writing_serial(input):
+    global writing
+    
+    wait_serial()
+    writing = 1
+    ser.write(input)
+    writing = 0
+
 def user_wait(duration):
     global scaring
     stop = time.time()+duration
@@ -77,9 +89,9 @@ def midiThread():
                         value = drums[e[0][1]]
                     rgb = twitch_bot_utils.hex2chr(value)
                     before = get_pixels()
-                    ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
+                    writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
                     pygame.time.wait(50)
-                    ser.write("#%c%c%c\xff!" % (before[0],before[1],before[2]))
+                    writing_serial("#%c%c%c\xff!" % (before[0],before[1],before[2]))
 
         # wait 10ms - this is arbitrary, but wait(0) still resulted
         # in 100% cpu utilization
@@ -335,9 +347,9 @@ def arduino_scare(pin,command,msg,dur,wait):
     scare_status(msg)
     scaring = 1
     twitch_bot_utils.printer(msg)
-    ser.write("#%c%c\x00%c" % (pin,1,command))
+    writing_serial("#%c%c\x00%c" % (pin,1,command))
     time.sleep(dur)
-    ser.write("#%c%c\x00%c" % (pin,0,command))
+    writing_serial("#%c%c\x00%c" % (pin,0,command))
     scare_status(-1)
     time.sleep(wait)
     scaring = 0
@@ -465,12 +477,20 @@ def master_commands(user,data):
 #get current pixel colors and return into a list of lists
 def get_pixels():
     global ser
+    global writing
     pixels = {}
+    
+    wait_serial()
+    writing = 1
     ser.flushInput()
-    ser.write("#000%c0" % chr(252))
+    writing = 0
+    writing_serial("#000%c0" % chr(252))
+    wait_serial()
+    writing = 1
     for x in range( 0, 30 ):
         line = ser.readline().split(",")
         pixels.update( {line[0] : [ int(line[1]),int(line[2]),int(line[3]) ] } )
+    writing = 0
     return pixels
 
 #fade from current color to new color using a number of "frames"
@@ -491,14 +511,14 @@ def fade(red,green,blue,steps,wait=2):
             b=int(round(pixels["%s"%y][2] + ((diff[y][2]/steps)*x)))
             if b<0:
                 b=0
-            ser.write("#%c%c%c%c" % (r,g,b,y))
-        ser.write("!")
+            writing_serial("#%c%c%c%c" % (r,g,b,y))
+        writing_serial("!")
         if scaring==1:
             twitch_bot_utils.printer("Scare! Stopping user command")
-            ser.write("#%c%c%c\xff!" % (red,green,blue))
+            writing_serial("#%c%c%c\xff!" % (red,green,blue))
             return
         pygame.time.wait(wait)
-    ser.write("#%c%c%c\xff!" % (red,green,blue))
+    writing_serial("#%c%c%c\xff!" % (red,green,blue))
     
 #set the leds to black if in scary mode, fade up from black to white if normal mode
 def modedefault():
@@ -535,7 +555,7 @@ def disco():
     for x in range(0, 5): #loop 5 mins
         for y in range(0, 255): #loop through all 255 colors
             rgb = Wheel(y)
-            ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
+            writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
             if scaring==1:
                 printer("Scare! Stopping user command")
                 return
@@ -548,9 +568,9 @@ def strobe():
     animating = 1
     irc_msg("SEIZURE PARTY!!!!!!!!")
     for x in range(0, 50): #flicker 200 times, for 30 ms on, then 30ms off
-        ser.write("#\xff\xff\xff\xff!")
+        writing_serial("#\xff\xff\xff\xff!")
         pygame.time.wait(40)
-        ser.write("#\x00\x00\x00\xff!")
+        writing_serial("#\x00\x00\x00\xff!")
         pygame.time.wait(40)
         if scaring==1:
             printer("Scare! Stopping user command")
@@ -564,9 +584,9 @@ def disco_strobe():
     irc_msg("DISCO SEIZURES!!!!!!!!")
     for y in range(0, 85): #loop through all 255 colors
         rgb = Wheel(y*3)
-        ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
+        writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
         pygame.time.wait(40)
-        ser.write("#\x00\x00\x00\xff!")
+        writing_serial("#\x00\x00\x00\xff!")
         pygame.time.wait(40)
         if scaring==1:
             printer("Scare! Stopping user command")
@@ -582,10 +602,10 @@ def chase(r, g, b,num=6):
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
                 if z>y-3 and z<y+3:
-                    ser.write("#%c%c%c%c" % (r,g,b,z))
+                    writing_serial("#%c%c%c%c" % (r,g,b,z))
                 else:
-                    ser.write("#\x00\x00\x00%c" % z)
-            ser.write("!")
+                    writing_serial("#\x00\x00\x00%c" % z)
+            writing_serial("!")
             if scaring==1:
                 printer("Scare! Stopping user command")
                 return
@@ -601,10 +621,10 @@ def bounce(r, g, b,num=6):
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
                 if z>y-3 and z<y+3:
-                    ser.write("#%c%c%c%c" % (r,g,b,z))
+                    writing_serial("#%c%c%c%c" % (r,g,b,z))
                 else:
-                    ser.write("#\x00\x00\x00%c" % z)
-            ser.write("!")
+                    writing_serial("#\x00\x00\x00%c" % z)
+            writing_serial("!")
             if scaring==1:
                 printer("Scare! Stopping user command")
                 return
@@ -619,17 +639,20 @@ def centerchase(r, g, b,num=6):
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
-                if z>y-3 and z<y+3:
-                    ser.write("#%c%c%c%c" % (r,g,b,z))
+                center = 15-abs(y-15)
+                left = 15 + center
+                right = 15 - center
+                if (z>left-2 and z<left+2) or (z>right-2 and z<right+2):
+                    writing_serial("#%c%c%c%c" % (r,g,b,z))
                 else:
-                    ser.write("#\x00\x00\x00%c" % z)
-            ser.write("!")
+                    writing_serial("#\x00\x00\x00%c" % z)
+            writing_serial("!")
             if scaring==1:
                 printer("Scare! Stopping user command")
                 return
-            pygame.time.wait(10)
+            pygame.time.wait(10)       
         pygame.time.wait(500)
-    return    
+    return
     
 def alternate(r1,g1,b1,r2,g2,b2):
     global animating
@@ -641,10 +664,10 @@ def alternate(r1,g1,b1,r2,g2,b2):
         b1,b2 = b2,b1
         for x in range( 0, 30 ):
             if x<15: #draw the first color to 0-14
-                ser.write("#%c%c%c%c" % (r1,g1,b1,x)) 
+                writing_serial("#%c%c%c%c" % (r1,g1,b1,x)) 
             else: #and the second to 15-30
-                ser.write("#%c%c%c%c" % (r2,g2,b2,x))
-        ser.write("!")
+                writing_serial("#%c%c%c%c" % (r2,g2,b2,x))
+        writing_serial("!")
         if scaring==1:
             printer("Scare! Stopping alternate")
             return
@@ -662,10 +685,10 @@ def fire(r1,g1,b1,r2,g2,b2):
         for x in range( 0, 30 ):
             r = random.randrange(2)
             if r==1:
-                ser.write("#%c%c%c%c" % (r1,g1,b1,x) )
+                writing_serial("#%c%c%c%c" % (r1,g1,b1,x) )
             else:
-                ser.write("#%c%c%c%c" % (r2,g2,b2,x) )
-        ser.write("!")
+                writing_serial("#%c%c%c%c" % (r2,g2,b2,x) )
+        writing_serial("!")
         if scaring==1:
             printer("Scare! Stopping fire")
             return
@@ -682,8 +705,8 @@ def disco_fire():
     for y in range( 0, 30 ):
         for x in range( 0, 30 ):
             c = Wheel(((random.randint(1, 32)+random_color)*7)%255)
-            ser.write("#%c%c%c%c" % (c[0],c[1],c[2],x) )
-        ser.write("!")
+            writing_serial("#%c%c%c%c" % (c[0],c[1],c[2],x) )
+        writing_serial("!")
         if scaring==1:
             printer("Scare! Stopping disco fire")
             return
@@ -694,7 +717,7 @@ def disco_fire():
 def allleds(r,g,b):
     global animating
     animating = 1
-    ser.write("#%c%c%c\xff!" % (r,g,b) )
+    writing_serial("#%c%c%c\xff!" % (r,g,b) )
     user_wait(5)
     modedefault()
     
@@ -792,6 +815,23 @@ def user_commands(user,data):
                     return
                 else:
                     twitch_bot_utils.printer("Not enough colors to chase!")
+            if m.group(1).lower()=="centerchase":
+                if len(parts)>0:
+                    while len(parts)>6:
+                        parts.pop(6)
+                    for part in parts:
+                        rgb = twitch_bot_utils.convertcolor(part,random_color)
+                        if rgb:
+                            num = round(6/len(parts))
+                            print type(rgb[0])
+                            centerchase(rgb[0],rgb[1],rgb[2],int(num))
+                            time.sleep(1)
+                        else:
+                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                    modedefault()
+                    return
+                else:
+                    twitch_bot_utils.printer("Not enough colors to centerchase!")
             if len(parts)==1:
                 rgb = twitch_bot_utils.convertcolor(parts[0],random_color)
                 if rgb:
@@ -821,7 +861,7 @@ def user_commands(user,data):
             if data.find ( key.lower() ) != -1:
                 twitch_bot_utils.printer("key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
                 irc_msg("%s!!!" % key.upper())
-                ser.write("#%c%c%c\xff!" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
+                writing_serial("#%c%c%c\xff!" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
                 user_wait(5)
                 modedefault()
                 return
@@ -829,14 +869,14 @@ def user_commands(user,data):
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
 "screech" : "SOUND_1288.ogg",
-"heatbeat" : "SOUND_1323.ogg",
+"heartbeat" : "SOUND_1323.ogg",
 "crash" : "SOUND_1399.ogg",
-"bam" : "SOUND_1463.ogg",
+"highbang" : "SOUND_1463.ogg",
 "deep" : "SOUND_1465.ogg",
 "eery" : "SOUND_1467.ogg",
 "creak" : "SOUND_1507.ogg",
-"low" : "SOUND_1511.ogg",
-"bang" : "SOUND_1528.ogg",
+"lownoise" : "SOUND_1511.ogg",
+"deepbang" : "SOUND_1528.ogg",
 "clang" : "SOUND_1598.ogg",
 "boom" : "SOUND_1603.ogg",
 "scrape" : "SOUND_1604.ogg",
@@ -845,15 +885,15 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "animal" : "SOUND_0004.ogg",
 "creeky" : "SOUND_0012.ogg",
 "robot" : "SOUND_0029.ogg",
-"rythm" : "SOUND_0030.ogg",
+"rhythm" : "SOUND_0030.ogg",
 "open" : "SOUND_0042.ogg",
 "locked" : "SOUND_0072.ogg",
 "hiss" : "SOUND_0195.ogg",
 "moan" : "SOUND_0296.ogg",
 "static" : "sh2static2.ogg",
 "kids" : "kids.ogg",
-"cut" : "3dcut.ogg", 
-"saw" : "3dbread.ogg" }
+"cutting" : "3dcut.ogg", 
+"sawing" : "3dbread.ogg" }
 
 #serial stuff
 #todo: add code to find arduino dynamically
@@ -897,7 +937,7 @@ master = "spiffomatic64"
 mode = 0 #twitch_bot_utils.scaryDay()
 scaring = 0
 switching = 0
-animating = 0
+writing = 0
 t2.start()
 
 #todo: instead of calling functions directly, add them to a global queue with a processing thread
@@ -906,8 +946,10 @@ t2.start()
 optout = []
 
 #Main loop
-ser.write("#\xff\xff\xff\xff!")
+twitch_bot_utils.printer("Blacking out all pixels!")
+writing_serial("#\xff\xff\xff\xff!")
 time.sleep(2)
+twitch_bot_utils.printer("mode default")
 modedefault()
 time.sleep(1)
 twitch_bot_utils.printer("READY!")
@@ -917,7 +959,7 @@ user_stack = []
 
 
 while True:
-    ser.flushInput() #ignore serial input, todo: log serial input without locking loop
+    #ser.flushInput() #ignore serial input, todo: log serial input without locking loop
     orig = irc.recv ( 4096 ) #receive irc data
     
     if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
