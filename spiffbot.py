@@ -19,6 +19,51 @@ import os
 import twitch_bot_utils
 import time
 
+#Map of sound commands to sound files
+sounds = { "slam" : "SOUND_1277.ogg",
+"screech" : "SOUND_1288.ogg",
+"heartbeat" : "SOUND_1323.ogg",
+"crash" : "SOUND_1399.ogg",
+"highbang" : "SOUND_1463.ogg",
+"deep" : "SOUND_1465.ogg",
+"eery" : "SOUND_1467.ogg",
+"creak" : "SOUND_1507.ogg",
+"lownoise" : "SOUND_1511.ogg",
+"deepbang" : "SOUND_1528.ogg",
+"clang" : "SOUND_1598.ogg",
+"boom" : "SOUND_1603.ogg",
+"scrape" : "SOUND_1604.ogg",
+"creepy" : "SOUND_1608.ogg",
+"techno" : "SOUND_1630.ogg",
+"animal" : "SOUND_0004.ogg",
+"creeky" : "SOUND_0012.ogg",
+"robot" : "SOUND_0029.ogg",
+"rhythm" : "SOUND_0030.ogg",
+"open" : "SOUND_0042.ogg",
+"locked" : "SOUND_0072.ogg",
+"hiss" : "SOUND_0195.ogg",
+"moan" : "SOUND_0296.ogg",
+"static" : "sh2static2.ogg",
+"kids" : "kids.ogg",
+"cutting" : "3dcut.ogg", 
+"sawing" : "3dbread.ogg" }
+
+
+def twitch_profile(data):
+    f = open('profile.txt', 'a')
+    if data==-1:
+        f.truncate()
+    else:
+        f.write(data)
+    f.close()
+
+twitch_profile(-1)
+twitch_profile("Here are the commands you can use to play along, and interact with my \"spiffbot\"")
+twitch_profile("")
+twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
+
+
+
 def wait_serial():
     while writing==1:
         pygame.time.wait(10)
@@ -358,7 +403,7 @@ def arduino_scare(pin,command,msg,dur,wait):
     scaring = 0
     switch()
     
-def play_sound(song):
+def play_sound(song,left,right):
     global scaring
     scaring = 1 #dont switch until the sound is done playing
     
@@ -367,16 +412,16 @@ def play_sound(song):
     pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
     twitch_bot_utils.printer(pygame.mixer.get_init())
     twitch_bot_utils.printer(pygame.mixer.get_num_channels())
-    pygame.mixer.music.set_volume(1) #set volume to full
     
     #play the sound
     twitch_bot_utils.printer("Playing sound %s" % song)
-    pygame.mixer.music.load(song)
-    pygame.mixer.music.play()
-    pygame.mixer.music.set_volume(1) #set volume to full
+    sound_scare = pygame.mixer.Sound(song)
+    channel = sound_scare.play()
+    channel.set_volume(left,right) #set volume to full
+    
 
     clock = pygame.time.Clock()
-    while pygame.mixer.music.get_busy():
+    while channel.get_busy():
        # check if playback has finished
        clock.tick(30)
     pygame.mixer.quit() 
@@ -392,6 +437,18 @@ def scare_status(status):
     f.close()
       
 #commands only accessible by the user in control      
+twitch_profile("#Scary mode:")
+twitch_profile("Spiffbot will randomly pick someone in chat to be \"in control\".")
+twitch_profile("This person will have 5 minutes (with a 2.5 minute warning letting you know how much time is left) to use a \"scare\" command.")
+twitch_profile("")
+twitch_profile("##Scare Commands for the user in \"Control\"")
+twitch_profile("##Sounds commands for the user in \"Control\"")
+twitch_profile("**!pass** : allows you to pass control on to the next person instead of using it yourself, if you add a username after !pass, you can pass control to someone specifically") 
+twitch_profile("**!randomsound** : Picks a sound scare randomly")
+sound_buffer = ""
+for sound, file in sounds.iteritems():
+    sound_buffer = "%s**%s**, " % (sound_buffer,sound)
+twitch_profile(sound_buffer)
 def master_commands(user,data):
     global master
     global sounds
@@ -415,9 +472,11 @@ def master_commands(user,data):
             if len(parts) == 1:
                 switch()
             
-        #Song commands
+        #sound commands
+        
         song = ''
-        #slect a random sound
+        #select a random sound
+        
         if command == "!randomsound":
             twitch_bot_utils.printer("Random sound")
             song = random.choice(sounds.values())
@@ -428,8 +487,17 @@ def master_commands(user,data):
                 song = file
                 break #stop after the first sound command is found
         if song != '': #if a sound was selected
+            #check for left/right
+            left = 1
+            right = 1
+            if data.find("left") != -1:
+                twitch_bot_utils.printer("Found left")
+                right = 0
+            elif data.find("right") != -1:
+                twitch_bot_utils.printer("Found right")
+                left = 0
             #Play sound in a thread
-            scare = threading.Thread(target=play_sound,args=(song,))
+            scare = threading.Thread(target=play_sound,args=(song,left,right))
             scare.daemon = True
             scare.start() 
             return
@@ -954,35 +1022,6 @@ def user_commands(user,data):
                 user_wait(5)
                 modedefault()
                 return
-    
-#Map of sound commands to sound files
-sounds = { "slam" : "SOUND_1277.ogg",
-"screech" : "SOUND_1288.ogg",
-"heartbeat" : "SOUND_1323.ogg",
-"crash" : "SOUND_1399.ogg",
-"highbang" : "SOUND_1463.ogg",
-"deep" : "SOUND_1465.ogg",
-"eery" : "SOUND_1467.ogg",
-"creak" : "SOUND_1507.ogg",
-"lownoise" : "SOUND_1511.ogg",
-"deepbang" : "SOUND_1528.ogg",
-"clang" : "SOUND_1598.ogg",
-"boom" : "SOUND_1603.ogg",
-"scrape" : "SOUND_1604.ogg",
-"creepy" : "SOUND_1608.ogg",
-"techno" : "SOUND_1630.ogg",
-"animal" : "SOUND_0004.ogg",
-"creeky" : "SOUND_0012.ogg",
-"robot" : "SOUND_0029.ogg",
-"rhythm" : "SOUND_0030.ogg",
-"open" : "SOUND_0042.ogg",
-"locked" : "SOUND_0072.ogg",
-"hiss" : "SOUND_0195.ogg",
-"moan" : "SOUND_0296.ogg",
-"static" : "sh2static2.ogg",
-"kids" : "kids.ogg",
-"cutting" : "3dcut.ogg", 
-"sawing" : "3dbread.ogg" }
 
 #serial stuff
 #todo: add code to find arduino dynamically
