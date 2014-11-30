@@ -370,24 +370,24 @@ def flicker(times=2):
     
     scaring = 1
     
-    pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
+    while True:
+        time.sleep(0.001)
+        try:
+            hwnd = win32gui.FindWindow(None,"pygame window")
+            #print hwnd
+            if hwnd:
+                twitch_bot_utils.printer("Got hwnd")
+                break
+        except win32gui.error:
+            print 'not found'
     
-    for i in range(0,times):
-        pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
-        while True:
-            time.sleep(0.001)
-            try:
-                hwnd = win32gui.FindWindow(None,"pygame window")
-                #print hwnd
-                if hwnd:
-                    break
-            except win32gui.error:
-                print 'not found'
-        win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1280,1024,0)
-        time.sleep(0.5)
-        pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
-        time.sleep(0.05)
-    pygame.display.quit()
+    if hwnd:
+        for i in range(0,times):
+            win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1280,1024,0)
+            time.sleep(0.5)
+            win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1,1,0)
+            time.sleep(0.05)
+    #pygame.display.quit()
     scaring = 0
     switch()
       
@@ -408,7 +408,6 @@ def play_sound(song,left,right):
     scaring = 1 #dont switch until the sound is done playing
     
     #setup audio
-    pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
     pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
     twitch_bot_utils.printer(pygame.mixer.get_init())
     twitch_bot_utils.printer(pygame.mixer.get_num_channels())
@@ -423,8 +422,9 @@ def play_sound(song,left,right):
     clock = pygame.time.Clock()
     while channel.get_busy():
        # check if playback has finished
+       #pygame.display.update()
        clock.tick(30)
-    pygame.mixer.quit() 
+    #pygame.mixer.quit() 
     scaring = 0
     switch()
     
@@ -1028,7 +1028,10 @@ def user_commands(user,data):
 ser = serial.Serial("Com4", 115200)
 
 #Midi initialization 
+pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
 #pygame.init()
+#pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
+
 #pygame.midi.init()
 #midi = pygame.midi.Input(getMidi("MIDISPORT 1x1 In"))
 #midi_device = getMidi("USB MS1x1 MIDI Interface")
@@ -1076,7 +1079,7 @@ optout = []
 
 #Main loop
 twitch_bot_utils.printer("Blacking out all pixels!")
-writing_serial("#\xff\xff\xff\xff!")
+writing_serial("#\x00\x00\x00\xff!")
 time.sleep(2)
 twitch_bot_utils.printer("mode default")
 modedefault()
