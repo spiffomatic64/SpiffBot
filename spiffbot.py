@@ -18,6 +18,7 @@ import html_colors
 import os 
 import twitch_bot_utils
 import time
+from subprocess import call
 
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
@@ -212,7 +213,7 @@ def mastertimer():
 #switch control to a random person (or specific person if specified)
 def switch(user="",pass_control=0):
     global counter
-    
+    global scaring
     global master
     global switching
     global next
@@ -339,7 +340,7 @@ def printAllScreen():
     return i
 
 #Flip the monitor using winapi's
-def flip(duration=20):
+def flip(duration=20,admin=0):
     global scaring
     
     scaring = 1
@@ -360,38 +361,43 @@ def flip(duration=20):
     win32.ChangeDisplaySettingsEx(device.DeviceName,dm)
     scare_status(-1)
     scaring = 0
-    
-    switch()
+    if admin==0:
+        switch()
     return
     
 #Slow strobe the monitor effect
-def flicker(times=2):
+def flicker(times=5,admin=0):
     global scaring
     
     scaring = 1
+    pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
     
     while True:
         time.sleep(0.001)
         try:
             hwnd = win32gui.FindWindow(None,"pygame window")
-            #print hwnd
+            print hwnd
             if hwnd:
-                twitch_bot_utils.printer("Got hwnd")
+                twitch_bot_utils.printer("Got hwnd Setting to topmost")
+                win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1,1,0)
                 break
         except win32gui.error:
             print 'not found'
     
     if hwnd:
         for i in range(0,times):
-            win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1280,1024,0)
+            twitch_bot_utils.printer("Flicker off")
+            pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
             time.sleep(0.5)
-            win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1,1,0)
+            twitch_bot_utils.printer("Flicker on")
+            pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
             time.sleep(0.05)
-    #pygame.display.quit()
+    pygame.display.quit()
     scaring = 0
-    switch()
+    if admin==0:
+        switch()
       
-def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1):
+def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1,admin=0):
     scare_status(msg)
     scaring = 1
     twitch_bot_utils.printer("%s %s time(s)" % (msg,times))
@@ -402,16 +408,17 @@ def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1):
     scare_status(-1)
     time.sleep(wait)
     scaring = 0
-    switch()
+    if admin==0:
+        switch()
     
-def play_sound(song,left,right):
+def play_sound(song,left,right,admin=0):
     global scaring
     scaring = 1 #dont switch until the sound is done playing
     
     #setup audio
     pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-    twitch_bot_utils.printer(pygame.mixer.get_init())
-    twitch_bot_utils.printer(pygame.mixer.get_num_channels())
+    #twitch_bot_utils.printer(pygame.mixer.get_init())
+    #twitch_bot_utils.printer(pygame.mixer.get_num_channels())
     
     #play the sound
     twitch_bot_utils.printer("Playing sound %s" % song)
@@ -427,7 +434,20 @@ def play_sound(song,left,right):
        clock.tick(30)
     #pygame.mixer.quit() 
     scaring = 0
-    switch()
+    if admin==0:
+        switch()
+    
+def turn_off_monitors(msg,wait,admin=0):
+    scare_status(msg)
+    scaring = 1
+    twitch_bot_utils.printer(msg)
+    call(["nircmd.exe", "monitor", "off"])
+    time.sleep(2.5)
+    scare_status(-1)
+    time.sleep(wait)
+    scaring = 0
+    if admin==0:
+        switch()
     
 def scare_status(status):
     f = open('scarestatus.txt', 'w')
@@ -456,6 +476,10 @@ def master_commands(user,data):
     
     
     if scaring==0 and (user.lower() == master.lower() or user.lower()==twitch_auth.get_streamer()): #check that the user is the master
+        if user.lower()==twitch_auth.get_streamer():
+            admin = 1
+        else:
+            admin = 0 
         twitch_bot_utils.printer("User is in control, checking for commands")
         parts = data.lower().split()
         command = parts[0][1:]
@@ -498,7 +522,7 @@ def master_commands(user,data):
                 twitch_bot_utils.printer("Found right")
                 left = 0
             #Play sound in a thread
-            scare = threading.Thread(target=play_sound,args=(song,left,right))
+            scare = threading.Thread(target=play_sound,args=(song,left,right,admin))
             scare.daemon = True
             scare.start() 
             return
@@ -509,47 +533,54 @@ def master_commands(user,data):
             
         #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
         if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,20))
+            scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,20,1,admin))
             scare.daemon = True
             scare.start() 
             return
             
         #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
         if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,20))
+            scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,20,1,admin))
             scare.daemon = True
             scare.start() 
             return
             
         #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
         if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,20,2))
+            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,20,2,admin))
             scare.daemon = True
             scare.start() 
             return
         
         #rattle the vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'rumble' ) != -1 or data.find ( 'vibe' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,20))
+            scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,20,1,admin))
             scare.daemon = True
             scare.start() 
             return
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,20))
+            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,20,admin))
             scare.daemon = True
             scare.start() 
             return
             
         #flip the main monitor and switch control
         if data.find ( 'flip' ) != -1:
-            scare = threading.Thread(target=flip)
+            scare = threading.Thread(target=flip,args=(20,admin))
             scare.daemon = True
             scare.start() 
             return
             
         #flip the main monitor and switch control
+        if data.find ( 'monitor' ) != -1:
+            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",20,admin))
+            scare.daemon = True
+            scare.start() 
+            return
+            
+        #flip the main monitor and switch control (broken atm)
         '''if data.find ( 'flicker' ) != -1:
             flicker()
             return'''
@@ -1035,11 +1066,12 @@ def user_commands(user,data):
 #todo: add code to find arduino dynamically
 ser = serial.Serial("Com4", 115200)
 
-#Midi initialization 
+#Display init for flicker
 pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
 #pygame.init()
-#pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
 
+
+#Midi initialization 
 #pygame.midi.init()
 #midi = pygame.midi.Input(getMidi("MIDISPORT 1x1 In"))
 #midi_device = getMidi("USB MS1x1 MIDI Interface")
