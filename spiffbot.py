@@ -47,7 +47,14 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "static" : "sh2static2.ogg",
 "kids" : "kids.ogg",
 "cutting" : "3dcut.ogg", 
-"sawing" : "3dbread.ogg" }
+"sawing" : "3dbread.ogg", 
+"zombie" : "zombie_scare.ogg",
+"tentacle" : "stinger_tentacle.ogg",
+"sting" : "sting.ogg",
+"bigzombie" : "large_zombie.ogg",
+"hunter" : "hunter.ogg",
+"brute" : "brute.ogg"
+}
 
 
 def twitch_profile(data):
@@ -422,7 +429,7 @@ def play_sound(song,left,right,admin=0):
     
     #play the sound
     twitch_bot_utils.printer("Playing sound %s" % song)
-    sound_scare = pygame.mixer.Sound(song)
+    sound_scare = pygame.mixer.Sound("./sounds/%s" % song)
     channel = sound_scare.play()
     channel.set_volume(left,right) #set volume to full
     
@@ -877,6 +884,7 @@ def allleds(r,g,b,wait):
 def user_stack_consumer():
     global user_stack
     while True:
+        twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
         if len(user_stack)>0 and scaring==0 and animating==0:
             twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
             data = user_stack.pop(0)
@@ -925,7 +933,7 @@ def user_commands(user,data):
             return
 
     #Get current streaming game
-    if command == "!game":
+    if command == "!game" or data.find ( 'what game' ) != -1:
         irc_msg("The current game is: %s" % get_game())
         
     if scaring == 1 or animating == 1:
