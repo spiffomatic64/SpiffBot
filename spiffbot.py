@@ -170,7 +170,6 @@ def switch(user="",pass_control=0):
     
     global master
     global switching
-    global scaring
     global next
     global pass_counter
     
@@ -229,7 +228,7 @@ def switch(user="",pass_control=0):
 #commands that will only work for me (and moderators in the future)
 def admin_commands(user,data):
     global master
-    
+    global counter
     global optout
     global mode
     global next
@@ -561,7 +560,7 @@ def disco():
     irc_msg("DISCO PARTY!!!!!!!!")
     for x in range(0, 5): #loop 5 mins
         for y in range(0, 255): #loop through all 255 colors
-            rgb = Wheel(y)
+            rgb = twitch_bot_utils.Wheel(y)
             writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
             if scaring==1:
                 printer("Scare! Stopping user command")
@@ -592,7 +591,7 @@ def disco_strobe():
     animating = 1
     irc_msg("DISCO SEIZURES!!!!!!!!")
     for y in range(0, 85): #loop through all 255 colors
-        rgb = Wheel(y*3)
+        rgb = twitch_bot_utils.Wheel(y*3)
         writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
         pygame.time.wait(40)
         writing_serial("#\x00\x00\x00\xff!")
@@ -699,8 +698,8 @@ def disco_alternate():
     for y in range(0, 255): #loop through all 255 colors
         if (y%24)==0:
             w,x = x,w
-        rgb = Wheel((y+x)%255)
-        rgb2 = Wheel((y+w)%255)
+        rgb = twitch_bot_utils.Wheel((y+x)%255)
+        rgb2 = twitch_bot_utils.Wheel((y+w)%255)
         for z in range( 0, 30 ):
             if z<15: #draw the first color to 0-14
                 writing_serial("#%c%c%c%c" % (rgb[0],rgb[1],rgb[2],z)) 
@@ -745,7 +744,7 @@ def disco_fire():
     irc_msg("FIRE!!!")
     for y in range( 0, 30 ):
         for x in range( 0, 30 ):
-            c = Wheel(((random.randint(1, 32)+random_color)*7)%255)
+            c = twitch_bot_utils.Wheel(((random.randint(1, 32)+random_color)*7)%255)
             writing_serial("#%c%c%c%c" % (c[0],c[1],c[2],x) )
         writing_serial("!")
         if scaring==1:
@@ -755,12 +754,12 @@ def disco_fire():
     modedefault()
     return
     
-def allleds(r,g,b):
+def allleds(r,g,b,wait):
     global animating
     wait_animating()
     animating = 1
     writing_serial("#%c%c%c\xff!" % (r,g,b) )
-    user_wait(5)
+    user_wait(wait)
     modedefault()
 
 def user_stack_consumer():
@@ -886,11 +885,26 @@ def user_commands(user,data):
                     return
                 else:
                     twitch_bot_utils.printer("Not enough colors to centerchase!")
+            if m.group(1).lower()=="cycle":
+                if len(parts)>0:
+                    while len(parts)>6:
+                        parts.pop(6)
+                    for part in parts:
+                        rgb = twitch_bot_utils.convertcolor(part,random_color)
+                        if rgb:
+                            print type(rgb[0])
+                            num = round(6/len(parts))
+                            allleds(rgb[0],rgb[1],rgb[2],num)
+                        else:
+                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                    return
+                else:
+                    twitch_bot_utils.printer("Not enough colors to cycle!")
             if len(parts)==1:
                 rgb = twitch_bot_utils.convertcolor(parts[0],random_color)
                 if rgb:
                     if m.group(1).lower()=="rgb":
-                        allleds(rgb[0],rgb[1],rgb[2])
+                        allleds(rgb[0],rgb[1],rgb[2],5)
                         time.sleep(1)
             if len(parts)==2:
                 rgb = twitch_bot_utils.convertcolor(parts[0],random_color)
@@ -988,7 +1002,7 @@ t2 = threading.Thread(target=mastertimer)
 t2.daemon = True
 #master = twitch_auth.get_streamer()
 master = "spiffomatic64"
-mode = 0 #twitch_bot_utils.scaryDay()
+mode = twitch_bot_utils.scaryDay()
 scaring = 0
 switching = 0
 writing = 0
