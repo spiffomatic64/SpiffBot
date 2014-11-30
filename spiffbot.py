@@ -391,13 +391,14 @@ def flicker(times=2):
     scaring = 0
     switch()
       
-def arduino_scare(pin,command,msg,dur,wait):
+def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1):
     scare_status(msg)
     scaring = 1
-    twitch_bot_utils.printer(msg)
-    writing_serial("#%c%c\x00%c" % (pin,1,command))
-    time.sleep(dur)
-    writing_serial("#%c%c\x00%c" % (pin,0,command))
+    twitch_bot_utils.printer("%s %s time(s)" % (msg,times))
+    for i in range(0,times):
+        writing_serial("#%c%c\x00%c" % (pin,start,command))
+        time.sleep(dur)
+        writing_serial("#%c%c\x00%c" % (pin,stop,command))
     scare_status(-1)
     time.sleep(wait)
     scaring = 0
@@ -506,33 +507,41 @@ def master_commands(user,data):
         if command == "!randomscare":
             data = random.choice(['quiet', "rattle", "heart"])
             
-        #Drop the box on me by moving the arm down for 1 second, then waiting 20 seconds and switching
+        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
         if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(10,254,"Dropping box",1,20))
+            scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,20))
             scare.daemon = True
             scare.start() 
             return
             
-        #Drop the box on me by moving the arm down for 1 second, then waiting 20 seconds and switching
+        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
         if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(9,254,"Moving leg servo",1,20))
+            scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,20))
+            scare.daemon = True
+            scare.start() 
+            return
+            
+        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
+        if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
+            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,20,2))
             scare.daemon = True
             scare.start() 
             return
         
         #rattle the vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'rumble' ) != -1 or data.find ( 'vibe' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(11,253,"Desk vibe",2,20))
+            scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,20))
             scare.daemon = True
             scare.start() 
             return
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds and switch
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(3,253,"Chest vibe",2,20))
+            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,20))
             scare.daemon = True
             scare.start() 
             return
+            
         #flip the main monitor and switch control
         if data.find ( 'flip' ) != -1:
             scare = threading.Thread(target=flip)
@@ -837,12 +846,11 @@ def allleds(r,g,b,wait):
 def user_stack_consumer():
     global user_stack
     while True:
-        while len(user_stack)>0:
-            while scaring==0 and animating==0:
-                twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
-                data = user_stack.pop(0)
-                twitch_bot_utils.printer("Checking a buffered string: %s" % data)
-                user_commands(user,data)
+        if len(user_stack)>0 and scaring==0 and animating==0:
+            twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
+            data = user_stack.pop(0)
+            twitch_bot_utils.printer("Checking a buffered string: %s" % data)
+            user_commands(user,data)
         time.sleep(1)
 
 #commands accessible by all users

@@ -1,5 +1,5 @@
 #include <Adafruit_NeoPixel.h>
-#include <PWMServo.h> 
+#include <Servo.h> 
 
 #define PIN 6
 #define LEDS 30
@@ -9,7 +9,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(LEDS, PIN, NEO_GRB + NEO_KHZ800);
 int count=-1;
 unsigned char color[6];
 boolean alt = 0;
-PWMServo drop;
+Servo drop;
 
 void setup() {
   color[5]=0;                               //char array null terminal for printing
@@ -17,9 +17,11 @@ void setup() {
   strip.begin();
   strip.show();                             // Initialize all strip to 'off'
   
-  moveServo(10,false);
+  moveServo(10,40);
+  moveServo(9,40);
+  moveServo(5,180);
   
-  Serial.println("Ready");
+  Serial.println("Arduino Ready");
 }
 
 void loop() {
@@ -75,11 +77,12 @@ void vibrate(int pin, boolean onoff) {
 }
 
 //control drop servo
-void moveServo(int pin, boolean updown) {
+void moveServo(int pin, int degree) {
    drop.attach(pin);
-   if (updown==true) drop.write(130);
-   else drop.write(40);
-   delay(100);
+   Serial.print("Moving pin: ");
+   Serial.println(pin);
+   drop.write(degree);
+   delay(500);
    drop.detach();
    pinMode(pin, OUTPUT);
    digitalWrite(pin, LOW); 
