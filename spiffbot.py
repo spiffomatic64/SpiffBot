@@ -631,7 +631,10 @@ def bounce(r, g, b,num=6):
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
-                if z>y-3 and z<y+3:
+                w = y * 2
+                if y > 15:
+                    w = (15 - (y - 15)) * 2
+                if z>w-3 and z<w+3:
                     writing_serial("#%c%c%c%c" % (r,g,b,z))
                 else:
                     writing_serial("#\x00\x00\x00%c" % z)
@@ -639,9 +642,10 @@ def bounce(r, g, b,num=6):
             if scaring==1:
                 printer("Scare! Stopping user command")
                 return
-            pygame.time.wait(10)
+            pygame.time.wait(10)       
         pygame.time.wait(500)
-    return    
+    animating = 0
+    return  
     
 def centerchase(r, g, b,num=6):
     global animating
@@ -885,6 +889,23 @@ def user_commands(user,data):
                     return
                 else:
                     twitch_bot_utils.printer("Not enough colors to centerchase!")
+            if m.group(1).lower()=="bounce":
+                if len(parts)>0:
+                    while len(parts)>6:
+                        parts.pop(6)
+                    for part in parts:
+                        rgb = twitch_bot_utils.convertcolor(part,random_color)
+                        if rgb:
+                            num = round(6/len(parts))
+                            print type(rgb[0])
+                            bounce(rgb[0],rgb[1],rgb[2],int(num))
+                            time.sleep(1)
+                        else:
+                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                    modedefault()
+                    return
+                else:
+                    twitch_bot_utils.printer("Not enough colors to bounce!")
             if m.group(1).lower()=="cycle":
                 if len(parts)>0:
                     while len(parts)>6:
