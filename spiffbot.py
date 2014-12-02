@@ -18,6 +18,7 @@ import html_colors
 import os 
 import twitch_bot_utils
 import time
+import traceback
 from subprocess import call
 
 #Map of sound commands to sound files
@@ -85,7 +86,11 @@ def writing_serial(input):
     
     wait_serial()
     writing = 1
-    ser.write(input)
+    try:
+        ser.write(input)
+    except:
+        twitch_bot_utils.printer("Serial write crashed crashed writing: %s" % join(hex(ord(n)) for n in my_hex))
+        twitch_bot_utils.printer(traceback.format_exc())
     writing = 0
 
 def user_wait(duration):
@@ -145,10 +150,14 @@ def midiThread():
                         #twitch_bot_utils.printer(drums[e[0][1]]) #debug, comment this out while playing, slows down the thread
                         value = drums[e[0][1]]
                     rgb = twitch_bot_utils.hex2chr(value)
-                    before = get_pixels()
+                    #before = get_pixels()
+                    
                     writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
                     pygame.time.wait(50)
-                    writing_serial("#%c%c%c\xff!" % (before[0],before[1],before[2]))
+                    '''for x in range(0,30):
+                        writing_serial("#%c%c%c%c" % (before["%s"%x][0],before["%s"%x][1],before["%s"%x][2],x))
+                    writing_serial("!")'''
+                    writing_serial("#\x00\x00\x00\xff!")
 
         # wait 10ms - this is arbitrary, but wait(0) still resulted
         # in 100% cpu utilization
@@ -407,13 +416,15 @@ def flicker(times=5,admin=0):
 def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1,admin=0):
     scare_status(msg)
     scaring = 1
+    status_length = 3
     twitch_bot_utils.printer("%s %s time(s)" % (msg,times))
     for i in range(0,times):
         writing_serial("#%c%c\x00%c" % (pin,start,command))
         time.sleep(dur)
         writing_serial("#%c%c\x00%c" % (pin,stop,command))
+    time.sleep(status_length)
     scare_status(-1)
-    time.sleep(wait)
+    time.sleep(wait-status_length)
     scaring = 0
     if admin==0:
         switch()
@@ -447,11 +458,12 @@ def play_sound(song,left,right,admin=0):
 def turn_off_monitors(msg,wait,admin=0):
     scare_status(msg)
     scaring = 1
+    status_length = 3
     twitch_bot_utils.printer(msg)
     call(["nircmd.exe", "monitor", "off"])
-    time.sleep(2.5)
+    time.sleep(2.5+status_length)
     scare_status(-1)
-    time.sleep(wait)
+    time.sleep(wait-status_length)
     scaring = 0
     if admin==0:
         switch()
@@ -883,6 +895,7 @@ def allleds(r,g,b,wait):
 
 def user_stack_consumer():
     global user_stack
+
     while True:
         if len(user_stack)>0 and scaring==0 and animating==0:
             twitch_bot_utils.printer("user stack consumer DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
@@ -895,6 +908,7 @@ def user_stack_consumer():
 def user_commands(user,data):
     global optout
     global user_stack
+    global animating
     
     
     parts = data.lower().split()
@@ -943,7 +957,7 @@ def user_commands(user,data):
         twitch_bot_utils.printer(string.join(user_stack," - "))
         return 
     else:
-        twitch_bot_utils.printer("No scare currently, checking for animations")
+        twitch_bot_utils.printer("No scare or animation currently, checking for animations")
         #disco rainbow colors
         if data.find ( 'disco' ) != -1:
             if data.find ( 'strobe' ) != -1:
@@ -1062,6 +1076,7 @@ def user_commands(user,data):
         #html color keys (single color, no animation)
         for key, value in sorted(html_colors.colors.iteritems()):
             if data.find ( key.lower() ) != -1:
+                animating = 1
                 twitch_bot_utils.printer("key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
                 irc_msg("%s!!!" % key.upper())
                 writing_serial("#%c%c%c\xff!" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
@@ -1074,14 +1089,14 @@ def user_commands(user,data):
 ser = serial.Serial("Com4", 115200)
 
 #Display init for flicker
-pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
+#pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
 #pygame.init()
 
 
 #Midi initialization 
 #pygame.midi.init()
-#midi = pygame.midi.Input(getMidi("MIDISPORT 1x1 In"))
-#midi_device = getMidi("USB MS1x1 MIDI Interface")
+#midi_device = getMidi("MIDISPORT 1x1 In")
+#twitch_bot_utils.printer("Got midi: %s" % midi_device)
 #midi = pygame.midi.Input(midi_device)
     
 #start IRC
