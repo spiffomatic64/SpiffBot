@@ -884,9 +884,8 @@ def allleds(r,g,b,wait):
 def user_stack_consumer():
     global user_stack
     while True:
-        twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
         if len(user_stack)>0 and scaring==0 and animating==0:
-            twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
+            twitch_bot_utils.printer("user stack consumer DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
             data = user_stack.pop(0)
             twitch_bot_utils.printer("Checking a buffered string: %s" % data)
             user_commands(user,data)
@@ -1174,4 +1173,4 @@ while True:
                     master_commands(user,data)
                 #check for normal user commands
                 user_commands(user,data)
-                twitch_bot_utils.printer("DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
+                twitch_bot_utils.printer("DEBUG after user_commands!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
