@@ -508,8 +508,12 @@ def master_commands(user,data):
         if command == "!pass":
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
-                    twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
-                    switch(parts[1],1)
+                    if parts[1].lower() not in optout:
+                        twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
+                        switch(parts[1],1)
+                    else:
+                        irc_msg("Can't pass, %s is opted out!" % parts[1].lower())
+                        twitch_bot_utils.printer("%s tried to pass to %s who is opted out" % (user.lower(),parts[1].lower()))
                 else:
                     irc_msg("You cant pass to yourself!")
                     twitch_bot_utils.printer("%s tried to pass to them-self" % user.lower())
@@ -924,7 +928,7 @@ def user_commands(user,data):
     #Scary mode only commands
     if mode == 0:
         if command == "!whosgotit":
-            irc_msg("%s is in currently control!" % master)
+            irc_msg("%s is currently in control!" % master)
             return 
         #opt a user out, and switch if they were in control
         if command == "!optout":
