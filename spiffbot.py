@@ -524,6 +524,7 @@ def master_commands(user,data):
         if command == "!randomsound":
             twitch_bot_utils.printer("Random sound")
             song = random.choice(sounds.values())
+            irc_msg("You cant pass to yourself!")
         #check message for all sound commands
         for sound, file in sounds.iteritems():
             if data.find(sound) != -1:
@@ -1168,8 +1169,8 @@ while True:
     for line in lines:
         twitch_bot_utils.printer("Line: %s" % line)
         parts = line.split() #Split irc data by white space
-        if parts[1].lower()=="privmsg" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a message, and its to our channel
-            if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
+        if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
+            if parts[1].lower()=="privmsg" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a message, and its to our channel
                 user = parts.pop(0) 
                 user = user[1:user.find("!")] #get the username from the first "part"
                 parts.pop(0) #throw away the next two parts
@@ -1189,3 +1190,8 @@ while True:
                 #check for normal user commands
                 user_commands(user,data)
                 twitch_bot_utils.printer("DEBUG after user_commands!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
+        elif parts[1].lower()=="part" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a part, and its to our channel
+            user = parts.pop(0) 
+            user = user[1:user.find("!")] #get the username from the first "part"
+            if user == master:
+                switch()
