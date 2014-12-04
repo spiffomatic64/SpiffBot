@@ -101,7 +101,7 @@ def user_wait(duration):
     return
 def irc_msg(msg):   
     twitch_bot_utils.printer('PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg))
-    irc.send ( 'PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg) )  
+    irc.send ( 'PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg.encode('utf-8')) )  
 
 #List and select midi device
 def getMidi(midi_device):
