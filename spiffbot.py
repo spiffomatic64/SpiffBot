@@ -554,52 +554,53 @@ def master_commands(user,data):
         #select a random scare command
         if command == "!randomscare":
             data = random.choice(['quiet', "rattle", "heart"])
-            
-        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
+        wait = random.randint(2, 30)
+        twitch_bot_utils.printer("Random wait: %s" % wait)
+        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
         if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,20,1,admin))
+            scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,wait,1,admin))
             scare.daemon = True
             scare.start() 
             return
             
-        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
+        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
         if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,20,1,admin))
+            scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,wait,1,admin))
             scare.daemon = True
             scare.start() 
             return
             
-        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds and switching
+        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds 
         if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,20,2,admin))
+            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,wait,2,admin))
             scare.daemon = True
             scare.start() 
             return
         
-        #rattle the vibration motor for 2 seconds, then wait 20 seconds and switch
+        #rattle the vibration motor for 2 seconds, then wait 20 seconds
         if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'rumble' ) != -1 or data.find ( 'vibe' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,20,1,admin))
+            scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,wait,1,admin))
             scare.daemon = True
             scare.start() 
             return
             
-        #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds and switch
+        #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,20,admin))
+            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,wait,admin))
             scare.daemon = True
             scare.start() 
             return
             
-        #flip the main monitor and switch control
+        #flip the main monitor
         if data.find ( 'flip' ) != -1:
-            scare = threading.Thread(target=flip,args=(20,admin))
+            scare = threading.Thread(target=flip,args=(wait+5,admin))
             scare.daemon = True
             scare.start() 
             return
             
-        #flip the main monitor and switch control
+        #disable all monitors
         if data.find ( 'monitor' ) != -1:
-            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",20,admin))
+            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
             scare.start() 
             return
