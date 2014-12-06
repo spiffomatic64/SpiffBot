@@ -54,7 +54,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "sting" : "sting.ogg",
 "bigzombie" : "large_zombie.ogg",
 "hunter" : "hunter.ogg",
-"brute" : "brute.ogg"
+"brute" : "brute.ogg",
+"zombieattack" : "Zombie_Attack_Walk"
 }
 
 
@@ -593,7 +594,7 @@ def master_commands(user,data):
             
         #flip the main monitor
         if data.find ( 'flip' ) != -1:
-            scare = threading.Thread(target=flip,args=(wait+5,admin))
+            scare = threading.Thread(target=flip,args=(30+wait,admin))
             scare.daemon = True
             scare.start() 
             return
