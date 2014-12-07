@@ -55,7 +55,11 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "bigzombie" : "large_zombie.ogg",
 "hunter" : "hunter.ogg",
 "brute" : "brute.ogg",
-"zombieattack" : "Zombie_Attack_Walk"
+"zombieattack" : "zombie_attack_walk",
+"spawn" : "aslt_spwn_01",
+"birds" : "birdflock_calls_medium_loop_v1",
+"teleport" : "taken_flanker_tele_01",
+"wings" : "birdflock_wings_medium_loop_v1"
 }
 
 
@@ -71,6 +75,19 @@ twitch_profile(-1)
 twitch_profile("Here are the commands you can use to play along, and interact with my \"spiffbot\"")
 twitch_profile("")
 twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
+
+def opt(user,inout):
+    global optin
+    if inout:
+        if user not in optin:
+            optin.append(user)
+            if master==twitch_auth.get_bot():
+                switch(user)
+    else:
+        if user in optin:
+            optin.remove(user)
+            if user == master:
+                switch()
 
 def scare_lock(status):
     global scaring
@@ -167,8 +184,6 @@ def midiThread():
 
 #gets a "live" list of viewers in chat
 def get_viewers(opted=True):
-    global optin
-    
     url = "https://tmi.twitch.tv/group/user/%s/chatters" % twitch_auth.get_streamer()
     twitch_bot_utils.printer("Checking viewers...")
     data = requests.get(url=url)
@@ -214,7 +229,7 @@ def mastertimer():
                     if master!=twitch_auth.get_bot():
                         irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
-                        optin.remove(master)
+                        opt(master,False)
                     twitch_bot_utils.printer("Master switch")
                     counter = time.time()
                     switch()
@@ -318,18 +333,12 @@ def admin_commands(user,data):
                 twitch_bot_utils.printer(part)
             #add user to optin list
             if command == "!optin":
-                if parts[1] not in optin:
-                    optin.append(parts[1])
-                    irc_msg("%s has been opted in!" % parts[1])
+                opt(parts[1],True)
+                irc_msg("Opting %s in" % parts[1])
             #optout a user
             if command == "!optout":
                 #check that user is already opted in
-                if parts[1] in optin:
-                    optin.remove(parts[1])
-                    irc_msg("%s has been opted back out!" % parts[1])
-                    #if the user is currently in control, switch
-                    if parts[1].lower() == master:
-                        switch()
+                opt(parts[1],False)
             #change mode from scary to normal
             if command == "!mode":
                 if parts[1] == "scary":
@@ -602,7 +611,7 @@ def master_commands(user,data):
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
-            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,1,admin))
+            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
             scare.start() 
             return
@@ -936,16 +945,13 @@ def user_commands(user,data):
         #opt a user in, and switch if they were in control
         if command == "!optin":
             if user not in optin and user != twitch_auth.get_streamer():
-                optin.append(user)
-                irc_msg("%s has opted in!" % user)
+                opt(user,True)
+                irc_msg("%s is now opted in!" %user)
             return
         #allow a user to optout
         if command == "!optout":
-            if user in optin:
-                optin.remove(user)
-                irc_msg("%s has opted back out!" % user)
-                if user == master:
-                    switch()
+            opt(user,False)
+            irc_msg("%s is now opted out!" %user)
             return
         #let viewers know how much time is left    
         if command == "!timeleft":
@@ -1183,7 +1189,7 @@ while True:
                 user = user[1:user.find("!")] #get the username from the first "part"
                 if user not in chatters:
                     chatters.append(user)
-                    optin.append(user)
+                    opt(user,True)
                     
                 parts.pop(0) #throw away the next two parts
                 parts.pop(0)
