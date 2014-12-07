@@ -72,7 +72,10 @@ twitch_profile("Here are the commands you can use to play along, and interact wi
 twitch_profile("")
 twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
 
-
+def scare_lock(status):
+    global scaring
+    twitch_bot_utils.printer("Setting scaring: %s" % status)
+    scaring = status
 
 def wait_serial():
     while writing==1:
@@ -95,7 +98,6 @@ def writing_serial(input):
     writing = 0
 
 def user_wait(duration):
-    global scaring
     stop = time.time()+duration
     while time.time() < stop and scaring==0:
         time.sleep(0.5)
@@ -116,7 +118,6 @@ def getMidi(midi_device):
 
 #Midi thread, gets midi data, translates to html rgb values, 
 #and lights leds based on that color for 50ms, then turns all leds off
-#todo: go back to original colors
 def midiThread():
     global midi #midi input device
      #serial device 
@@ -165,8 +166,8 @@ def midiThread():
         pygame.time.wait(10)
 
 #gets a "live" list of viewers in chat
-def get_viewers():
-    global optout
+def get_viewers(opted=True):
+    global optin
     
     url = "https://tmi.twitch.tv/group/user/%s/chatters" % twitch_auth.get_streamer()
     twitch_bot_utils.printer("Checking viewers...")
@@ -175,11 +176,11 @@ def get_viewers():
     output = json.loads(binary)
     viewers = []
     for viewer in output['chatters']['viewers']:
-        if viewer not in optout:
+        if viewer in optin:
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     for viewer in output['chatters']['moderators']:
-        if viewer not in optout and viewer!=twitch_auth.get_bot() and viewer!=twitch_auth.get_streamer():
+        if viewer in optin and viewer!=twitch_auth.get_bot() and viewer!=twitch_auth.get_streamer():
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     return viewers
@@ -197,9 +198,8 @@ def get_game():
 def mastertimer():
     global counter
     global master
-    global scaring
     global switching
-    global optout
+    global optin
     global mode
 
     warn_timer = 0
@@ -209,12 +209,12 @@ def mastertimer():
         if mode == 0:
             if scaring == 0 and switching == 0:
                 elapsed = time.time() - counter
-                #every 5 minutes switch control, and add master to optout list 300
+                #every 5 minutes switch control, and remove master from optin list 300
                 if elapsed>300 and warn_timer < 2:
                     if master!=twitch_auth.get_bot():
                         irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
-                        optout.append(master)
+                        optin.remove(master)
                     twitch_bot_utils.printer("Master switch")
                     counter = time.time()
                     switch()
@@ -230,7 +230,6 @@ def mastertimer():
 #switch control to a random person (or specific person if specified)
 def switch(user="",pass_control=0):
     global counter
-    global scaring
     global master
     global switching
     global next
@@ -292,7 +291,7 @@ def switch(user="",pass_control=0):
 def admin_commands(user,data):
     global master
     global counter
-    global optout
+    global optin
     global mode
     global next
     
@@ -308,24 +307,29 @@ def admin_commands(user,data):
                 switch(parts[1],-1)
             if len(parts) == 1:
                 switch()
+        if command == "!whosoptedin":
+            optedin = ""
+            for optins in optin:
+                optedin = "%s %s " % (optedin,optins)
+            irc_msg("%s" % optedin)
         #if there are at least 2 words in the message
         if len(parts) == 2:
             for part in parts:
                 twitch_bot_utils.printer(part)
-            #add user to optout list
+            #add user to optin list
+            if command == "!optin":
+                if parts[1] not in optin:
+                    optin.append(parts[1])
+                    irc_msg("%s has been opted in!" % parts[1])
+            #optout a user
             if command == "!optout":
-                if parts[1] not in optout:
-                    optout.append(parts[1])
-                    irc_msg("%s has been opted out!" % parts[1])
+                #check that user is already opted in
+                if parts[1] in optin:
+                    optin.remove(parts[1])
+                    irc_msg("%s has been opted back out!" % parts[1])
                     #if the user is currently in control, switch
                     if parts[1].lower() == master:
                         switch()
-            #optin a user
-            if command == "!optin":
-                #check that user is already opted out
-                if parts[1] in optout:
-                    optout.remove(parts[1])
-                    irc_msg("%s has been opted back in!" % parts[1])
             #change mode from scary to normal
             if command == "!mode":
                 if parts[1] == "scary":
@@ -357,10 +361,8 @@ def printAllScreen():
     return i
 
 #Flip the monitor using winapi's
-def flip(duration=20,admin=0):
-    global scaring
-    
-    scaring = 1
+def flip(duration=20,scare=0):
+    scare_lock(1)
     scare_status("Monitor is flipped!")
     #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
     device = win32.EnumDisplayDevices(None,1);
@@ -377,16 +379,14 @@ def flip(duration=20,admin=0):
     dm.Fields = dm.Fields & win32con.DM_DISPLAYORIENTATION
     win32.ChangeDisplaySettingsEx(device.DeviceName,dm)
     scare_status(-1)
-    scaring = 0
-    if admin==0:
+    scare_lock(0)
+    if scare==0:
         switch()
     return
     
 #Slow strobe the monitor effect
-def flicker(times=5,admin=0):
-    global scaring
-    
-    scaring = 1
+def flicker(times=5,scare=0):
+    scare_lock(1)
     pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
     
     while True:
@@ -410,13 +410,14 @@ def flicker(times=5,admin=0):
             pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
             time.sleep(0.05)
     pygame.display.quit()
-    scaring = 0
-    if admin==0:
+    scare_lock(0)
+    if scare==0:
         switch()
       
-def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1,admin=0):
+def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
+    scare_lock(1)
     scare_status(msg)
-    scaring = 1
+    twitch_bot_utils.printer("Arguino scare, scare=%s" % scare)
     status_length = 3
     twitch_bot_utils.printer("%s %s time(s)" % (msg,times))
     for i in range(0,times):
@@ -426,13 +427,12 @@ def arduino_scare(pin,start,stop,command,msg,dur,wait,times=1,admin=0):
     time.sleep(status_length)
     scare_status(-1)
     time.sleep(wait-status_length)
-    scaring = 0
-    if admin==0:
+    scare_lock(0)
+    if scare==0:
         switch()
     
-def play_sound(song,left,right,admin=0):
-    global scaring
-    scaring = 1 #dont switch until the sound is done playing
+def play_sound(song,left,right,scare=0):
+    scare_lock(1)
     
     #setup audio
     pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
@@ -452,21 +452,21 @@ def play_sound(song,left,right,admin=0):
        #pygame.display.update()
        clock.tick(30)
     #pygame.mixer.quit() 
-    scaring = 0
-    if admin==0:
+    scare_lock(0)
+    if scare==0:
         switch()
     
-def turn_off_monitors(msg,wait,admin=0):
+def turn_off_monitors(msg,wait,scare=0):
     scare_status(msg)
-    scaring = 1
+    scare_lock(1)
     status_length = 3
     twitch_bot_utils.printer(msg)
     call(["nircmd.exe", "monitor", "off"])
     time.sleep(2.5+status_length)
     scare_status(-1)
     time.sleep(wait-status_length)
-    scaring = 0
-    if admin==0:
+    scare_lock(0)
+    if scare==0:
         switch()
     
 def scare_status(status):
@@ -495,8 +495,9 @@ def master_commands(user,data):
     global sounds
     
     
-    if scaring==0 and (user.lower() == master.lower() or user.lower()==twitch_auth.get_streamer()): #check that the user is the master
+    if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==twitch_auth.get_streamer()): #check that the user is the master
         if user.lower()==twitch_auth.get_streamer():
+            twitch_bot_utils.printer("User is admin, dont switch")
             admin = 1
         else:
             admin = 0 
@@ -509,7 +510,7 @@ def master_commands(user,data):
         if command == "!pass":
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
-                    if parts[1].lower() not in optout:
+                    if parts[1].lower() in optin:
                         twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
                         switch(parts[1],1)
                     else:
@@ -587,7 +588,7 @@ def master_commands(user,data):
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,wait,admin))
+            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,wait,1,admin))
             scare.daemon = True
             scare.start() 
             return
@@ -601,7 +602,7 @@ def master_commands(user,data):
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
-            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
+            scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,1,admin))
             scare.daemon = True
             scare.start() 
             return
@@ -913,7 +914,7 @@ def user_stack_consumer():
 
 #commands accessible by all users
 def user_commands(user,data):
-    global optout
+    global optin
     global user_stack
     global animating
     
@@ -932,19 +933,19 @@ def user_commands(user,data):
         if command == "!whosgotit":
             irc_msg("%s is currently in control!" % master)
             return 
-        #opt a user out, and switch if they were in control
+        #opt a user in, and switch if they were in control
+        if command == "!optin":
+            if user not in optin and user != twitch_auth.get_streamer():
+                optin.append(user)
+                irc_msg("%s has opted in!" % user)
+            return
+        #allow a user to optout
         if command == "!optout":
-            if user not in optout and user != twitch_auth.get_streamer():
-                optout.append(user)
-                irc_msg("%s has opted out!" % user)
+            if user in optin:
+                optin.remove(user)
+                irc_msg("%s has opted back out!" % user)
                 if user == master:
                     switch()
-            return
-        #allow a user to opt back in
-        if command == "!optin":
-            if user in optout:
-                optout.remove(user)
-                irc_msg("%s has opted back in!" % user)
             return
         #let viewers know how much time is left    
         if command == "!timeleft":
@@ -1144,7 +1145,7 @@ t2.start()
 #todo: instead of calling functions directly, add them to a global queue with a processing thread
 #the thread will 
 
-optout = []
+optin = []
 
 #Main loop
 twitch_bot_utils.printer("Blacking out all pixels!")
@@ -1157,6 +1158,7 @@ twitch_bot_utils.printer("READY!")
 pass_counter = 3
 random_color=1
 user_stack = []
+chatters = []
 
 user_stack_thread = threading.Thread(target=user_stack_consumer)
 user_stack_thread.daemon = True
@@ -1179,6 +1181,10 @@ while True:
             if parts[1].lower()=="privmsg" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a message, and its to our channel
                 user = parts.pop(0) 
                 user = user[1:user.find("!")] #get the username from the first "part"
+                if user not in chatters:
+                    chatters.append(user)
+                    optin.append(user)
+                    
                 parts.pop(0) #throw away the next two parts
                 parts.pop(0)
                 #Put all parts of the message back together into data variable, and lowercase it
