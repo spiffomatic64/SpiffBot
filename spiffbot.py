@@ -20,6 +20,7 @@ import twitch_bot_utils
 import time
 import traceback
 from subprocess import call
+import twitch_db
 
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
@@ -77,15 +78,15 @@ twitch_profile("")
 twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
 
 def opt(user,inout):
-    global optin
+    user=user.lower()
     if inout:
-        if user not in optin:
-            optin.append(user)
+        if not db.getUserOpted(user):
+            db.updateUserOpted(user,1)
             if master==twitch_auth.get_bot():
                 switch(user)
     else:
-        if user in optin:
-            optin.remove(user)
+        if db.getUserOpted(user):
+            db.updateUserOpted(user,0)
             if user == master:
                 switch()
 
@@ -191,11 +192,11 @@ def get_viewers(opted=True):
     output = json.loads(binary)
     viewers = []
     for viewer in output['chatters']['viewers']:
-        if viewer in optin:
+        if db.getUserOpted(viewer):
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     for viewer in output['chatters']['moderators']:
-        if viewer in optin and viewer!=twitch_auth.get_bot() and viewer!=twitch_auth.get_streamer():
+        if db.getUserOpted(viewer) and viewer!=twitch_auth.get_bot() and viewer!=twitch_auth.get_streamer():
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     return viewers
@@ -214,7 +215,6 @@ def mastertimer():
     global counter
     global master
     global switching
-    global optin
     global mode
 
     warn_timer = 0
@@ -224,7 +224,7 @@ def mastertimer():
         if mode == 0:
             if scaring == 0 and switching == 0:
                 elapsed = time.time() - counter
-                #every 5 minutes switch control, and remove master from optin list 300
+                #every 5 minutes switch control, and remove master from optedin list 300
                 if elapsed>300 and warn_timer < 2:
                     if master!=twitch_auth.get_bot():
                         irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
@@ -306,7 +306,6 @@ def switch(user="",pass_control=0):
 def admin_commands(user,data):
     global master
     global counter
-    global optin
     global mode
     global next
     
@@ -324,21 +323,23 @@ def admin_commands(user,data):
                 switch()
         if command == "!whosoptedin":
             optedin = ""
-            for optins in optin:
+            for optins in db.getOptedUsers():
                 optedin = "%s %s " % (optedin,optins)
             irc_msg("%s" % optedin)
         #if there are at least 2 words in the message
         if len(parts) == 2:
             for part in parts:
                 twitch_bot_utils.printer(part)
-            #add user to optin list
+            #add user to opted in list
             if command == "!optin":
                 opt(parts[1],True)
                 irc_msg("Opting %s in" % parts[1])
+                return
             #optout a user
             if command == "!optout":
                 #check that user is already opted in
                 opt(parts[1],False)
+                return
             #change mode from scary to normal
             if command == "!mode":
                 if parts[1] == "scary":
@@ -525,7 +526,7 @@ def master_commands(user,data):
         if command == "!pass":
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
-                    if parts[1].lower() in optin:
+                    if parts[1].lower() in db.getOptedUsers():
                         twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
                         switch(parts[1],1)
                     else:
@@ -929,7 +930,6 @@ def user_stack_consumer():
 
 #commands accessible by all users
 def user_commands(user,data):
-    global optin
     global user_stack
     global animating
     
@@ -950,9 +950,8 @@ def user_commands(user,data):
             return 
         #opt a user in, and switch if they were in control
         if command == "!optin":
-            if user not in optin and user != twitch_auth.get_streamer():
-                opt(user,True)
-                irc_msg("%s is now opted in!" %user)
+            opt(user,True)
+            irc_msg("%s is now opted in!" %user)
             return
         #allow a user to optout
         if command == "!optout":
@@ -999,10 +998,6 @@ def user_commands(user,data):
             strobe()
             return
                 
-        #fire animation
-        #if data.find ( 'fire' ) != -1:
-            #fire()
-            #return
         m = re.search('(\w+)\((.+(?:\|[a-zA-Z0-9#]+)*)\)',data,re.IGNORECASE)
         if m:
             twitch_bot_utils.printer("regex passed")
@@ -1112,6 +1107,9 @@ def user_commands(user,data):
 #todo: add code to find arduino dynamically
 ser = serial.Serial("Com4", 115200)
 
+#db stuff
+db = twitch_db.twitchdb()
+
 #Display init for flicker
 #pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
 #pygame.init()
@@ -1162,11 +1160,6 @@ writing = 0
 animating = 0
 t2.start()
 
-#todo: instead of calling functions directly, add them to a global queue with a processing thread
-#the thread will 
-
-optin = []
-
 #Main loop
 twitch_bot_utils.printer("Blacking out all pixels!")
 writing_serial("#\x00\x00\x00\xff!")
@@ -1178,7 +1171,6 @@ twitch_bot_utils.printer("READY!")
 pass_counter = 3
 random_color=1
 user_stack = []
-chatters = []
 
 user_stack_thread = threading.Thread(target=user_stack_consumer)
 user_stack_thread.daemon = True
@@ -1201,8 +1193,7 @@ while True:
             if parts[1].lower()=="privmsg" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a message, and its to our channel
                 user = parts.pop(0) 
                 user = user[1:user.find("!")] #get the username from the first "part"
-                if user not in chatters:
-                    chatters.append(user)
+                if user not in db.getUsers():
                     opt(user,True)
                     
                 parts.pop(0) #throw away the next two parts
