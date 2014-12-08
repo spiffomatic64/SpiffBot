@@ -55,11 +55,11 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "bigzombie" : "large_zombie.ogg",
 "hunter" : "hunter.ogg",
 "brute" : "brute.ogg",
-"zombieattack" : "zombie_attack_walk",
-"spawn" : "aslt_spwn_01",
-"birds" : "birdflock_calls_medium_loop_v1",
-"teleport" : "taken_flanker_tele_01",
-"wings" : "birdflock_wings_medium_loop_v1"
+"zombieattack" : "zombie_attack_walk.ogg",
+"spawn" : "aslt_spwn_01.ogg",
+"birds" : "birdflock_calls_medium_loop_v1.ogg",
+"teleport" : "taken_flanker_tele_01.ogg",
+"wings" : "birdflock_wings_medium_loop_v1.ogg"
 }
 
 
@@ -68,7 +68,7 @@ def twitch_profile(data):
     if data==-1:
         f.truncate()
     else:
-        f.write(data)
+        f.write("%s\r\n" % data)
     f.close()
 
 twitch_profile(-1)
@@ -439,15 +439,21 @@ def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(0)
     if scare==0:
         switch()
+        
+def notify():
+    #play the sound
+    twitch_bot_utils.printer("Playing notification sound to grab attention")
+    sound_scare = pygame.mixer.Sound("./sounds/OOT_MainMenu_Select.ogg")
+    channel = sound_scare.play()
+    channel.set_volume(1,1) #set volume to full
+
+    clock = pygame.time.Clock()
+    while channel.get_busy():
+       # check if playback has finished
+       clock.tick(30)
     
 def play_sound(song,left,right,scare=0):
     scare_lock(1)
-    
-    #setup audio
-    pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-    #twitch_bot_utils.printer(pygame.mixer.get_init())
-    #twitch_bot_utils.printer(pygame.mixer.get_num_channels())
-    
     #play the sound
     twitch_bot_utils.printer("Playing sound %s" % song)
     sound_scare = pygame.mixer.Sound("./sounds/%s" % song)
@@ -493,7 +499,7 @@ twitch_profile("This person will have 5 minutes (with a 2.5 minute warning letti
 twitch_profile("")
 twitch_profile("##Scare Commands for the user in \"Control\"")
 twitch_profile("##Sounds commands for the user in \"Control\"")
-twitch_profile("**!pass** : allows you to pass control on to the next person instead of using it yourself, if you add a username after !pass, you can pass control to someone specifically") 
+twitch_profile("**!pass** : allows you to pass control on to the next person instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
 twitch_profile("**!randomsound** : Picks a sound scare randomly")
 sound_buffer = ""
 for sound, file in sounds.iteritems():
@@ -962,6 +968,10 @@ def user_commands(user,data):
     #Get current streaming game
     if command == "!game" or data.find ( 'what game' ) != -1:
         irc_msg("The current game is: %s" % get_game())
+        return
+    if command == "!spiff":
+        notify()
+        return
         
     if scaring == 1 or animating == 1:
         twitch_bot_utils.printer("Busy, adding to stack")
@@ -1105,6 +1115,10 @@ ser = serial.Serial("Com4", 115200)
 #Display init for flicker
 #pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
 #pygame.init()
+#setup audio
+pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
+twitch_bot_utils.printer(pygame.mixer.get_init())
+twitch_bot_utils.printer(pygame.mixer.get_num_channels())
 
 
 #Midi initialization 
