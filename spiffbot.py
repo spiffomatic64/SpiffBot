@@ -1,4 +1,3 @@
-import socket
 import re
 import time
 import serial
@@ -69,7 +68,7 @@ def twitch_profile(data):
     if data==-1:
         f.truncate()
     else:
-        f.write("%s\r\n" % data)
+        f.write("%s\n" % data)
     f.close()
 
 twitch_profile(-1)
@@ -120,9 +119,6 @@ def user_wait(duration):
     while time.time() < stop and scaring==0:
         time.sleep(0.5)
     return
-def irc_msg(msg):   
-    twitch_bot_utils.printer('PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg))
-    irc.send ( 'PRIVMSG #%s :%s\r\n' % (twitch_auth.get_streamer(),msg.encode('utf-8')) )  
 
 #List and select midi device
 def getMidi(midi_device):
@@ -227,7 +223,7 @@ def mastertimer():
                 #every 5 minutes switch control, and remove master from optedin list 300
                 if elapsed>300 and warn_timer < 2:
                     if master!=twitch_auth.get_bot():
-                        irc_msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
+                        irc.msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
                         opt(master,False)
                     twitch_bot_utils.printer("Master switch")
@@ -236,7 +232,7 @@ def mastertimer():
                 #every 2.5 minutes warn the user in control 150
                 elif elapsed>150 and warn_timer == 0:
                     if master!=twitch_auth.get_bot():
-                        irc_msg( "2.5 Minutes left %s!" % master)  
+                        irc.msg( "2.5 Minutes left %s!" % master)  
                     warn_timer = 1
                 
                 twitch_bot_utils.printer(elapsed)
@@ -264,7 +260,7 @@ def switch(user="",pass_control=0):
         elif pass_control==1: #increment pass_counter
             pass_counter = pass_counter +1
         if pass_counter>2 and pass_control!=-1:
-            irc_msg("Too many passes to specific users, use a scare command, or !pass without a username") 
+            irc.msg("Too many passes to specific users, use a scare command, or !pass without a username") 
             switching = 0
             return
             
@@ -295,7 +291,7 @@ def switch(user="",pass_control=0):
                 master=twitch_auth.get_bot()
         #reset counter and notify chat that a new viewer is in control
         twitch_bot_utils.printer("%s is now in control!" % master)
-        irc_msg("%s is now in control!" % master) 
+        irc.msg("%s is now in control!" % master) 
         twitch_bot_utils.printer("Switching from %s to %s" % (old,master))
         counter = time.time()
         switching = 0
@@ -325,7 +321,7 @@ def admin_commands(user,data):
             optedin = ""
             for optins in db.getOptedUsers():
                 optedin = "%s %s " % (optedin,optins)
-            irc_msg("%s" % optedin)
+            irc.msg("%s" % optedin)
         #if there are at least 2 words in the message
         if len(parts) == 2:
             for part in parts:
@@ -333,7 +329,7 @@ def admin_commands(user,data):
             #add user to opted in list
             if command == "!optin":
                 opt(parts[1],True)
-                irc_msg("Opting %s in" % parts[1])
+                irc.msg("Opting %s in" % parts[1])
                 return
             #optout a user
             if command == "!optout":
@@ -347,12 +343,12 @@ def admin_commands(user,data):
                     twitch_bot_utils.printer("Scary time!")
                     counter = time.time()
                     master=twitch_auth.get_streamer()
-                    irc_msg("ITS SCARY TIME!!!")
+                    irc.msg("ITS SCARY TIME!!!")
                     modedefault()
                 if parts[1] == "normal":
                     mode = 1
                     twitch_bot_utils.printer("Normal time!")
-                    irc_msg("Playing normal games")
+                    irc.msg("Playing normal games")
                     modedefault()
             if command == "!switchnext":
                 twitch_bot_utils.printer("Setting next user to: %s" % parts[1])
@@ -530,10 +526,10 @@ def master_commands(user,data):
                         twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
                         switch(parts[1],1)
                     else:
-                        irc_msg("Can't pass, %s is opted out!" % parts[1].lower())
+                        irc.msg("Can't pass, %s is opted out!" % parts[1].lower())
                         twitch_bot_utils.printer("%s tried to pass to %s who is opted out" % (user.lower(),parts[1].lower()))
                 else:
-                    irc_msg("You cant pass to yourself!")
+                    irc.msg("You cant pass to yourself!")
                     twitch_bot_utils.printer("%s tried to pass to them-self" % user.lower())
             if len(parts) == 1:
                 switch()
@@ -546,7 +542,7 @@ def master_commands(user,data):
         if command == "!randomsound":
             twitch_bot_utils.printer("Random sound")
             song = random.choice(sounds.values())
-            irc_msg("You cant pass to yourself!")
+            irc.msg("You cant pass to yourself!")
         #check message for all sound commands
         for sound, file in sounds.iteritems():
             if data.find(sound) != -1:
@@ -708,7 +704,7 @@ def disco():
     global animating
     wait_animating()
     animating = 1
-    irc_msg("DISCO PARTY!!!!!!!!")
+    irc.msg("DISCO PARTY!!!!!!!!")
     for x in range(0, 5): #loop 5 mins
         for y in range(0, 255): #loop through all 255 colors
             rgb = twitch_bot_utils.Wheel(y)
@@ -724,7 +720,7 @@ def strobe():
     global animating
     wait_animating()
     animating = 1
-    irc_msg("SEIZURE PARTY!!!!!!!!")
+    irc.msg("SEIZURE PARTY!!!!!!!!")
     for x in range(0, 50): #flicker 200 times, for 30 ms on, then 30ms off
         writing_serial("#\xff\xff\xff\xff!")
         pygame.time.wait(40)
@@ -740,7 +736,7 @@ def disco_strobe():
     global animating
     wait_animating()
     animating = 1
-    irc_msg("DISCO SEIZURES!!!!!!!!")
+    irc.msg("DISCO SEIZURES!!!!!!!!")
     for y in range(0, 85): #loop through all 255 colors
         rgb = twitch_bot_utils.Wheel(y*3)
         writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
@@ -874,7 +870,7 @@ def fire(r1,g1,b1,r2,g2,b2):
     global animating
     wait_animating()
     animating = 1
-    irc_msg("FIRE!!!")
+    irc.msg("FIRE!!!")
     for y in range( 0, 30 ):
         for x in range( 0, 30 ):
             r = random.randrange(2)
@@ -896,7 +892,7 @@ def disco_fire():
     global animating
     wait_animating()
     animating = 1
-    irc_msg("FIRE!!!")
+    irc.msg("FIRE!!!")
     for y in range( 0, 30 ):
         for x in range( 0, 30 ):
             c = twitch_bot_utils.Wheel(((random.randint(1, 32)+random_color)*7)%255)
@@ -941,35 +937,37 @@ def user_commands(user,data):
     
     #start commands
     if data.find ( 'test' ) != -1:
-        irc_msg("test to you too!")
+        irc.msg("test to you too!")
     
     #Scary mode only commands
     if mode == 0:
         if command == "!whosgotit":
-            irc_msg("%s is currently in control!" % master)
+            irc.msg("%s is currently in control!" % master)
             return 
         #opt a user in, and switch if they were in control
         if command == "!optin":
             opt(user,True)
-            irc_msg("%s is now opted in!" %user)
+            irc.msg("%s is now opted in!" %user)
             return
         #allow a user to optout
         if command == "!optout":
             opt(user,False)
-            irc_msg("%s is now opted out!" %user)
+            irc.msg("%s is now opted out!" %user)
             return
         #let viewers know how much time is left    
         if command == "!timeleft":
             timeleft = 300 - (time.time() - counter)
-            irc_msg("%s has %s seconds left!" % (master,round(timeleft)))
+            irc.msg("%s has %s seconds left!" % (master,round(timeleft)))
             return
 
     #Get current streaming game
     if command == "!game" or data.find ( 'what game' ) != -1:
-        irc_msg("The current game is: %s" % get_game())
+        irc.msg("The current game is: %s" % get_game())
         return
     if command == "!spiff":
-        notify()
+        elapsed = alert.notify()
+        if elapsed > 0:
+            irc.msg("Spiff was just notified %s seconds ago!" % elapsed )
         return
         
     if scaring == 1 or animating == 1:
@@ -1097,7 +1095,7 @@ def user_commands(user,data):
             if data.find ( key.lower() ) != -1:
                 animating = 1
                 twitch_bot_utils.printer("key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
-                irc_msg("%s!!!" % key.upper())
+                irc.msg("%s!!!" % key.upper())
                 writing_serial("#%c%c%c\xff!" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
                 user_wait(5)
                 modedefault()
@@ -1125,24 +1123,8 @@ twitch_bot_utils.printer(pygame.mixer.get_num_channels())
 #twitch_bot_utils.printer("Got midi: %s" % midi_device)
 #midi = pygame.midi.Input(midi_device)
     
-#start IRC
-network = 'irc.twitch.tv'
-port = 6667
-irc = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
-irc.connect ( ( network, port ) )
-twitch_bot_utils.printer("connected")
-#IRC auth
-irc.send("PASS oauth:%s\r\n" % twitch_auth.get_oauth())
-irc.send("NICK %s\r\n" % twitch_auth.get_bot())
-irc.send("USER %s %s %s :Python IRC\r\n" % (twitch_auth.get_bot(),twitch_auth.get_bot(),twitch_auth.get_bot()))
-#wait before reading data (needed for twitch)
-time.sleep(0.5)
-twitch_bot_utils.printer(irc.recv ( 4096 ))
-twitch_bot_utils.printer("Got stuff")
-#wait before joining (needed for twitch)
-time.sleep(0.5)
-irc.send("JOIN #%s\r\n" % twitch_auth.get_streamer())
-
+irc = twitch_bot_utils.irc_connection("irc.twitch.tv","6667",twitch_auth.get_bot(),twitch_auth.get_oauth(),twitch_auth.get_streamer())    
+    
 #Midi Thread start
 #t = threading.Thread(target=midiThread)
 #t.daemon = True
@@ -1175,6 +1157,7 @@ user_stack = []
 user_stack_thread = threading.Thread(target=user_stack_consumer)
 user_stack_thread.daemon = True
 user_stack_thread.start()
+alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
 
 while True:
     #ser.flushInput() #ignore serial input, todo: log serial input without locking loop
@@ -1183,7 +1166,6 @@ while True:
     if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
         irc.send ( 'PONG ' + orig.split() [ 1 ] + '\r\n' )
         
-    twitch_bot_utils.printer(orig)
     lines = orig.splitlines()
     print "Lines: %s" % len(lines)
     for line in lines:
