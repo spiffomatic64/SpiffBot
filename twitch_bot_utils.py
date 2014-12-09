@@ -9,7 +9,7 @@ import socket
 
 class irc_connection:
     
-    def __init__(self,network,port,bot,oauth,streamer):
+    def __init__(self,network,port,bot,oauth,streamer,parsers):
         #IRC connect
         network = 'irc.twitch.tv'
         port = 6667
@@ -29,6 +29,9 @@ class irc_connection:
         time.sleep(0.5)
         self.streamer = streamer
         self.conn.send("JOIN #%s\r\n" % self.streamer)
+        t = threading.Thread(target=self.irc_thread,args=(parsers,))
+        t.daemon = True
+        t.start()
     
     def send(self,msg):   
         self.conn.send ( msg )  
@@ -40,8 +43,33 @@ class irc_connection:
         printer('PRIVMSG #%s :%s\r\n' % (self.streamer,msg))
         self.conn.send ( 'PRIVMSG #%s :%s\r\n' % (self.streamer,msg.encode('utf-8')) )  
         
+    def irc_thread(self,parsers):
+        printer("Started irc_thread")
+        while True:
+            orig = self.conn.recv ( 4096 ) #receive irc data
         
-        
+            if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
+                self.conn.send ( 'PONG ' + orig.split() [ 1 ] + '\r\n' )
+                
+            lines = orig.splitlines()
+            for line in lines:
+                printer("Line: %s" % line)
+                parts = line.split() #Split irc data by white space
+                if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
+                    if parts[1].lower()=="privmsg" and parts[2][1:].lower()==self.streamer: #check this is a message, and its to our channel
+                        user = parts.pop(0) 
+                        user = user[1:user.find("!")] #get the username from the first "part"
+                        parts.pop(0) #throw away the next two parts
+                        parts.pop(0)
+                        #Put all parts of the message back together into data variable, and lowercase it
+                        data = ""
+                        for part in parts:
+                            data = data + part + " "
+                        data = data.lower()
+                        printer("User: %s Message: %s" % (user,data))
+                        for parser in parsers:
+                            if parser(user,data):
+                                break
 
 class notification:
 

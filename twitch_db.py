@@ -1,4 +1,5 @@
 import mysql.connector
+import datetime
 
 class twitchdb:
 
@@ -29,6 +30,28 @@ class twitchdb:
         cursor.execute(query, (username,opted,opted))
         self.cnx.commit()
         
+    def getUserOpted(self,username):
+        query = ("SELECT opted FROM users WHERE username = %s")
+        cursor = self.cnx.cursor()
+        cursor.execute(query, ([username]))
+        result = cursor.fetchone()
+        if result != None:
+            if result[0]==1:
+                return True
+        return False
+        
+    def getOptedUsers(self):
+        query = ("SELECT username FROM users WHERE opted = 1")
+        cursor = self.cnx.cursor()
+        cursor.execute(query, ([]))
+        results = []
+        for id in cursor:
+            results.append(id[0])
+        if len(results)>0:
+            return results
+        else:
+            return False
+            
     def updateUserSession(self,username,session):
         try: 
             int(session)
@@ -54,31 +77,26 @@ class twitchdb:
         cursor = self.cnx.cursor()
         cursor.execute(query, (username,referral,referral))
         self.cnx.commit()
+        
+    def updateLastControl(self,username): 
+        query = ("INSERT INTO users (username,last_control) VALUES (%s,%s) ON DUPLICATE KEY UPDATE last_control=%s;")
+        cursor = self.cnx.cursor()
+        #YYYY-MM-DD HH:MM:SS
+        last_control = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute(query, (username,last_control,last_control))
+        self.cnx.commit()
+        
+    def getLastControl(self,username): 
+        query = ("SELECT last_control FROM users WHERE username = %s")
+        cursor = self.cnx.cursor()
+        cursor.execute(query, ([username]))
+        result = cursor.fetchone()
+        if result != None:
+            return result[0]
+        return False
             
     def getUsers(self):
         query = ("SELECT * FROM users")
-        cursor = self.cnx.cursor()
-        cursor.execute(query, ([]))
-        results = []
-        for id in cursor:
-            results.append(id[0])
-        if len(results)>0:
-            return results
-        else:
-            return False
-            
-    def getUserOpted(self,user):
-        query = ("SELECT opted FROM users WHERE username = %s")
-        cursor = self.cnx.cursor()
-        cursor.execute(query, ([user]))
-        result = cursor.fetchone()
-        if result != None:
-            if result[0]==1:
-                return True
-        return False
-        
-    def getOptedUsers(self):
-        query = ("SELECT username FROM users WHERE opted = 1")
         cursor = self.cnx.cursor()
         cursor.execute(query, ([]))
         results = []
