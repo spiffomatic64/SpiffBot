@@ -2,12 +2,83 @@ import logging
 import datetime
 import time
 import html_colors
+import random
+import pygame
+import threading
+import socket
+
+class irc_connection:
+    
+    def __init__(self,network,port,bot,oauth,streamer):
+        #IRC connect
+        network = 'irc.twitch.tv'
+        port = 6667
+        self.conn = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
+        self.conn.connect ( ( network, port ) )
+        printer("connected")
+        #IRC auth
+        self.conn.send("PASS oauth:%s\r\n" % oauth)
+        self.bot = bot
+        self.conn.send("NICK %s\r\n" % self.bot)
+        self.conn.send("USER %s %s %s :Python IRC\r\n" % (self.bot,self.bot,self.bot))
+        #wait before reading data (needed for twitch)
+        time.sleep(0.5)
+        printer(self.conn.recv ( 4096 ))
+        printer("Got stuff")
+        #wait before joining (needed for twitch)
+        time.sleep(0.5)
+        self.streamer = streamer
+        self.conn.send("JOIN #%s\r\n" % self.streamer)
+    
+    def send(self,msg):   
+        self.conn.send ( msg )  
+        
+    def recv(self,buf_size):   
+        return self.conn.recv ( buf_size )  
+    
+    def msg(self,msg):   
+        printer('PRIVMSG #%s :%s\r\n' % (self.streamer,msg))
+        self.conn.send ( 'PRIVMSG #%s :%s\r\n' % (self.streamer,msg.encode('utf-8')) )  
+        
+        
+        
+
+class notification:
+
+    def __init__(self,sound,throttle):
+        self.notified = time.time()-throttle
+        self.throttle = throttle
+        self.sound = sound
+    
+    def notify(self):
+        elapsed = time.time() - self.notified
+        if elapsed >= self.throttle:
+            #play the sound
+            printer("Playing notification sound to grab attention %s" % elapsed)
+            sound_scare = pygame.mixer.Sound(self.sound)
+            channel = sound_scare.play()
+            channel.set_volume(1,1) #set volume to full
+
+            clock = pygame.time.Clock()
+            while channel.get_busy():
+               # check if playback has finished
+               clock.tick(30)
+            self.notified = time.time()
+            return False
+        else:
+            return round(elapsed)
+            
+        
+    def update_throttle(throttle):
+        self.throttle = throttle
 
 #return scary-0 or normal-1 dependant on the current day (>=4 is between thurs and sunday)
 def scaryDay():
     if datetime.date.today().isoweekday()>=4:
+        printer("Scary Day!")
         return 0
     else:
+        printer("Normal Day!")
         return 1
 
 #Prints to console, and a log file
@@ -35,6 +106,18 @@ def bounds(input):
     if input>255:
         input = 255
     return input
+    
+#return a color from a 255 rainbow palette
+def Wheel(WheelPos):
+    WheelPos = 255 - WheelPos;
+    if WheelPos < 85:
+        return [255 - WheelPos * 3, 0, WheelPos * 3];
+    elif WheelPos < 170:
+        WheelPos -= 85;
+        return [0, WheelPos * 3, 255 - WheelPos * 3];
+    else:
+        WheelPos -= 170;
+        return [WheelPos * 3, 255 - WheelPos * 3, 0];
 
 #parse a string for a single color (returned as a list)
 def convertcolor(input,random_color):
