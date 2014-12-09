@@ -10,6 +10,7 @@ I'm using an arduino currently to drive some leds/servo's/vibration motors, but 
 The code is VERY ugly, VERY buggy, and is changed just about daily... Its literally cobbled together every night about 30 minutes before I stream to add a few features/fix a few bugs here and there. (I avoid large re-writes because it would mean downtime for the stream) which makes it even uglier lol...
 
 <h1>Current list of added features:</h1>
+<ol>
 <li>Midi Drum input</li>
 <li>alternate(color,color)</li>
 <li>chase(color)</li>
@@ -31,4 +32,4 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 <li>after light command, fade to white during normal, and go to black during scary</li>
 <li>color commands only run for a set amount of time</li>
 <li>letting viewers flip main monitor upside down</li>
-
+</ol>
