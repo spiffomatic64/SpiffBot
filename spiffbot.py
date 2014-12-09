@@ -221,18 +221,19 @@ def mastertimer():
             if scaring == 0 and switching == 0:
                 elapsed = time.time() - counter
                 #every 5 minutes switch control, and remove master from optedin list 300
-                if elapsed>300 and warn_timer < 2:
+                if elapsed>30 and warn_timer < 2:
                     if master!=twitch_auth.get_bot():
                         irc.msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
                         opt(master,False)
                     twitch_bot_utils.printer("Master switch")
                     counter = time.time()
-                    switch()
-                #every 2.5 minutes warn the user in control 150
-                elif elapsed>150 and warn_timer == 0:
+                    warn_timer = 0
+                #every 2.5 minutes warn the user in control 150 (make sure to only warn once)
+                elif elapsed>15 and warn_timer == 0:
                     if master!=twitch_auth.get_bot():
                         irc.msg( "2.5 Minutes left %s!" % master)  
+                        twitch_bot_utils.printer("Sending 2.5 minute warning")
                     warn_timer = 1
                 
                 twitch_bot_utils.printer(elapsed)
