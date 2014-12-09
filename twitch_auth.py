@@ -6,3 +6,9 @@ def get_oauth():
     
 def get_bot():
     return "spiffbot"
+
+def get_db_user():
+    return "spiffbot"
+    
+def get_db_pass():
+    return "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

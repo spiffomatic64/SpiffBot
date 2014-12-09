@@ -1106,7 +1106,7 @@ def user_commands(user,data):
 ser = serial.Serial("Com4", 115200)
 
 #db stuff
-db = twitch_db.twitchdb()
+db = twitch_db.twitchdb(twitch_auth.get_db_user(),twitch_auth.get_db_pass(),"127.0.0.1","twitch")
 
 #Display init for flicker
 #pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
