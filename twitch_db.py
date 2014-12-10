@@ -87,9 +87,16 @@ class twitchdb:
         self.cnx.commit()
         
     def getLastControl(self,username): 
-        query = ("SELECT last_control FROM users WHERE username = %s")
+        query = "SELECT * FROM users WHERE opted = 1 AND username IN ( %s ) ORDER BY last_control ASC LIMIT 1"
+
         cursor = self.cnx.cursor()
-        cursor.execute(query, ([username]))
+
+        if type(username) is str:   
+            cursor.execute(query, ([username]))
+        else:
+            in_p = ", ".join(map(lambda x: "%s", username))
+            query = query % in_p
+            cursor.execute(query, (username))
         result = cursor.fetchone()
         if result != None:
             return result[0]
