@@ -256,8 +256,7 @@ def switch(user="",pass_control=0):
     #This is used to lock the switch thread (to prevent double switching)
     if switching == 0 and scaring == 0:
         switching = 1
-        twitch_bot_utils.printer("getting viewers")
-        viewers = get_viewers()
+        
         #pass limiting logic
         twitch_bot_utils.printer("Pass Counter: %s" % pass_counter)
         if pass_control==0: #reset pass counter
@@ -269,11 +268,14 @@ def switch(user="",pass_control=0):
             switching = 0
             return
             
+        twitch_bot_utils.printer("getting viewers")
+        viewers = get_viewers()
+        
         #remove the current controller from available viewers to prevent switching to the same person
         if master in viewers:
             viewers.remove(master)
         #add logic for fairness
-        #use stack queue
+        
         old = master
         #if a "next" user is specified, switch to that user
         if next:
@@ -289,8 +291,12 @@ def switch(user="",pass_control=0):
         else:
             #if there are more than 0 viewers, pick a random viewer
             if len(viewers)>0:
-                random.shuffle(viewers) #probably not needed, but what the hell :-P
-                master = random.choice(viewers)
+                
+                if user == -1:
+                    master = db.getLastControl(viewers)
+                else:
+                    random.shuffle(viewers) #probably not needed, but what the hell :-P
+                    master = random.choice(viewers)
             else:
                 twitch_bot_utils.printer("No valid viewers to switch to")
                 master=twitch_auth.get_bot()
@@ -298,6 +304,7 @@ def switch(user="",pass_control=0):
         twitch_bot_utils.printer("%s is now in control!" % master)
         irc.msg("%s is now in control!" % master) 
         twitch_bot_utils.printer("Switching from %s to %s" % (old,master))
+        db.updateLastControl(master)
         counter = time.time()
         switching = 0
     else:
@@ -546,7 +553,7 @@ def master_commands(user,data):
                     twitch_bot_utils.printer("%s tried to pass to them-self" % user.lower())
                     return True
             if len(parts) == 1:
-                switch()
+                switch(-1)
                 return True
             
         #sound commands
@@ -1130,6 +1137,7 @@ scaring = 0
 switching = 0
 writing = 0
 animating = 0
+next = None
 mode = twitch_bot_utils.scaryDay()
 
 #serial stuff
@@ -1185,43 +1193,3 @@ while True:
     #ser.flushInput() #ignore serial input, todo: log serial input without locking loop
     
     time.sleep(1)
-    
-    
-    '''orig = irc.recv ( 4096 ) #receive irc data
-    
-    if orig.find ( 'PING' ) != -1: #Needed to keep connected to IRC, without this, twitch will disconnect
-        irc.send ( 'PONG ' + orig.split() [ 1 ] + '\r\n' )
-        
-    lines = orig.splitlines()
-    print "Lines: %s" % len(lines)
-    for line in lines:
-        twitch_bot_utils.printer("Line: %s" % line)
-        parts = line.split() #Split irc data by white space
-        if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
-            if parts[1].lower()=="privmsg" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a message, and its to our channel
-                user = parts.pop(0) 
-                user = user[1:user.find("!")] #get the username from the first "part"
-                if user not in db.getUsers():
-                    opt(user,True)
-                    
-                parts.pop(0) #throw away the next two parts
-                parts.pop(0)
-                #Put all parts of the message back together into data variable, and lowercase it
-                data = ""
-                for part in parts:
-                    data = data + part + " "
-                data = data.lower()
-                twitch_bot_utils.printer("User: %s Message: %s" % (user,data))
-                
-                #check for admin commands
-                admin_commands(user,data)
-                #check for in control commands
-                master_commands(user,data)
-                #check for normal user commands
-                user_commands(user,data)
-                twitch_bot_utils.printer("DEBUG after user_commands!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
-        elif parts[1].lower()=="part" and parts[2][1:].lower()==twitch_auth.get_streamer(): #check this is a part, and its to our channel
-            user = parts.pop(0) 
-            user = user[1:user.find("!")] #get the username from the first "part"
-            if user == master:
-                switch()'''
