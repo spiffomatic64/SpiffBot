@@ -1034,7 +1034,6 @@ def user_commands(user,data):
                         rgb = twitch_bot_utils.convertcolor(part,random_color)
                         if rgb:
                             num = round(6/len(parts))
-                            print type(rgb[0])
                             chase(rgb[0],rgb[1],rgb[2],int(num))
                             time.sleep(1)
                         else:
@@ -1051,7 +1050,6 @@ def user_commands(user,data):
                         rgb = twitch_bot_utils.convertcolor(part,random_color)
                         if rgb:
                             num = round(6/len(parts))
-                            print type(rgb[0])
                             centerchase(rgb[0],rgb[1],rgb[2],int(num))
                             time.sleep(1)
                         else:
@@ -1068,7 +1066,6 @@ def user_commands(user,data):
                         rgb = twitch_bot_utils.convertcolor(part,random_color)
                         if rgb:
                             num = round(6/len(parts))
-                            print type(rgb[0])
                             bounce(rgb[0],rgb[1],rgb[2],int(num))
                             time.sleep(1)
                         else:
@@ -1084,7 +1081,6 @@ def user_commands(user,data):
                     for part in parts:
                         rgb = twitch_bot_utils.convertcolor(part,random_color)
                         if rgb:
-                            print type(rgb[0])
                             num = round(6/len(parts))
                             allleds(rgb[0],rgb[1],rgb[2],num)
                         else:

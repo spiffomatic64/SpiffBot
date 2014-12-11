@@ -6,6 +6,7 @@ import random
 import pygame
 import threading
 import socket
+import string
 
 class irc_connection:
     
