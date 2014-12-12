@@ -72,11 +72,9 @@ def get_next_game():
     binary = data.content
     output = json.loads(binary)
     for panel in output:
-        #print panel['data']['title']
         if panel['data']['title'] == "Schedule":
-            scary = panel['html_description'].split("<strong>Scary Games</strong>")
-            scary = scary[1].split("<strong>Normal Games</strong>")
-            games = scary[1].splitlines()
+            scary = panel['html_description'].split("<strong>Normal Games</strong>")[1]
+            games = scary.splitlines()
             for game in games:
                 if game.find("<strong>next</strong>") != -1:
                     return inBetween(game,"<h1>",":")
