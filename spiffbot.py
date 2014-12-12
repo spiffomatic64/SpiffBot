@@ -62,6 +62,24 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "wings" : "birdflock_wings_medium_loop_v1.ogg"
 }
 
+def inBetween(stuff,first,last):
+    return stuff[stuff.find(first)+len(first):stuff.find(last)]
+
+def get_next_game():
+    url = "http://api.twitch.tv/api/channels/%s/panels" % twitch_auth.get_streamer()
+    twitch_bot_utils.printer("Checking games...")
+    data = requests.get(url)
+    binary = data.content
+    output = json.loads(binary)
+    for panel in output:
+        #print panel['data']['title']
+        if panel['data']['title'] == "Schedule":
+            scary = panel['html_description'].split("<strong>Scary Games</strong>")
+            scary = scary[1].split("<strong>Normal Games</strong>")
+            games = scary[1].splitlines()
+            for game in games:
+                if game.find("<strong>next</strong>") != -1:
+                    return inBetween(game,"<h1>",":")
 
 def twitch_profile(data):
     f = open('profile.txt', 'a')
@@ -983,14 +1001,19 @@ def user_commands(user,data):
             return True
 
     #Get current streaming game
+    if command == "!nextgame" or ( data.find ( 'what game' ) != -1 and data.find ( 'next' ) != -1 ):
+        irc.msg("The next game is: %s!" % get_next_game())
+        return True
+    
     if command == "!game" or data.find ( 'what game' ) != -1:
         irc.msg("The current game is: %s" % get_game())
         return True
+    
     if command == "!spiff":
         elapsed = alert.notify()
         if elapsed > 0:
             irc.msg("Spiff was just notified %s seconds ago!" % elapsed )
-        return True 
+        return True
         
     if scaring == 1 or animating == 1:
         twitch_bot_utils.printer("Busy, adding to stack")
@@ -1123,6 +1146,10 @@ def user_commands(user,data):
                 user_wait(5)
                 modedefault()
                 return True
+                
+def last_seen(user,data):
+    db.updateLastSeen(user)
+    
 #constants
 master = twitch_auth.get_streamer()
 alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
@@ -1159,7 +1186,7 @@ twitch_bot_utils.printer(pygame.mixer.get_num_channels())
 #midi = pygame.midi.Input(midi_device)
 
 irc = twitch_bot_utils.irc_connection("irc.twitch.tv","6667",twitch_auth.get_bot(),twitch_auth.get_oauth(),
-    twitch_auth.get_streamer(),[autoOptIn,admin_commands,master_commands,user_commands])    
+    twitch_auth.get_streamer(),[autoOptIn,last_seen,admin_commands,master_commands,user_commands])    
     
 #Midi Thread start
 #t = threading.Thread(target=midiThread)
