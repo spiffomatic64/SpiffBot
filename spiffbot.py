@@ -349,8 +349,10 @@ def admin_commands(user,data):
                 return True
         if command == "!whosoptedin":
             optedin = ""
+            viewers = get_viewers()
             for optins in db.getOptedUsers():
-                optedin = "%s %s " % (optedin,optins)
+                if optins in viewers:
+                    optedin = "%s %s " % (optedin,optins)
             irc.msg("%s" % optedin)
             return True
         #if there are at least 2 words in the message
