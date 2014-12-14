@@ -102,7 +102,9 @@ def opt(user,inout):
             if master==twitch_auth.get_bot():
                 switch(user)
     else:
-        if db.getUserOpted(user):
+        if user == twitch_auth.get_streamer():
+            switch()
+        elif db.getUserOpted(user):
             db.updateUserOpted(user,0)
             if user == master:
                 switch()
