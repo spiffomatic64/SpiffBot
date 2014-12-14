@@ -60,7 +60,7 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "birds" : "birdflock_calls_medium_loop_v1.ogg",
 "teleport" : "taken_flanker_tele_01.ogg",
 "wings" : "birdflock_wings_medium_loop_v1.ogg",
-"subtlebirds" : "subtle_birds.oog"
+"subtlebirds" : "subtle_birds.ogg"
 }
 
 def inBetween(stuff,first,last):
@@ -741,6 +741,7 @@ def fade(red,green,blue,steps,wait=2):
         if scaring==1:
             twitch_bot_utils.printer("Scare! Stopping user command")
             writing_serial("#%c%c%c\xff!" % (red,green,blue))
+            animating = 0
             return
         pygame.time.wait(wait)
     writing_serial("#%c%c%c\xff!" % (red,green,blue))
@@ -784,6 +785,7 @@ def disco():
             writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
             if scaring==1:
                 printer("Scare! Stopping user command")
+                animating = 0
                 return
             pygame.time.wait(5)
     modedefault()
@@ -801,6 +803,7 @@ def strobe():
         pygame.time.wait(40)
         if scaring==1:
             printer("Scare! Stopping user command")
+            animating = 0
             return
     modedefault()
     return
@@ -818,6 +821,7 @@ def disco_strobe():
         pygame.time.wait(40)
         if scaring==1:
             printer("Scare! Stopping user command")
+            animating = 0
             return
     modedefault()
     return    
@@ -837,6 +841,7 @@ def chase(r, g, b,num=6):
             writing_serial("!")
             if scaring==1:
                 printer("Scare! Stopping user command")
+                animating = 0
                 return
             pygame.time.wait(10)       
         pygame.time.wait(500)
@@ -861,6 +866,7 @@ def bounce(r, g, b,num=6):
             writing_serial("!")
             if scaring==1:
                 printer("Scare! Stopping user command")
+                animating = 0
                 return
             pygame.time.wait(10)       
         pygame.time.wait(500)
@@ -885,6 +891,7 @@ def centerchase(r, g, b,num=6):
             writing_serial("!")
             if scaring==1:
                 printer("Scare! Stopping user command")
+                animating = 0
                 return
             pygame.time.wait(10)       
         pygame.time.wait(500)
@@ -908,6 +915,7 @@ def alternate(r1,g1,b1,r2,g2,b2):
         writing_serial("!")
         if scaring==1:
             printer("Scare! Stopping alternate")
+            animating = 0
             return
         time.sleep(0.5)
     modedefault()
@@ -931,6 +939,7 @@ def disco_alternate():
                 writing_serial("#%c%c%c%c" % (rgb2[0],rgb2[1],rgb2[2],z)) 
         if scaring==1:
             printer("Scare! Stopping user command")
+            animating = 0
             return
         writing_serial("!")    
         pygame.time.wait(5)
@@ -954,6 +963,7 @@ def fire(r1,g1,b1,r2,g2,b2):
         writing_serial("!")
         if scaring==1:
             printer("Scare! Stopping fire")
+            animating = 0
             return
         time.sleep(0.1)
     modedefault()
@@ -973,6 +983,7 @@ def disco_fire():
         writing_serial("!")
         if scaring==1:
             printer("Scare! Stopping disco fire")
+            animating = 0
             return
         time.sleep(0.1)
     modedefault()
