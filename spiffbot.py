@@ -590,12 +590,25 @@ def master_commands(user,data):
         
         twitch_bot_utils.printer("%s == %s" % (user.lower(), master.lower()))
         #allow a user to pass to someone else, or to someone random
+        if command == "!passnew":
+            twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
+            switch(-1)
+            return True
+            
         if command == "!pass":
+            if len(parts) == 1:
+                twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
+                switch(-1)
+                return True
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
                     if parts[1].lower() in db.getOptedUsers():
                         twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
                         switch(parts[1],1)
+                        return True
+                    elif parts[1].lower() == "new" or parts[1].lower() == "newuser":
+                        twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
+                        switch(-1)
                         return True
                     else:
                         irc.msg("Can't pass, %s is opted out!" % parts[1].lower())
@@ -605,9 +618,6 @@ def master_commands(user,data):
                     irc.msg("You cant pass to yourself!")
                     twitch_bot_utils.printer("%s tried to pass to them-self" % user.lower())
                     return True
-            if len(parts) == 1:
-                switch(-1)
-                return True
             
         #sound commands
         
