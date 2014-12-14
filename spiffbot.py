@@ -256,8 +256,14 @@ def mastertimer():
                 #every 2.5 minutes warn the user in control 150 (make sure to only warn once)
                 elif elapsed>150 and warn_timer == 0:
                     if master!=twitch_auth.get_bot():
-                        irc.msg( "2.5 Minutes left %s!" % master)  
-                        twitch_bot_utils.printer("Sending 2.5 minute warning")
+                        viewers = get_viewers()
+                        if master in viewers:
+                            irc.msg( "2.5 Minutes left %s!" % master)  
+                            twitch_bot_utils.printer("Sending 2.5 minute warning")
+                        else:
+                            irc.msg( "%s is not in viewer list, Switching control!" % master)  
+                            switch(-1)
+                            return
                     warn_timer = 1
                 
                 twitch_bot_utils.printer(elapsed)
