@@ -365,6 +365,7 @@ def admin_commands(user,data):
                     optedin = "%s %s " % (optedin,optins)
             irc.msg("%s" % optedin)
             return True
+            
         #if there are at least 2 words in the message
         if len(parts) == 2:
             for part in parts:
@@ -1050,7 +1051,7 @@ def user_commands(user,data):
     global animating
     
     
-    parts = data.lower().split()
+    parts = data.split()
     command = parts[0][1:]
     
     twitch_bot_utils.printer("Checking %s for user commands..." % data)
@@ -1079,6 +1080,13 @@ def user_commands(user,data):
         if command == "!timeleft":
             timeleft = 300 - (time.time() - counter)
             irc.msg("%s has %s seconds left!" % (master,round(timeleft)))
+            return True
+        if data.find("am i opted") != -1:
+            if user in db.getOptedUsers():
+                opted = "in"
+            else:
+                opted = "out"
+            irc.msg("%s is opted %s" % (user,opted))
             return True
 
     #Get current streaming game
