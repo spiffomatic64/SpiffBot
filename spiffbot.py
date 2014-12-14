@@ -59,7 +59,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "spawn" : "aslt_spwn_01.ogg",
 "birds" : "birdflock_calls_medium_loop_v1.ogg",
 "teleport" : "taken_flanker_tele_01.ogg",
-"wings" : "birdflock_wings_medium_loop_v1.ogg"
+"wings" : "birdflock_wings_medium_loop_v1.ogg",
+"subtlebirds" : "subtle_birds.oog"
 }
 
 def inBetween(stuff,first,last):
@@ -91,6 +92,7 @@ twitch_profile(-1)
 twitch_profile("Here are the commands you can use to play along, and interact with my \"spiffbot\"")
 twitch_profile("")
 twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
+twitch_profile("")
 
 def opt(user,inout):
     user=user.lower()
@@ -505,6 +507,7 @@ def play_sound(song,left,right,scare=0):
         switch()
     
 def turn_off_monitors(msg,wait,scare=0):
+    twitch_bot_utils.printer("Monitor scare")
     scare_status(msg)
     scare_lock(1)
     status_length = 3
@@ -531,9 +534,39 @@ twitch_profile("Spiffbot will randomly pick someone in chat to be \"in control\"
 twitch_profile("This person will have 5 minutes (with a 2.5 minute warning letting you know how much time is left) to use a \"scare\" command.")
 twitch_profile("")
 twitch_profile("##Scare Commands for the user in \"Control\"")
+twitch_profile("**!randomscare** : Picks a action scare randomly  ")
+twitch_profile("")
+twitch_profile("**drop**, **quiet**, **door**, or **gun** :Drops a small cardboard box directly in front of me, that no matter how far in advance I know its coming, always seems to scare the pants off me...  ")
+twitch_profile("")
+twitch_profile("**brush**, **pants**, **spider**, or **crawl** :This is by far the most overpowered scare we have, its a server strapped to my leg, that grabs my pants and makes it feel like someone is tugging at my pants")
+twitch_profile("")
+twitch_profile("**touch**, **shoulder**, or **tapping** :This will move a servo (twice) attached to my shoulder that emulates someone tapping on it")
+twitch_profile("")
+twitch_profile("**rattle**, **fall**, **rumble**, or **vibe** :Turns on a vibration motor I took out of an xbox controller, that will rattle around making noise/vibrations/ and movement out of the corner of my eye... Will most likely also scare the pants off me...")
+twitch_profile("")
+twitch_profile("**heart**, **chest**, **buzz**, **neck** : Turns on a smaller vibration motor that I will attach to myself somehow (wear around neck, sit on thigh etc... I will actually feel this, and its pretty sure to scare any pants that are still left on me at this point....")
+twitch_profile("")
+twitch_profile("**!flip** : Flips my main monitor image 180 degrees (vertically) for 30 full seconds (everything should look normal on the stream though)")
+twitch_profile("")
+twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 seconds")
+twitch_profile("")
 twitch_profile("##Sounds commands for the user in \"Control\"")
-twitch_profile("**!pass** : allows you to pass control on to the next person instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
+twitch_profile("**!pass** : allows you to pass control on to the person who has not had control in the longest instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
 twitch_profile("**!randomsound** : Picks a sound scare randomly")
+
+twitch_profile("##Commands for everyone (even if you don't have control)")
+twitch_profile("These commands, are available to everyone (even when not in control)  ")
+twitch_profile("")
+twitch_profile("**!whosgotit** : lets you know who is currently in control  ")
+twitch_profile("")
+twitch_profile("**!timeleft** : lets you know much much time is left before control is shifted  ")
+twitch_profile("")
+twitch_profile("**!optout** : lets you opt out of getting picked for control")
+twitch_profile("")
+twitch_profile("**!optin** : lets you opt back in to get control")
+twitch_profile("")
+twitch_profile("**!game** : lets you know what game we are currently playing")
+twitch_profile("")
 sound_buffer = ""
 for sound, file in sounds.iteritems():
     sound_buffer = "%s**%s**, " % (sound_buffer,sound)
@@ -653,10 +686,11 @@ def master_commands(user,data):
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
+            twitch_bot_utils.printer("Monitor scare1")
             scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
-            return True
             scare.start() 
+            return True
             
         #flip the main monitor and switch control (broken atm)
         '''if data.find ( 'flicker' ) != -1:
@@ -962,6 +996,24 @@ def user_stack_consumer():
             twitch_bot_utils.printer("Checking a buffered string: %s" % data)
             user_commands(user,data)
         time.sleep(1)
+        
+twitch_profile("#Commands for everyone (even if you don't have control) Scary & Normal mode  ")
+twitch_profile("")
+twitch_profile("**disco**: plays a crazy color animation  ")
+twitch_profile("**disco fire**: plays another crazy color animation  ")
+twitch_profile("**disco strobe**: plays yet another crazy color animation  ")
+twitch_profile("**fire(red,blue)** : plays a fire animation with two colors ")
+twitch_profile("**strobe** : plays a strobe animation  ")
+twitch_profile("**rgb(yellow)** : Lets users pick a specific color  ")
+twitch_profile("**chase(green)** : Lets users play a \"chase\" animation with a specific color  (chase also lets you use 3 color commands to chase in a row)")
+twitch_profile("**centerchase(blue)** : Same as chase, but starts in the center and goes out from both left and right")
+twitch_profile("**alternate(green,purple)** : plays an alternating animation (lights half the leds with one color, and the other, with the second)  ")
+twitch_profile("")
+twitch_profile("All colors/commands accept 0-255,0-255,0-255 rgb, as well as html color codes (copy pasted from w3's html color codes)  ")
+twitch_profile("")
+twitch_profile("For example: alternate(red,blue), will do the same thing as alternate(255,0,0,0,0,255)  ")
+twitch_profile("")
+twitch_profile("If you have an idea for new rules/scares/animations/things I should let viewers control while playing games... Let me know, I'm trying to add at least one new feature every night to keep things interesting.")
 
 #commands accessible by all users
 def user_commands(user,data):
