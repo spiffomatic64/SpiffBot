@@ -263,7 +263,7 @@ def mastertimer():
                         else:
                             irc.msg( "%s is not in viewer list, Switching control!" % master)  
                             switch(-1)
-                            return
+                            counter = time.time()
                     warn_timer = 1
                 
                 twitch_bot_utils.printer(elapsed)
