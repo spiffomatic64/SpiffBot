@@ -39,8 +39,9 @@ while True:                                                     #main loop, this
             print "user: %s command: %s" % (user,command)       #print out what user and their "command" for debugging purposes
             if command=="!test":                                #check if they said !test
                 irc.send ( 'PRIVMSG #%s :test to you too!\r\n' % channel )  #Make the bot reply back with "test to you too!"
-            if command=="!kill":                                #check if they said !kill
-                irc.send ( 'PRIVMSG #%s :%s %s\r\n' % (channel,parts[1],random.choice(responses)))  #send a message saying <username> then a random string from the responses list above
+            if len(parts)>1:
+                if command=="!kill":                                #check if they said !kill
+                    irc.send ( 'PRIVMSG #%s :%s %s\r\n' % (channel,parts[1],random.choice(responses)))  #send a message saying <username> then a random string from the responses list above
                                                                 #Put all parts back together into data variable, and lowercase it
                                                                 #data will contain anything a user says in chat
         data = ""
