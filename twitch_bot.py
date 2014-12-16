@@ -2,9 +2,9 @@ import socket
 import time
 import random
 
-bot_username = "spiffbot"                                        #Put the twitch username of your bot here (A bot needs a twitch account to function in chat)
-channel = "spiffomatic64"                                             #Put the channelname of the stream you want the bot to join (most likely will be your twitch username)
-oauth = "dojsgaubygovskbd7oxwmf77onthuc"                                #Put the oauth token of the bot's twitch account here (Login to twitch as your bot, then go here http://www.twitchapps.com/tmi/ 
+bot_username = "botname"                                        #Put the twitch username of your bot here (A bot needs a twitch account to function in chat)
+channel = "channel"                                             #Put the channelname of the stream you want the bot to join (most likely will be your twitch username)
+oauth = "xxxxxxxxxxxxxxxxxxxxxx"                                #Put the oauth token of the bot's twitch account here (Login to twitch as your bot, then go here http://www.twitchapps.com/tmi/ 
                                                                 #click "connect to twitch" then copy the text that is after oauth: 
     
 network = 'irc.twitch.tv'                                       #the twitch server, leave this alone
