@@ -654,7 +654,7 @@ def master_commands(user,data):
         if command == "!randomscare":
             data = random.choice(['quiet', "rattle", "heart"])
         
-        wait = random.randint(2, 30)
+        wait = random.randint(4, 30)
         twitch_bot_utils.printer("Random wait: %s" % wait)
         
         #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
