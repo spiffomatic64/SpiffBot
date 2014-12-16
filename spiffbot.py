@@ -242,10 +242,15 @@ def mastertimer():
     
     while True:
         if mode == 0:
+            elapsed = time.time() - counter
+            if elapsed >390 or elapsed<0:
+                scare_lock(0)
+                switching = 0
+                twitch_bot_utils.printer("Elapsed out of bounds!: %s" % elapsed);
+                
             if scaring == 0 and switching == 0:
-                elapsed = time.time() - counter
                 #every 5 minutes switch control, and remove master from optedin list 300
-                if elapsed>300 and warn_timer < 2:
+                if elapsed>300:
                     if master!=twitch_auth.get_bot():
                         irc.msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
@@ -483,34 +488,21 @@ def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(0)
     if scare==0:
         switch()
+    
+def play_sound(sound,left,right):
+    twitch_bot_utils.printer("Playing sound %s" % sound)
+    mixer = pygame.mixer.Sound("./sounds/%s" % sound)
+    channel = mixer.play()
+    channel.set_volume(left,right)
+
+    clock = pygame.time.Clock()
+    # wait for playback to be finished
+    while channel.get_busy():
+       clock.tick(30)
         
-def notify():
-    #play the sound
-    twitch_bot_utils.printer("Playing notification sound to grab attention")
-    sound_scare = pygame.mixer.Sound("./sounds/OOT_MainMenu_Select.ogg")
-    channel = sound_scare.play()
-    channel.set_volume(1,1) #set volume to full
-
-    clock = pygame.time.Clock()
-    while channel.get_busy():
-       # check if playback has finished
-       clock.tick(30)
-    
-def play_sound(song,left,right,scare=0):
+def sound_scare(sound,left,right,scare=0):
     scare_lock(1)
-    #play the sound
-    twitch_bot_utils.printer("Playing sound %s" % song)
-    sound_scare = pygame.mixer.Sound("./sounds/%s" % song)
-    channel = sound_scare.play()
-    channel.set_volume(left,right) #set volume to full
-    
-
-    clock = pygame.time.Clock()
-    while channel.get_busy():
-       # check if playback has finished
-       #pygame.display.update()
-       clock.tick(30)
-    #pygame.mixer.quit() 
+    play_sound(sound,left,right)
     scare_lock(0)
     if scare==0:
         switch()
@@ -537,7 +529,7 @@ def scare_status(status):
         f.write(status)
     f.close()
       
-#commands only accessible by the user in control      
+#Twitch profile generator
 twitch_profile("#Scary mode:")
 twitch_profile("Spiffbot will randomly pick someone in chat to be \"in control\".")
 twitch_profile("This person will have 5 minutes (with a 2.5 minute warning letting you know how much time is left) to use a \"scare\" command.")
@@ -580,6 +572,8 @@ sound_buffer = ""
 for sound, file in sounds.iteritems():
     sound_buffer = "%s**%s**, " % (sound_buffer,sound)
 twitch_profile(sound_buffer)
+
+#commands only accessible by the user in control  
 def master_commands(user,data):
     global master
     global sounds
@@ -627,13 +621,13 @@ def master_commands(user,data):
                     return True
             
         #sound commands
-        
         song = ''
-        #select a random sound
         
+        #select a random sound
         if command == "!randomsound":
             twitch_bot_utils.printer("Random sound")
             song = random.choice(sounds.values())
+            
         #check message for all sound commands
         for sound, file in sounds.iteritems():
             if data.find(sound) != -1:
@@ -651,7 +645,7 @@ def master_commands(user,data):
                 twitch_bot_utils.printer("Found right")
                 left = 0
             #Play sound in a thread
-            scare = threading.Thread(target=play_sound,args=(song,left,right,admin))
+            scare = threading.Thread(target=sound_scare,args=(song,left,right,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -659,8 +653,10 @@ def master_commands(user,data):
         #select a random scare command
         if command == "!randomscare":
             data = random.choice(['quiet', "rattle", "heart"])
+        
         wait = random.randint(2, 30)
         twitch_bot_utils.printer("Random wait: %s" % wait)
+        
         #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
         if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,wait,1,admin))
@@ -668,14 +664,14 @@ def master_commands(user,data):
             scare.start() 
             return True
             
-        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
+        #Move the servo attached to my legs
         if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,wait,1,admin))
             scare.daemon = True
             scare.start() 
             return True
             
-        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds 
+        #Move the servo attached to my shoulder
         if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,wait,2,admin))
             scare.daemon = True
@@ -792,7 +788,6 @@ def Wheel(WheelPos):
         WheelPos -= 170;
         return [WheelPos * 3, 255 - WheelPos * 3, 0];
 
-            
 def disco():
     global animating
     wait_animating()
@@ -1038,6 +1033,7 @@ twitch_profile("**rgb(yellow)** : Lets users pick a specific color  ")
 twitch_profile("**chase(green)** : Lets users play a \"chase\" animation with a specific color  (chase also lets you use 3 color commands to chase in a row)")
 twitch_profile("**centerchase(blue)** : Same as chase, but starts in the center and goes out from both left and right")
 twitch_profile("**alternate(green,purple)** : plays an alternating animation (lights half the leds with one color, and the other, with the second)  ")
+twitch_profile("**disco alternate** : plays an alternating animation (lights half the leds with one color, and the other, with the second) with the disco palette  ")
 twitch_profile("")
 twitch_profile("All colors/commands accept 0-255,0-255,0-255 rgb, as well as html color codes (copy pasted from w3's html color codes)  ")
 twitch_profile("")
@@ -1063,8 +1059,11 @@ def user_commands(user,data):
     
     #Scary mode only commands
     if mode == 0:
-        if command == "!whosgotit":
-            irc.msg("%s is currently in control!" % master)
+        if data.find("!whosgotit") != -1:
+            if data.find("!hide") != -1:
+                irc.msg("!hide %s is currently in control!" % master)
+            else:
+                irc.msg("%s is currently in control!" % master)
             return True
         #opt a user in, and switch if they were in control
         if command == "!optin":
@@ -1077,9 +1076,13 @@ def user_commands(user,data):
             irc.msg("%s is now opted out!" %user)
             return True
         #let viewers know how much time is left    
-        if command == "!timeleft":
-            timeleft = 300 - (time.time() - counter)
-            irc.msg("%s has %s seconds left!" % (master,round(timeleft)))
+        if data.find("!timeleft") != -1:
+            if data.find("!hide") != -1:
+                timeleft = 300 - (time.time() - counter)
+                irc.msg("%s has %s seconds left!" % (master,round(timeleft)))
+            else:
+                timeleft = 300 - (time.time() - counter)
+                irc.msg("!hide %s has %s seconds left!" % (master,round(timeleft)))
             return True
         if data.find("am i opted") != -1:
             if user in db.getOptedUsers():
@@ -1264,9 +1267,9 @@ db = twitch_db.twitchdb(twitch_auth.get_db_user(),twitch_auth.get_db_pass(),"127
 #pygame.init()
 #setup audio
 pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-twitch_bot_utils.printer("Initiated Pygame Mixer:")
-twitch_bot_utils.printer(pygame.mixer.get_init())
-twitch_bot_utils.printer(pygame.mixer.get_num_channels())
+#twitch_bot_utils.printer("Initiated Pygame Mixer:")
+#twitch_bot_utils.printer(pygame.mixer.get_init())
+#twitch_bot_utils.printer(pygame.mixer.get_num_channels())
 
 #Midi initialization 
 #pygame.midi.init()
