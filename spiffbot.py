@@ -129,6 +129,7 @@ def opt(user,inout):
                 
 def autoOptIn(user,data):
     if user not in db.getUsers():
+        twitch_bot_utils.printer("Auto Opting %s in!" % user)
         opt(user,True)
 
 def scare_lock(status):
@@ -807,8 +808,8 @@ def disco():
             rgb = twitch_bot_utils.Wheel(y)
             writing_serial("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
             if scaring==1:
-                printer("Scare! Stopping user command")
-                animating = 0
+                twitch_bot_utils.printer("Scare! Stopping user command")
+                modedefault()
                 return
             pygame.time.wait(5)
     modedefault()
@@ -1132,13 +1133,21 @@ def user_commands(user,data):
         #disco rainbow colors
         if data.find ( 'disco' ) != -1:
             if data.find ( 'strobe' ) != -1:
-                disco_strobe()
+                animation = threading.Thread(target=disco_strobe)
+                animation.daemon = True
+                animation.start() 
             elif data.find ( 'fire' ) != -1:
-                disco_fire()
+                animation = threading.Thread(target=disco_fire)
+                animation.daemon = True
+                animation.start() 
             elif data.find ( 'alternate' ) != -1:
-                disco_alternate()
+                animation = threading.Thread(target=disco_alternate)
+                animation.daemon = True
+                animation.start() 
             else:
-                disco()
+                animation = threading.Thread(target=disco)
+                animation.daemon = True
+                animation.start() 
             return True
 
         #flickr strobe
@@ -1265,6 +1274,7 @@ writing = 0
 animating = 0
 next = None
 stayAlive = 1
+
 mode = twitch_bot_utils.scaryDay()
 
 #serial stuff
