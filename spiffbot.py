@@ -63,11 +63,29 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "subtlebirds" : "subtle_birds.ogg"
 }
 
+def setMode(type):
+    global mode
+    
+    if type == "scary" or type == 0:
+        mode = 0
+        twitch_bot_utils.printer("Scary time!")
+        counter = time.time()
+        master=auth.get_streamer()
+        irc.msg("ITS SCARY TIME!!!")
+        modedefault()
+        return True
+    if type == "normal" or type == 1:
+        mode = 1
+        twitch_bot_utils.printer("Normal time!")
+        irc.msg("Playing normal games")
+        modedefault()
+        return True
+
 def inBetween(stuff,first,last):
     return stuff[stuff.find(first)+len(first):stuff.find(last)]
 
 def get_next_game():
-    url = "http://api.twitch.tv/api/channels/%s/panels" % twitch_auth.get_streamer()
+    url = "http://api.twitch.tv/api/channels/%s/panels" % auth.get_streamer()
     twitch_bot_utils.printer("Checking games...")
     data = requests.get(url)
     binary = data.content
@@ -99,10 +117,10 @@ def opt(user,inout):
     if inout:
         if not db.getUserOpted(user):
             db.updateUserOpted(user,1)
-            if master==twitch_auth.get_bot():
+            if master==auth.get_bot():
                 switch(user)
     else:
-        if user == twitch_auth.get_streamer():
+        if user == auth.get_streamer():
             switch()
         elif db.getUserOpted(user):
             db.updateUserOpted(user,0)
@@ -205,7 +223,7 @@ def midiThread():
 
 #gets a "live" list of viewers in chat
 def get_viewers(opted=True):
-    url = "https://tmi.twitch.tv/group/user/%s/chatters" % twitch_auth.get_streamer()
+    url = "https://tmi.twitch.tv/group/user/%s/chatters" % auth.get_streamer()
     twitch_bot_utils.printer("Checking viewers...")
     data = requests.get(url=url)
     binary = data.content
@@ -216,13 +234,13 @@ def get_viewers(opted=True):
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     for viewer in output['chatters']['moderators']:
-        if db.getUserOpted(viewer) and viewer!=twitch_auth.get_bot() and viewer!=twitch_auth.get_streamer():
+        if db.getUserOpted(viewer) and viewer!=auth.get_bot() and viewer!=auth.get_streamer():
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     return viewers
     
 def get_game():
-    url = "https://api.twitch.tv/kraken/streams/%s" % twitch_auth.get_streamer()
+    url = "https://api.twitch.tv/kraken/streams/%s" % auth.get_streamer()
     twitch_bot_utils.printer("Checking game...")
     data = requests.get(url=url)
     binary = data.content
@@ -251,7 +269,7 @@ def mastertimer():
             if scaring == 0 and switching == 0:
                 #every 5 minutes switch control, and remove master from optedin list 300
                 if elapsed>300:
-                    if master!=twitch_auth.get_bot():
+                    if master!=auth.get_bot():
                         irc.msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
                         opt(master,False)
@@ -260,7 +278,7 @@ def mastertimer():
                     warn_timer = 0
                 #every 2.5 minutes warn the user in control 150 (make sure to only warn once)
                 elif elapsed>150 and warn_timer == 0:
-                    if master!=twitch_auth.get_bot():
+                    if master!=auth.get_bot():
                         viewers = get_viewers()
                         if master in viewers:
                             irc.msg( "2.5 Minutes left %s!" % master)  
@@ -330,7 +348,7 @@ def switch(user="",pass_control=0):
                     master = random.choice(viewers)
             else:
                 twitch_bot_utils.printer("No valid viewers to switch to")
-                master=twitch_auth.get_bot()
+                master=auth.get_bot()
         #reset counter and notify chat that a new viewer is in control
         twitch_bot_utils.printer("%s is now in control!" % master)
         irc.msg("%s is now in control!" % master) 
@@ -347,9 +365,10 @@ def admin_commands(user,data):
     global counter
     global mode
     global next
+    global stayAlive
     
-    #if user.lower() == twitch_auth.get_streamer():
-    if user.lower() == "spiffomatic64":
+    #if user.lower() == auth.get_streamer():
+    if auth.is_admin(user):
         #split irc messages into parts by white space 
         parts = data.lower().split()
         twitch_bot_utils.printer("User is admin, checking for commands")
@@ -362,6 +381,8 @@ def admin_commands(user,data):
             if len(parts) == 1:
                 switch()
                 return True
+        if command == "!restart" or command == "!reload":
+            stayAlive = 0
         if command == "!whosoptedin":
             optedin = ""
             viewers = get_viewers()
@@ -387,19 +408,7 @@ def admin_commands(user,data):
                 return True
             #change mode from scary to normal
             if command == "!mode":
-                if parts[1] == "scary":
-                    mode = 0
-                    twitch_bot_utils.printer("Scary time!")
-                    counter = time.time()
-                    master=twitch_auth.get_streamer()
-                    irc.msg("ITS SCARY TIME!!!")
-                    modedefault()
-                    return True
-                if parts[1] == "normal":
-                    mode = 1
-                    twitch_bot_utils.printer("Normal time!")
-                    irc.msg("Playing normal games")
-                    modedefault()
+                if setMode(parts[1]):
                     return True
             if command == "!switchnext":
                 twitch_bot_utils.printer("Setting next user to: %s" % parts[1])
@@ -579,8 +588,8 @@ def master_commands(user,data):
     global sounds
     
     #check that the user is the master, and we are in scary mode
-    if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==twitch_auth.get_streamer()) and mode==0:
-        if user.lower()==twitch_auth.get_streamer():
+    if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==auth.get_streamer()) and mode==0:
+        if user.lower()==auth.get_streamer():
             twitch_bot_utils.printer("User is admin, dont switch")
             admin = 1
         else:
@@ -1243,7 +1252,9 @@ def last_seen(user,data):
     db.updateLastSeen(user)
     
 #constants
-master = twitch_auth.get_streamer()
+auth = twitch_auth.auth()
+auth.add_admin("spiffbot")
+master = auth.get_streamer()
 alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
 user_stack = []
 pass_counter = 3
@@ -1253,6 +1264,7 @@ switching = 0
 writing = 0
 animating = 0
 next = None
+stayAlive = 1
 mode = twitch_bot_utils.scaryDay()
 
 #serial stuff
@@ -1260,7 +1272,7 @@ mode = twitch_bot_utils.scaryDay()
 ser = serial.Serial("Com4", 115200)
 
 #db stuff
-db = twitch_db.twitchdb(twitch_auth.get_db_user(),twitch_auth.get_db_pass(),"127.0.0.1","twitch")
+db = twitch_db.twitchdb(auth.get_db_user(),auth.get_db_pass(),"127.0.0.1","twitch")
 
 #Display init for flicker
 #pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
@@ -1277,8 +1289,8 @@ pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
 #twitch_bot_utils.printer("Got midi: %s" % midi_device)
 #midi = pygame.midi.Input(midi_device)
 
-irc = twitch_bot_utils.irc_connection("irc.twitch.tv","6667",twitch_auth.get_bot(),twitch_auth.get_oauth(),
-    twitch_auth.get_streamer(),[autoOptIn,last_seen,admin_commands,master_commands,user_commands])    
+irc = twitch_bot_utils.irc_connection("irc.twitch.tv","6667",auth.get_bot(),auth.get_oauth(),
+    auth.get_streamer(),[autoOptIn,last_seen,admin_commands,master_commands,user_commands])    
     
 #Midi Thread start
 #t = threading.Thread(target=midiThread)
@@ -1290,13 +1302,13 @@ t2 = threading.Thread(target=mastertimer)
 t2.daemon = True
 t2.start()
 
-
 twitch_bot_utils.printer("Blacking out all pixels!")
 writing_serial("#\x00\x00\x00\xff!")
 time.sleep(2)
 modedefault()
 time.sleep(1)
 twitch_bot_utils.printer("READY!")
+irc.msg("READY!")
 
 
 user_stack_thread = threading.Thread(target=user_stack_consumer)
@@ -1304,7 +1316,7 @@ user_stack_thread.daemon = True
 user_stack_thread.start()
 
 #Main loop
-while True:
+while stayAlive:
     #ser.flushInput() #ignore serial input, todo: log serial input without locking loop
     
     time.sleep(1)

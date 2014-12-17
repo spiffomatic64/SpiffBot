@@ -10,7 +10,7 @@ import string
 
 class irc_connection:
     
-    def __init__(self,network,port,bot,oauth,streamer,parsers):
+    def __init__(self,network,port,bot,oauth,streamer,msg_parsers=[],irc_parsers=[]):
         #IRC connect
         network = 'irc.twitch.tv'
         port = 6667
@@ -30,7 +30,9 @@ class irc_connection:
         time.sleep(0.5)
         self.streamer = streamer
         self.conn.send("JOIN #%s\r\n" % self.streamer)
-        t = threading.Thread(target=self.irc_thread,args=(parsers,))
+        self.msg_parsers = msg_parsers
+        self.irc_parsers = irc_parsers
+        t = threading.Thread(target=self.irc_thread)
         t.daemon = True
         t.start()
     
@@ -44,7 +46,13 @@ class irc_connection:
         printer('PRIVMSG #%s :%s\r\n' % (self.streamer,msg))
         self.conn.send ( 'PRIVMSG #%s :%s\r\n' % (self.streamer,msg.encode('utf-8')) )  
         
-    def irc_thread(self,parsers):
+    def add_msgParser(msg_parser):
+        self.msg_parsers.append(msg_parser)
+        
+    def add_ircPasers(irc_parser):
+        self.irc_parsers.append(irc_parser)
+        
+    def irc_thread(self):
         printer("Started irc_thread")
         while True:
             orig = self.conn.recv ( 4096 ) #receive irc data
@@ -56,21 +64,24 @@ class irc_connection:
             for line in lines:
                 printer("Line: %s" % line)
                 parts = line.split() #Split irc data by white space
-                if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
-                    if parts[1].lower()=="privmsg" and parts[2][1:].lower()==self.streamer: #check this is a message, and its to our channel
-                        user = parts.pop(0) 
-                        user = user[1:user.find("!")] #get the username from the first "part"
-                        parts.pop(0) #throw away the next two parts
-                        parts.pop(0)
-                        #Put all parts of the message back together into data variable, and lowercase it
-                        data = ""
-                        for part in parts:
-                            data = data + part + " "
-                        data = data.lower()
-                        printer("User: %s Message: %s" % (user,data))
-                        for parser in parsers:
-                            if parser(user,data):
-                                break
+                if len(parts)>=3 and parts[2][1:].lower()==self.streamer:
+                    for parser in self.irc_parsers:
+                        parser(parts)
+                    if len(parts)>3: #all user input data has at least 3 parts user, PRIVMSG, #channel
+                        if parts[1].lower()=="privmsg" and parts[2][1:].lower()==self.streamer: #check this is a message, and its to our channel
+                            user = parts.pop(0) 
+                            user = user[1:user.find("!")] #get the username from the first "part"
+                            parts.pop(0) #throw away the next two parts
+                            parts.pop(0)
+                            #Put all parts of the message back together into data variable, and lowercase it
+                            data = ""
+                            for part in parts:
+                                data = data + part + " "
+                            data = data.lower()
+                            printer("User: %s Message: %s" % (user,data))
+                            for parser in self.msg_parsers:
+                                if parser(user,data):
+                                    break
 
 class notification:
 
@@ -82,15 +93,14 @@ class notification:
     def notify(self):
         elapsed = time.time() - self.notified
         if elapsed >= self.throttle:
-            #play the sound
             printer("Playing notification sound to grab attention %s" % elapsed)
             sound_scare = pygame.mixer.Sound(self.sound)
             channel = sound_scare.play()
             channel.set_volume(1,1) #set volume to full
 
             clock = pygame.time.Clock()
+            # check if playback has finished
             while channel.get_busy():
-               # check if playback has finished
                clock.tick(30)
             self.notified = time.time()
             return False
@@ -215,6 +225,6 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     valueScaled = float(value - leftMin) / float(leftMax - leftMin)
     return rightMin + (valueScaled * (rightMax - rightMin))
 
-log = time.strftime("%m-%d-%Y_%H-%M-%S.log")
+log = time.strftime("./logs/%m-%d-%Y_%H-%M-%S.log")
 logging.basicConfig(filename=log,level=logging.INFO)    
 logging.info('Setting up serial connection...')   
