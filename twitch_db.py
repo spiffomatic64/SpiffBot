@@ -101,6 +101,14 @@ class twitchdb:
         if result != None:
             return result[0]
         return False
+        
+    def updateLastSeen(self,username): 
+        query = ("INSERT INTO users (username,last_seen) VALUES (%s,%s) ON DUPLICATE KEY UPDATE last_seen=%s;")
+        cursor = self.cnx.cursor()
+        #YYYY-MM-DD HH:MM:SS
+        last_seen = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute(query, (username,last_seen,last_seen))
+        self.cnx.commit()
             
     def getUsers(self):
         query = ("SELECT * FROM users")
