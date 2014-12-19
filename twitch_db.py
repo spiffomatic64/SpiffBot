@@ -16,7 +16,7 @@ class twitchdb:
         except ValueError:
             return False
         query = ("INSERT INTO users (username,points) VALUES (%s,%s) ON DUPLICATE KEY UPDATE points=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, (username,points,points))
         self.cnx.commit()
 
@@ -26,13 +26,13 @@ class twitchdb:
         except ValueError:
             return False
         query = ("INSERT INTO users (username,opted) VALUES (%s,%s) ON DUPLICATE KEY UPDATE opted=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, (username,opted,opted))
         self.cnx.commit()
         
     def getUserOpted(self,username):
         query = ("SELECT opted FROM users WHERE username = %s")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, ([username]))
         result = cursor.fetchone()
         if result != None:
@@ -42,7 +42,7 @@ class twitchdb:
         
     def getOptedUsers(self):
         query = ("SELECT username FROM users WHERE opted = 1")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, ([]))
         results = []
         for id in cursor:
@@ -58,7 +58,7 @@ class twitchdb:
         except ValueError:
             return False
         query = ("INSERT INTO users (username,session) VALUES (%s,%s) ON DUPLICATE KEY UPDATE session=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, (username,session,session))
         self.cnx.commit()
         
@@ -68,19 +68,19 @@ class twitchdb:
         except ValueError:
             return False
         query = ("INSERT INTO users (username,watched) VALUES (%s,%s) ON DUPLICATE KEY UPDATE watched=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, (username,watched,watched))
         self.cnx.commit()
 
     def updateUserreferral(self,username,referral): 
         query = ("INSERT INTO users (username,referral) VALUES (%s,%s) ON DUPLICATE KEY UPDATE referral=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, (username,referral,referral))
         self.cnx.commit()
         
     def updateLastControl(self,username): 
         query = ("INSERT INTO users (username,last_control) VALUES (%s,%s) ON DUPLICATE KEY UPDATE last_control=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         #YYYY-MM-DD HH:MM:SS
         last_control = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute(query, (username,last_control,last_control))
@@ -89,7 +89,7 @@ class twitchdb:
     def getLastControl(self,username): 
         query = "SELECT * FROM users WHERE opted = 1 AND username IN ( %s ) ORDER BY last_control ASC LIMIT 1"
 
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
 
         if type(username) is str:   
             cursor.execute(query, ([username]))
@@ -104,7 +104,7 @@ class twitchdb:
         
     def updateLastSeen(self,username): 
         query = ("INSERT INTO users (username,last_seen) VALUES (%s,%s) ON DUPLICATE KEY UPDATE last_seen=%s;")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         #YYYY-MM-DD HH:MM:SS
         last_seen = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute(query, (username,last_seen,last_seen))
@@ -112,7 +112,7 @@ class twitchdb:
             
     def getUsers(self):
         query = ("SELECT * FROM users")
-        cursor = self.cnx.cursor()
+        cursor = self.cnx.cursor(buffered=True)
         cursor.execute(query, ([]))
         results = []
         for id in cursor:
