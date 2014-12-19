@@ -11,7 +11,7 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 
 <h1>Current list of added features:</h1>
 <ol>
-<li>Midi Drum input</li>
+<li>Midi Drum input to light output</li>
 <li>alternate(color,color)</li>
 <li>chase(color|*)</li>
 <li>fire(color|color) animation</li>
@@ -28,6 +28,7 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 <li>leg servo scare</li>
 <li>chest servo scare</li>
 <li>vibration motor scares</li>
+<li>random scare command-therogueeffect</li>
 <li>timer thread to automatically give up control from afk users</li>
 <li>accept html ffffff #ffffff 0xffffff ff,ff,ff 255,255,255 in all animations for colors </li>
 <li>switching mode from scary to normal</li>
@@ -40,4 +41,7 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 <li>get viewers as well as moderators</li>
 <li>allow streamer to use any command without causing a switch</li>
 <li>!game command lets viewers know what game is being played</li>
+<li>admin commands allowing manual switch's, and switch next (to not steal the current persons turn)</li>
+<li>!whosgotit command to let viewers know who currently has control</li>
+<li>!timeleft command to let viewers know how much time is left</li>
 </ol>
