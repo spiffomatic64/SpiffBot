@@ -21,6 +21,7 @@ from subprocess import call
 import twitch_db
 import twitch_bot_midi
 import twitch_bot_serial
+import subprocess
 
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
@@ -388,30 +389,11 @@ def flip(duration=20,scare=0):
     
 #Slow strobe the monitor effect
 def flicker(times=5,scare=0):
+    twitch_bot_utils.printer("Flicker scare!")
     scare_lock(1)
-    pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
-    
-    while True:
-        time.sleep(0.001)
-        try:
-            hwnd = win32gui.FindWindow(None,"pygame window")
-            print hwnd
-            if hwnd:
-                twitch_bot_utils.printer("Got hwnd Setting to topmost")
-                win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1,1,0)
-                break
-        except win32gui.error:
-            print 'not found'
-    
-    if hwnd:
-        for i in range(0,times):
-            twitch_bot_utils.printer("Flicker off")
-            pygame.display.set_mode((1280, 1024), pygame.NOFRAME  , 32)
-            time.sleep(0.5)
-            twitch_bot_utils.printer("Flicker on")
-            pygame.display.set_mode((1, 1), pygame.NOFRAME  , 32)
-            time.sleep(0.05)
-    pygame.display.quit()
+    scare_status("Flickering Monitor!")
+    subprocess.call(["python", "twitch_bot_flicker.py"])
+    scare_status(-1)
     scare_lock(0)
     if scare==0:
         switch()
@@ -481,19 +463,12 @@ twitch_profile("This person will have 5 minutes (with a 2.5 minute warning letti
 twitch_profile("")
 twitch_profile("##Scare Commands for the user in \"Control\"")
 twitch_profile("**!randomscare** : Picks a action scare randomly  ")
-twitch_profile("")
 twitch_profile("**drop**, **quiet**, **door**, or **gun** :Drops a small cardboard box directly in front of me, that no matter how far in advance I know its coming, always seems to scare the pants off me...  ")
-twitch_profile("")
 twitch_profile("**brush**, **pants**, **spider**, or **crawl** :This is by far the most overpowered scare we have, its a server strapped to my leg, that grabs my pants and makes it feel like someone is tugging at my pants")
-twitch_profile("")
 twitch_profile("**touch**, **shoulder**, or **tapping** :This will move a servo (twice) attached to my shoulder that emulates someone tapping on it")
-twitch_profile("")
 twitch_profile("**rattle**, **fall**, **rumble**, or **vibe** :Turns on a vibration motor I took out of an xbox controller, that will rattle around making noise/vibrations/ and movement out of the corner of my eye... Will most likely also scare the pants off me...")
-twitch_profile("")
 twitch_profile("**heart**, **chest**, **buzz**, **neck** : Turns on a smaller vibration motor that I will attach to myself somehow (wear around neck, sit on thigh etc... I will actually feel this, and its pretty sure to scare any pants that are still left on me at this point....")
-twitch_profile("")
 twitch_profile("**!flip** : Flips my main monitor image 180 degrees (vertically) for 30 full seconds (everything should look normal on the stream though)")
-twitch_profile("")
 twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 seconds")
 twitch_profile("")
 twitch_profile("##Sounds commands for the user in \"Control\"")
@@ -646,16 +621,18 @@ def master_commands(user,data):
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
-            twitch_bot_utils.printer("Monitor scare1")
+            twitch_bot_utils.printer("Monitor scare!")
             scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
             
         #flip the main monitor and switch control (broken atm)
-        '''if data.find ( 'flicker' ) != -1:
-            flicker()
-            return True'''
+        if data.find ( 'flicker' ) != -1:
+            scare = threading.Thread(target=flicker,args=(wait+3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
@@ -1188,9 +1165,10 @@ db = twitch_db.twitchdb(auth.get_db_user(),auth.get_db_pass(),"127.0.0.1","twitc
 
 #Display init for flicker
 #pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
-#pygame.init()
+#pygame.init() breaks sound module
 #setup audio
 pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
+#pygame.init()
 twitch_bot_utils.printer("Initiated Pygame Mixer:")
 twitch_bot_utils.printer(pygame.mixer.get_init())
 twitch_bot_utils.printer(pygame.mixer.get_num_channels())

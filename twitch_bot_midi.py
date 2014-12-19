@@ -58,7 +58,7 @@ class midi_lights:
             else:
                 return "Midi is already running!"
             
-    #Midi thread, gets midi data, translates to html rgb values, 
+    #Midi thread, gets midi data, translates to html rgb values 
     #and lights leds based on that color for 50ms, then turns all leds off
     def midiDrumsThread(self):
         twitch_bot_utils.printer("Started Midi Thread!")
