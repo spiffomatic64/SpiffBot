@@ -92,18 +92,22 @@ def inBetween(stuff,first,last):
     return stuff[stuff.find(first)+len(first):stuff.find(last)]
 
 def get_next_game():
-    url = "http://api.twitch.tv/api/channels/%s/panels" % auth.get_streamer()
-    twitch_bot_utils.printer("Checking games...")
-    data = requests.get(url)
-    binary = data.content
-    output = json.loads(binary)
-    for panel in output:
-        if panel['data']['title'] == "Schedule":
-            scary = panel['html_description'].split("<strong>Normal Games</strong>")[1]
-            games = scary.splitlines()
-            for game in games:
-                if game.find("<strong>next</strong>") != -1:
-                    return inBetween(game,"<h1>",":")
+    try:
+        url = "http://api.twitch.tv/api/channels/%s/panels" % auth.get_streamer()
+        twitch_bot_utils.printer("Checking games...")
+        data = requests.get(url)
+        binary = data.content
+        output = json.loads(binary)
+        for panel in output:
+            if panel['data']['title'] == "Schedule":
+                scary = panel['html_description'].split("<strong>Normal Games</strong>")[1]
+                games = scary.splitlines()
+                for game in games:
+                    if game.find("<strong>next</strong>") != -1:
+                        return inBetween(game,"<h1>",":")
+        return False
+    except:
+        return False
 
 def twitch_profile(data):
     f = open('profile.txt', 'a')
@@ -174,13 +178,16 @@ def get_viewers(opted=True):
     return viewers
     
 def get_game():
-    url = "https://api.twitch.tv/kraken/streams/%s" % auth.get_streamer()
-    twitch_bot_utils.printer("Checking game...")
-    data = requests.get(url=url)
-    binary = data.content
-    output = json.loads(binary)
-    game = output['stream']['game']
-    return game
+    try:
+        url = "https://api.twitch.tv/kraken/streams/%s" % auth.get_streamer()
+        twitch_bot_utils.printer("Checking game...")
+        data = requests.get(url=url)
+        binary = data.content
+        output = json.loads(binary)
+        game = output['stream']['game']
+        return game
+    except:
+        return False
     
 #Thread responsible for switching control
 def mastertimer():
@@ -251,15 +258,28 @@ def switch(user="",pass_control=0):
             switching = 0
             return
             
+        old = master
         twitch_bot_utils.printer("getting viewers")
-        viewers = get_viewers()
-        
+        try:
+            viewers = get_viewers()
+        except:
+            twitch_bot_utils.printer("*************Twitch Api is borked*************")
+            master=auth.get_bot()
+            twitch_bot_utils.printer("%s is now in control!" % master)
+            irc.msg("%s is now in control!" % master) 
+            twitch_bot_utils.printer("Switching from %s to %s" % (old,master))
+            db.updateLastControl(master)
+            counter = time.time()
+            switching = 0
+            return
+
         #remove the current controller from available viewers to prevent switching to the same person
         if master in viewers:
             viewers.remove(master)
+            
         #add logic for fairness
+
         
-        old = master
         #if a "next" user is specified, switch to that user
         if next:
             twitch_bot_utils.printer("next was set to: %s" % next)
@@ -480,7 +500,7 @@ twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 s
 twitch_profile("")
 twitch_profile("**!flicker** : Strobes the monitor (30 frames of black 10 frames of video)")
 twitch_profile("")
-twitch_profile("##Sounds commands for the user in \"Control\"")
+twitch_profile("##Sound commands for the user in \"Control\"")
 twitch_profile("**!pass** : allows you to pass control on to the person who has not had control in the longest instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
 twitch_profile("**!randomsound** : Picks a sound scare randomly")
 
@@ -1194,6 +1214,7 @@ ser.write("#\x00\x00\x00\xff!")
 time.sleep(2)
 modedefault()
 time.sleep(1)
+wait_animating()
 twitch_bot_utils.printer("READY!")
 irc.msg("READY!")
 
@@ -1204,6 +1225,4 @@ user_stack_thread.start()
 
 #Main loop
 while stayAlive:
-    #ser.flushInput() #ignore serial input, todo: log serial input without locking loop
-    
     time.sleep(1)
