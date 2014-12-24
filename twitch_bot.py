@@ -504,15 +504,6 @@ twitch_profile("##Sound commands for the user in \"Control\"")
 twitch_profile("**!pass** : allows you to pass control on to the person who has not had control in the longest instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
 twitch_profile("**!randomsound** : Picks a sound scare randomly")
 
-twitch_profile("##Commands for everyone (even if you don't have control)")
-twitch_profile("These commands, are available to everyone (even when not in control)  ")
-twitch_profile("**!whosgotit** : lets you know who is currently in control  ")
-twitch_profile("**!timeleft** : lets you know much much time is left before control is shifted  ")
-twitch_profile("**!optout** : lets you opt out of getting picked for control")
-twitch_profile("**!optin** : lets you opt back in to get control")
-twitch_profile("**!game** : lets you know what game we are currently playing")
-twitch_profile("**!nextgame** : lets you know what game we are going to play next")
-twitch_profile("")
 sound_buffer = ""
 for sound, file in sounds.iteritems():
     sound_buffer = "%s**%s**, " % (sound_buffer,sound)
@@ -937,6 +928,17 @@ def user_stack_consumer():
             twitch_bot_utils.printer("Checking a buffered string: %s" % data)
             user_commands(user,data)
         time.sleep(1)
+
+twitch_profile("##Commands for everyone (even if you don't have control)")
+twitch_profile("These commands, are available to everyone (even when not in control)  ")
+twitch_profile("**!whosgotit** : lets you know who is currently in control  ")
+twitch_profile("**!timeleft** : lets you know much much time is left before control is shifted  ")
+twitch_profile("**!optout** : lets you opt out of getting picked for control")
+twitch_profile("**!optin** : lets you opt back in to get control")
+twitch_profile("**!opted username** : lets you check if a specific user is opted in or out")
+twitch_profile("**!game** : lets you know what game we are currently playing")
+twitch_profile("**!nextgame** : lets you know what game we are going to play next")
+twitch_profile("")
         
 twitch_profile("#Commands for everyone (even if you don't have control) Scary & Normal mode  ")
 twitch_profile("")
@@ -989,8 +991,10 @@ def user_commands(user,data):
             opt(user,False)
             irc.msg("%s is now opted out!" %user)
             return True
-        if command == "!opted" and len(parts)>1:
+        if command == "!opted":
             opt_status = "out"
+            if len(parts)==1:
+                parts.append(user)
             if db.getUserOpted(parts[1]):
                 opt_status = "in"
             irc.msg("%s is opted %s!" % (parts[1],opt_status))
