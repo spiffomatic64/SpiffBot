@@ -989,6 +989,12 @@ def user_commands(user,data):
             opt(user,False)
             irc.msg("%s is now opted out!" %user)
             return True
+        if command == "!opted" and len(parts)>1:
+            opt_status = "out"
+            if db.getUserOpted(parts[1]):
+                opt_status = "in"
+            irc.msg("%s is opted %s!" % (parts[1],opt_status))
+            return True
         #let viewers know how much time is left    
         if data.find("!timeleft") != -1:
             if data.find("!hide") != -1:
