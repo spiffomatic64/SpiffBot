@@ -500,7 +500,11 @@ twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 s
 twitch_profile("")
 twitch_profile("**!flicker** : Strobes the monitor (30 frames of black 10 frames of video)")
 twitch_profile("")
+twitch_profile("##Scary sound commands for the user in \"Control\"")
+twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
+twitch_profile("")
 twitch_profile("**!randomsound** : Picks a sound scare randomly")
+twitch_profile("")
 
 sound_buffer = ""
 for sound, file in sounds.iteritems():
