@@ -147,8 +147,8 @@ def bounds(input):
     return input
     
 #return a color from a 255 rainbow palette
-def Wheel(WheelPos):
-    WheelPos = 255 - WheelPos;
+def Wheel(input):
+    WheelPos = 255 - int(round(input));
     if WheelPos < 85:
         return [255 - WheelPos * 3, 0, WheelPos * 3];
     elif WheelPos < 170:

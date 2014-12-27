@@ -500,14 +500,15 @@ twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 s
 twitch_profile("")
 twitch_profile("**!flicker** : Strobes the monitor (30 frames of black 10 frames of video)")
 twitch_profile("")
-twitch_profile("##Sound commands for the user in \"Control\"")
-twitch_profile("**!pass** : allows you to pass control on to the person who has not had control in the longest instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
 twitch_profile("**!randomsound** : Picks a sound scare randomly")
 
 sound_buffer = ""
 for sound, file in sounds.iteritems():
     sound_buffer = "%s**%s**, " % (sound_buffer,sound)
 twitch_profile(sound_buffer)
+twitch_profile("")
+twitch_profile("##Other commands for the user in \"Control\"")
+twitch_profile("**!pass** : allows you to pass control on to the person who has not had control in the longest instead of using it yourself. If you add a username after !pass, you can pass control to someone specifically") 
 
 #commands only accessible by the user in control  
 def master_commands(user,data):
@@ -629,11 +630,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor
-        if data.find ( 'flip' ) != -1:
+        '''if data.find ( 'flip' ) != -1:
             scare = threading.Thread(target=flip,args=(30+wait,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
@@ -644,11 +645,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor and switch control (broken atm)
-        if data.find ( 'flicker' ) != -1:
+        '''if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
@@ -764,6 +765,33 @@ def chase(r, g, b,num=6):
             for z in range(0,30): #draw the pixels
                 if z>y-3 and z<y+3:
                     ser.write("#%c%c%c%c" % (r,g,b,z))
+                else:
+                    ser.write("#\x00\x00\x00%c" % z)
+            ser.write("!")
+            if scaring==1:
+                printer("Scare! Stopping user command")
+                set_animating(0)
+                return
+            pygame.time.wait(10)       
+        pygame.time.wait(500)
+    set_animating(0)
+    return
+    
+def disco_chase(num=6):
+    wait_animating()
+    set_animating(1)
+    twitch_bot_utils.printer("Disco Chase")
+    irc.msg("DISCO CHASES!!!!!!!!")
+    color=0
+    for x in range(0, num): #chase animation num times
+        for y in range(0, 30): #chase across all 30 leds
+            color=color+10
+            if color>255:
+                color=0
+            rgb = twitch_bot_utils.Wheel(color)
+            for z in range(0,30): #draw the pixels
+                if z>y-3 and z<y+3:
+                    ser.write("#%c%c%c%c" % (rgb[0],rgb[1],rgb[2],z))
                 else:
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
@@ -945,10 +973,10 @@ twitch_profile("")
 twitch_profile("**disco**: plays a crazy color animation  ")
 twitch_profile("**disco fire**: plays another crazy color animation  ")
 twitch_profile("**disco strobe**: plays yet another crazy color animation  ")
-twitch_profile("**fire(red,blue)** : plays a fire animation with two colors ")
+twitch_profile("**fire(red|blue)** : plays a fire animation with two colors ")
 twitch_profile("**strobe** : plays a strobe animation  ")
 twitch_profile("**rgb(yellow)** : Lets users pick a specific color  ")
-twitch_profile("**chase(green)** : Lets users play a \"chase\" animation with a specific color  (chase also lets you use 3 color commands to chase in a row)")
+twitch_profile("**chase(green)** : Lets users play a \"chase\" animation with a specific color  (chase also lets you use 3 color commands separated by a pipe \"|\" to chase in a row)")
 twitch_profile("**centerchase(blue)** : Same as chase, but starts in the center and goes out from both left and right")
 twitch_profile("**alternate(green,purple)** : plays an alternating animation (lights half the leds with one color, and the other, with the second)  ")
 twitch_profile("**disco alternate** : plays an alternating animation (lights half the leds with one color, and the other, with the second) with the disco palette  ")
@@ -1056,6 +1084,10 @@ def user_commands(user,data):
                 animation.start() 
             elif data.find ( 'alternate' ) != -1:
                 animation = threading.Thread(target=disco_alternate)
+                animation.daemon = True
+                animation.start() 
+            elif data.find ( 'chase' ) != -1:
+                animation = threading.Thread(target=disco_chase)
                 animation.daemon = True
                 animation.start() 
             else:

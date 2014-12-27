@@ -1,13 +1,15 @@
 import mysql.connector
 import datetime
+import twitch_bot_utils
 
 class twitchdb:
 
     def __init__(self,u,p,h,d):
         try:
           self.cnx = mysql.connector.connect(user=u,password=p,host=h,database=d)
+          twitch_bot_utils.printer("Connected to DB!")
         except mysql.connector.Error as err:
-            print(err)
+            twitch_bot_utils.printer(err)
             
 
     def updateUserPoints(self,username,points):
