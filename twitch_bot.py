@@ -123,7 +123,7 @@ twitch_profile("")
 twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
 twitch_profile("")
 
-def opt(user,inout):
+def opt(user,inout,passed=None):
     user=user.lower()
     if inout:
         if not db.getUserOpted(user):
@@ -136,7 +136,10 @@ def opt(user,inout):
         elif db.getUserOpted(user):
             db.updateUserOpted(user,0)
             if user == master:
-                switch()
+                if passed:
+                    switch(passed)
+                else:
+                    switch()
                 
 def autoOptIn(user,data):
     if user not in db.getUsers():
@@ -213,24 +216,36 @@ def mastertimer():
                     if master!=auth.get_bot():
                         irc.msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
                         twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
-                        opt(master,False)
+                        if last_pass:
+                            twitch_bot_utils.printer("Passing back to user %s" % last_pass)
+                            opt(master,False,last_pass)
+                        else:
+                            opt(master,False)
                     twitch_bot_utils.printer("Master switch")
                     counter = time.time()
                     warn_timer = 0
                 #every 2.5 minutes warn the user in control 150 (make sure to only warn once)
                 elif elapsed>150 and warn_timer == 0:
                     if master!=auth.get_bot():
-                        viewers = get_viewers()
-                        if master in viewers:
+                        try:
+                            viewers = get_viewers()
+                            if master in viewers:
+                                irc.msg( "2.5 Minutes left %s!" % master)  
+                                twitch_bot_utils.printer("Sending 2.5 minute warning")
+                            else:
+                                irc.msg( "%s is not in viewer list, Switching control!" % master)  
+                                if last_pass:
+                                    switch(last_pass)
+                                else:
+                                    switch(-1)
+                                counter = time.time()
+                        except:
                             irc.msg( "2.5 Minutes left %s!" % master)  
                             twitch_bot_utils.printer("Sending 2.5 minute warning")
-                        else:
-                            irc.msg( "%s is not in viewer list, Switching control!" % master)  
-                            switch(-1)
-                            counter = time.time()
                     warn_timer = 1
                 
                 twitch_bot_utils.printer(elapsed)
+                twitch_bot_utils.printer(last_pass)
         time.sleep(1)
         
 #switch control to a random person (or specific person if specified)
@@ -240,6 +255,7 @@ def switch(user="",pass_control=0):
     global switching
     global next
     global pass_counter
+    global last_pass
     
     twitch_bot_utils.printer("Switching with user: %s" % user)
     #if warn timer is not -1, set warn timer to -1, then back to 0 at the end of the function
@@ -265,6 +281,7 @@ def switch(user="",pass_control=0):
         except:
             twitch_bot_utils.printer("*************Twitch Api is borked*************")
             master=auth.get_bot()
+            last_pass = None
             twitch_bot_utils.printer("%s is now in control!" % master)
             irc.msg("%s is now in control!" % master) 
             twitch_bot_utils.printer("Switching from %s to %s" % (old,master))
@@ -291,6 +308,7 @@ def switch(user="",pass_control=0):
         if user in viewers:
             twitch_bot_utils.printer("User is set: %s" % user)
             master = user
+            last_pass = None
         else:
             #if there are more than 0 viewers, pick a random viewer
             if len(viewers)>0:
@@ -303,6 +321,7 @@ def switch(user="",pass_control=0):
             else:
                 twitch_bot_utils.printer("No valid viewers to switch to")
                 master=auth.get_bot()
+            last_pass = None
         #reset counter and notify chat that a new viewer is in control
         twitch_bot_utils.printer("%s is now in control!" % master)
         irc.msg("%s is now in control!" % master) 
@@ -339,11 +358,14 @@ def admin_commands(user,data):
             stayAlive = 0
         if command == "!whosoptedin":
             optedin = ""
-            viewers = get_viewers()
-            for optins in db.getOptedUsers():
-                if optins in viewers:
-                    optedin = "%s %s " % (optedin,optins)
-            irc.msg("%s" % optedin)
+            try:
+                viewers = get_viewers()
+                for optins in db.getOptedUsers():
+                    if optins in viewers:
+                        optedin = "%s %s " % (optedin,optins)
+                irc.msg("%s" % optedin)
+            except:
+                irc.msg("Twitch api is borked :(")
             return True
         if command == "!midi":
             twitch_bot_utils.printer(midi.toggleMidi())
@@ -518,6 +540,7 @@ twitch_profile("**!pass** : allows you to pass control on to the person who has 
 def master_commands(user,data):
     global master
     global sounds
+    global last_pass
     
     #check that the user is the master, and we are in scary mode
     if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==auth.get_streamer()) and mode==0:
@@ -541,16 +564,19 @@ def master_commands(user,data):
             if len(parts) == 1:
                 twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
                 switch(-1)
+                last_pass = user
                 return True
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
                     if parts[1].lower() in db.getOptedUsers():
                         twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
                         switch(parts[1],1)
+                        last_pass = user
                         return True
                     elif parts[1].lower() == "new" or parts[1].lower() == "newuser":
                         twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
                         switch(-1)
+                        last_pass = user
                         return True
                     else:
                         irc.msg("Can't pass, %s is opted out!" % parts[1].lower())
@@ -634,11 +660,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor
-        '''if data.find ( 'flip' ) != -1:
+        if data.find ( 'flip' ) != -1:
             scare = threading.Thread(target=flip,args=(30+wait,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
+            return True
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
@@ -649,11 +675,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor and switch control (broken atm)
-        '''if data.find ( 'flicker' ) != -1:
+        if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
+            return True
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
@@ -1091,9 +1117,8 @@ def user_commands(user,data):
                 animation.daemon = True
                 animation.start() 
             elif data.find ( 'chase' ) != -1:
-                animation = threading.Thread(target=disco_chase)
-                animation.daemon = True
-                animation.start() 
+                disco_chase()
+                modedefault()
             else:
                 animation = threading.Thread(target=disco)
                 animation.daemon = True
@@ -1217,6 +1242,7 @@ master = auth.get_streamer()
 alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
 user_stack = []
 pass_counter = 3
+last_pass = None
 random_color=1
 scaring = 0
 switching = 0

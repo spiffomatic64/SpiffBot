@@ -44,4 +44,5 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 <li>admin commands allowing manual switch's, and switch next (to not steal the current persons turn)</li>
 <li>!whosgotit command to let viewers know who currently has control</li>
 <li>!timeleft command to let viewers know how much time is left</li>
+<li>!opted command to let viewers know if they are opted in or not</li>
 </ol>
