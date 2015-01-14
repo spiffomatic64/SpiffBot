@@ -62,7 +62,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "birds" : "birdflock_calls_medium_loop_v1.ogg",
 "teleport" : "taken_flanker_tele_01.ogg",
 "wings" : "birdflock_wings_medium_loop_v1.ogg",
-"subtlebirds" : "subtle_birds.ogg"
+"subtlebirds" : "subtle_birds.ogg",
+"scream" : "female_scream.ogg"
 }
 def set_animating(status):
     global animating
@@ -434,7 +435,7 @@ def flicker(times=5,scare=0):
     twitch_bot_utils.printer("Flicker scare!")
     scare_lock(1)
     scare_status("Flickering Monitor!")
-    subprocess.call(["python", "twitch_bot_flicker.py"])
+    subprocess.Popen(["python", "twitch_bot_flicker.py"])
     scare_status(-1)
     scare_lock(0)
     if scare==0:
@@ -660,11 +661,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor
-        if data.find ( 'flip' ) != -1:
+        '''if data.find ( 'flip' ) != -1:
             scare = threading.Thread(target=flip,args=(30+wait,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
@@ -675,11 +676,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor and switch control (broken atm)
-        if data.find ( 'flicker' ) != -1:
+        '''if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
@@ -832,6 +833,7 @@ def disco_chase(num=6):
             pygame.time.wait(10)       
         pygame.time.wait(500)
     set_animating(0)
+    modedefault()
     return
     
 def bounce(r, g, b,num=6):
@@ -1117,8 +1119,9 @@ def user_commands(user,data):
                 animation.daemon = True
                 animation.start() 
             elif data.find ( 'chase' ) != -1:
-                disco_chase()
-                modedefault()
+                animation = threading.Thread(target=disco_chase)
+                animation.daemon = True
+                animation.start() 
             else:
                 animation = threading.Thread(target=disco)
                 animation.daemon = True
