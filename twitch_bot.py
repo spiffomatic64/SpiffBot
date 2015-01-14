@@ -1081,6 +1081,10 @@ def user_commands(user,data):
         irc.msg("The next game is: %s!" % get_next_game())
         return True
     
+    if command == "!intro":
+        irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
+        return True
+    
     if command == "!game" or data.find ( 'what game' ) != -1:
         irc.msg("The current game is: %s" % get_game())
         return True
