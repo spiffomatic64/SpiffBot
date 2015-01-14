@@ -63,7 +63,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "teleport" : "taken_flanker_tele_01.ogg",
 "wings" : "birdflock_wings_medium_loop_v1.ogg",
 "subtlebirds" : "subtle_birds.ogg",
-"scream" : "female_scream.ogg"
+"scream" : "female_scream.ogg",
+"footsteps" : "footsteps.ogg"
 }
 def set_animating(status):
     global animating
