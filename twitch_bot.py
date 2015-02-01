@@ -621,7 +621,7 @@ def master_commands(user,data):
         
         #select a random scare command
         if command == "!randomscare":
-            data = random.choice(['quiet', "rattle", "heart"])
+            data = random.choice(['quiet', "rattle", "touch","brush","monitor"])
         
         wait = random.randint(4, 30)
         twitch_bot_utils.printer("Random wait: %s" % wait)
@@ -655,11 +655,11 @@ def master_commands(user,data):
             return True
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
-        if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
+        '''if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,wait,1,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
             
         #flip the main monitor
         '''if data.find ( 'flip' ) != -1:
@@ -992,6 +992,7 @@ def user_stack_consumer():
 
 twitch_profile("##Commands for everyone (even if you don't have control)")
 twitch_profile("These commands, are available to everyone (even when not in control)  ")
+twitch_profile("**!whosgotit** : lets you know who is currently in control, and how much time left they have  ")
 twitch_profile("**!whosgotit** : lets you know who is currently in control  ")
 twitch_profile("**!timeleft** : lets you know much much time is left before control is shifted  ")
 twitch_profile("**!optout** : lets you opt out of getting picked for control")
@@ -1036,6 +1037,13 @@ def user_commands(user,data):
     
     #Scary mode only commands
     if mode == 0:
+        if data.find("!status") != -1:
+            timeleft = round(300 - (time.time() - counter))
+            if data.find("!hide") != -1:
+                irc.msg("!hide %s is currently in control, with %s seconds left!" % (master,timeleft))
+            else:
+                irc.msg("%s is currently in control, with %s seconds left!" % (master,timeleft))
+            return True
         if data.find("!whosgotit") != -1:
             if data.find("!hide") != -1:
                 irc.msg("!hide %s is currently in control!" % master)
@@ -1092,6 +1100,14 @@ def user_commands(user,data):
     
     if command == "!game" or data.find ( 'what game' ) != -1:
         irc.msg("The current game is: %s" % get_game())
+        return True
+        
+    if command == "!games":
+        irc.msg("List of \"Best of the best\" https://docs.google.com/spreadsheets/d/1m1Jq_zOJg-BUWDY-Ir7KFGQsKCU3RcdU3eLW5_czKis/edit#gid=0")
+        return True
+        
+    if command == "!halley":
+        irc.msg("Wife Scare Part 1: https://www.youtube.com/watch?v=Q-xaW7IIa3I Part 2: https://www.youtube.com/watch?v=VROLA7HS8KI")
         return True
     
     if command == "!spiff":
