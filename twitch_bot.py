@@ -51,7 +51,7 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "kids" : "kids.ogg",
 "cutting" : "3dcut.ogg", 
 "sawing" : "3dbread.ogg", 
-"zombie" : "zombie_scare.ogg",
+"normalzombie" : "zombie_scare.ogg",
 "tentacle" : "stinger_tentacle.ogg",
 "sting" : "sting.ogg",
 "bigzombie" : "large_zombie.ogg",
@@ -64,7 +64,9 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "wings" : "birdflock_wings_medium_loop_v1.ogg",
 "subtlebirds" : "subtle_birds.ogg",
 "scream" : "female_scream.ogg",
-"footsteps" : "footsteps.ogg"
+"footsteps" : "footsteps.ogg",
+"rezombie" : "rezombie.ogg",
+"recreature" : "recreature.ogg"
 }
 def set_animating(status):
     global animating
@@ -516,7 +518,7 @@ twitch_profile("**touch**, **shoulder**, or **tapping** :This will move a servo 
 twitch_profile("")
 twitch_profile("**rattle**, **fall**, **rumble**, or **vibe** :Turns on a vibration motor I took out of an xbox controller, that will rattle around making noise/vibrations/ and movement out of the corner of my eye... Will most likely also scare the pants off me...")
 twitch_profile("")
-twitch_profile("**heart**, **chest**, **buzz**, **neck** : Turns on a smaller vibration motor that I will attach to myself somehow (wear around neck, sit on thigh etc... I will actually feel this, and its pretty sure to scare any pants that are still left on me at this point....")
+twitch_profile("**heart**, **chest**, **buzz**, **neck** : This will move a servo (twice) attached to my neck that emulates someone tapping on it")
 twitch_profile("")
 twitch_profile("**!flip** : Flips my main monitor image 180 degrees (vertically) for 30 full seconds (everything should look normal on the stream though)")
 twitch_profile("")
@@ -642,7 +644,7 @@ def master_commands(user,data):
             
         #Move the servo attached to my shoulder
         if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving shoulder servo",1,wait,2,admin))
+            scare = threading.Thread(target=arduino_scare,args=(3,0,180,254,"Moving shoulder servo",1,wait,3,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -655,18 +657,18 @@ def master_commands(user,data):
             return True
             
         #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
-        '''if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(3,1,0,253,"Chest vibe",2,wait,1,admin))
+        if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
+            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving neck servo",1,wait,3,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
+            return True
             
         #flip the main monitor
-        '''if data.find ( 'flip' ) != -1:
+        if data.find ( 'flip' ) != -1:
             scare = threading.Thread(target=flip,args=(30+wait,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
+            return True
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
@@ -677,11 +679,11 @@ def master_commands(user,data):
             return True
             
         #flip the main monitor and switch control (broken atm)
-        '''if data.find ( 'flicker' ) != -1:
+        if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
+            return True
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
@@ -992,7 +994,7 @@ def user_stack_consumer():
 
 twitch_profile("##Commands for everyone (even if you don't have control)")
 twitch_profile("These commands, are available to everyone (even when not in control)  ")
-twitch_profile("**!whosgotit** : lets you know who is currently in control, and how much time left they have  ")
+twitch_profile("**!status** : lets you know who is currently in control, and how much time left they have  ")
 twitch_profile("**!whosgotit** : lets you know who is currently in control  ")
 twitch_profile("**!timeleft** : lets you know much much time is left before control is shifted  ")
 twitch_profile("**!optout** : lets you opt out of getting picked for control")
@@ -1037,18 +1039,18 @@ def user_commands(user,data):
     
     #Scary mode only commands
     if mode == 0:
+        hide = False
+        if data.find("!hide") != -1:
+            hide = True
+        if data.find("!patience") != -1:
+            irc.msg("You can only do scares when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
+            return True
         if data.find("!status") != -1:
             timeleft = round(300 - (time.time() - counter))
-            if data.find("!hide") != -1:
-                irc.msg("!hide %s is currently in control, with %s seconds left!" % (master,timeleft))
-            else:
-                irc.msg("%s is currently in control, with %s seconds left!" % (master,timeleft))
+            irc.msg("%s is currently in control, with %s seconds left!" % (master,timeleft),hide)
             return True
         if data.find("!whosgotit") != -1:
-            if data.find("!hide") != -1:
-                irc.msg("!hide %s is currently in control!" % master)
-            else:
-                irc.msg("%s is currently in control!" % master)
+            irc.msg("%s is currently in control!" % (master),hide)
             return True
         #opt a user in, and switch if they were in control
         if command == "!optin":
@@ -1070,12 +1072,8 @@ def user_commands(user,data):
             return True
         #let viewers know how much time is left    
         if data.find("!timeleft") != -1:
-            if data.find("!hide") != -1:
-                timeleft = 300 - (time.time() - counter)
-                irc.msg("%s has %s seconds left!" % (master,round(timeleft)))
-            else:
-                timeleft = 300 - (time.time() - counter)
-                irc.msg("!hide %s has %s seconds left!" % (master,round(timeleft)))
+            timeleft = 300 - (time.time() - counter)
+            irc.msg("%s has %s seconds left!" % (master,round(timeleft)),hide)
             return True
         if data.find("am i opted") != -1:
             if user in db.getOptedUsers():
@@ -1119,8 +1117,6 @@ def user_commands(user,data):
     if scaring == 1 or animating == 1:
         twitch_bot_utils.printer("Busy, adding to stack: scaring: %s animating: %s" % (scaring,animating))
         user_stack.append([user,data])
-        #while len(user_stack)>5:
-            #user_stack.pop()
         del user_stack[5:]
         temp = []
         for stack in user_stack:
@@ -1288,12 +1284,8 @@ ser = twitch_bot_serial.twitch_serial("Com4",115200)
 #db stuff
 db = twitch_db.twitchdb(auth.get_db_user(),auth.get_db_pass(),"127.0.0.1","twitch")
 
-#Display init for flicker
-#pygame.mixer.pre_init(frequency=22050, size=-16, channels=2, buffer=4096)
-#pygame.init() breaks sound module
 #setup audio
 pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-#pygame.init()
 twitch_bot_utils.printer("Initiated Pygame Mixer:")
 twitch_bot_utils.printer(pygame.mixer.get_init())
 twitch_bot_utils.printer(pygame.mixer.get_num_channels())

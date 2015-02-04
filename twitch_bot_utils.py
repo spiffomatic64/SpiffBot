@@ -42,9 +42,12 @@ class irc_connection:
     def recv(self,buf_size):   
         return self.conn.recv ( buf_size )  
     
-    def msg(self,msg):   
+    def msg(self,msg,hide=False):   
         printer('PRIVMSG #%s :%s\r\n' % (self.streamer,msg))
-        self.conn.send ( 'PRIVMSG #%s :%s\r\n' % (self.streamer,msg.encode('utf-8')) )  
+        hide_msg = ""
+        if hide:
+            hide_msg = "!hide "
+        self.conn.send ( 'PRIVMSG #%s :%s%s\r\n' % (self.streamer,hide_msg,msg.encode('utf-8')) )  
         
     def add_msgParser(msg_parser):
         self.msg_parsers.append(msg_parser)
