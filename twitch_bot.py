@@ -438,7 +438,8 @@ def flicker(times=5,scare=0):
     twitch_bot_utils.printer("Flicker scare!")
     scare_lock(1)
     scare_status("Flickering Monitor!")
-    subprocess.Popen(["python", "twitch_bot_flicker.py"])
+    p = subprocess.Popen(["python", "twitch_bot_flicker.py"])
+    p.wait()
     scare_status(-1)
     scare_lock(0)
     if scare==0:
