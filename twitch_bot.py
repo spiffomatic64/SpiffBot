@@ -378,6 +378,9 @@ def admin_commands(user,data):
             return True
         if command == "!midi":
             twitch_bot_utils.printer(midi.toggleMidi())
+        if command == "!raffle":
+            raffle()
+            return True
             
         #if there are at least 2 words in the message
         if len(parts) == 2:
