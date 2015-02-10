@@ -23,6 +23,8 @@ import twitch_bot_midi
 import twitch_bot_serial
 import subprocess
 
+next_scary_game = "http://strawpoll.me/3580719"
+
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
 "screech" : "SOUND_1288.ogg",
@@ -66,7 +68,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "scream" : "female_scream.ogg",
 "footsteps" : "footsteps.ogg",
 "rezombie" : "rezombie.ogg",
-"recreature" : "recreature.ogg"
+"recreature" : "recreature.ogg",
+"subsonic" : "subsonic.ogg"
 }
 def set_animating(status):
     global animating
@@ -1003,6 +1006,7 @@ twitch_profile("**!optin** : lets you opt back in to get control")
 twitch_profile("**!opted username** : lets you check if a specific user is opted in or out")
 twitch_profile("**!game** : lets you know what game we are currently playing")
 twitch_profile("**!nextgame** : lets you know what game we are going to play next")
+twitch_profile("**!nextscarygame** : Brings up the current poll for what scary game is next")
 twitch_profile("")
         
 twitch_profile("#Commands for everyone (even if you don't have control) Scary & Normal mode  ")
@@ -1086,7 +1090,12 @@ def user_commands(user,data):
 
     #Get current streaming game
     if command == "!nextgame" or ( data.find ( 'what game' ) != -1 and data.find ( 'next' ) != -1 ):
-        irc.msg("The next game is: %s!" % get_next_game())
+        irc.msg("The next game is: %s! and vote/check the status of the next scary game here: %s" % (get_next_game(),next_scary_game) )
+        return True
+        
+    #Get current streaming game
+    if command == "!nextscarygame" or ( data.find ( 'what game' ) != -1 and data.find ( 'next' ) != -1 ):
+        irc.msg("The next scary game is determined by you! Vote/Check the status here: %s!" % next_scary_game )
         return True
     
     if command == "!intro":
