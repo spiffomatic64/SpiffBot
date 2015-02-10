@@ -1021,6 +1021,7 @@ twitch_profile("**chase(green)** : Lets users play a \"chase\" animation with a 
 twitch_profile("**centerchase(blue)** : Same as chase, but starts in the center and goes out from both left and right")
 twitch_profile("**alternate(green,purple)** : plays an alternating animation (lights half the leds with one color, and the other, with the second)  ")
 twitch_profile("**disco alternate** : plays an alternating animation (lights half the leds with one color, and the other, with the second) with the disco palette  ")
+twitch_profile("**randomcolor** : picks a random color to show on the led bar ")
 twitch_profile("")
 twitch_profile("All colors/commands accept 0-255,0-255,0-255 rgb, as well as html color codes (copy pasted from w3's html color codes)  ")
 twitch_profile("")
@@ -1163,6 +1164,11 @@ def user_commands(user,data):
         if data.find ( 'strobe' ) != -1:
             strobe()
             return True
+        
+        if data.find ( 'randomcolor' ) != -1:
+            rgb = twitch_bot_utils.convertcolor("random",random_color)
+            allleds(rgb[0],rgb[1],rgb[2],10)
+            return True
                 
         m = re.search('(\w+)\((.+(?:\|[a-zA-Z0-9#]+)*)\)',data,re.IGNORECASE)
         if m:
@@ -1234,7 +1240,7 @@ def user_commands(user,data):
                 rgb = twitch_bot_utils.convertcolor(parts[0],random_color)
                 if rgb:
                     if m.group(1).lower()=="rgb":
-                        allleds(rgb[0],rgb[1],rgb[2],5)
+                        allleds(rgb[0],rgb[1],rgb[2],10)
                         time.sleep(1)
             if len(parts)==2:
                 rgb = twitch_bot_utils.convertcolor(parts[0],random_color)
