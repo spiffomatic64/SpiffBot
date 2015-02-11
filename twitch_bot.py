@@ -152,6 +152,8 @@ def autoOptIn(user,data):
     if user not in db.getUsers():
         twitch_bot_utils.printer("Auto Opting %s in!" % user)
         opt(user,True)
+        irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
+
 
 def scare_lock(status):
     global scaring
