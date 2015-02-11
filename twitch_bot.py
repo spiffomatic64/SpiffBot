@@ -186,6 +186,11 @@ def get_viewers(opted=True):
             viewers.append(viewer)
             twitch_bot_utils.printer(viewer)
     return viewers
+
+# This will pick a random user from those that are opted in and display the winner in chat
+def raffle():
+    users_for_raffle = get_viewers(opted=TRUE)
+    twitch_bot_utils.printer('And the winner is ...'+str(random.choice(users_for_raffle)))
     
 def get_game():
     try:
@@ -376,6 +381,9 @@ def admin_commands(user,data):
             return True
         if command == "!midi":
             twitch_bot_utils.printer(midi.toggleMidi())
+        if command == "!raffle":
+            raffle()
+            return True
             
         #if there are at least 2 words in the message
         if len(parts) == 2:
