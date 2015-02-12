@@ -69,7 +69,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "footsteps" : "footsteps.ogg",
 "rezombie" : "rezombie.ogg",
 "recreature" : "recreature.ogg",
-"subsonic" : "subsonic.ogg"
+"subsonic" : "subsonic.ogg",
+"mgalert" : "metalgearalert.ogg"
 }
 def set_animating(status):
     global animating
@@ -191,8 +192,8 @@ def get_viewers(opted=True):
 
 # This will pick a random user from those that are opted in and display the winner in chat
 def raffle():
-    users_for_raffle = get_viewers(opted=TRUE)
-    twitch_bot_utils.printer('And the winner is ...'+str(random.choice(users_for_raffle)))
+    users_for_raffle = get_viewers(opted=True)
+    irc.msg('And the winner is ...'+str(random.choice(users_for_raffle)))
     
 def get_game():
     try:
