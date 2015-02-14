@@ -448,6 +448,32 @@ def flip(duration=20,scare=0):
         switch()
     return
     
+#Flip the monitor using winapi's
+def wiggle(times=20,scare=0):
+    scare_lock(1)
+    scare_status("Wiggling window!")
+    #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
+    while True:
+        time.sleep(0.001)
+        try:
+            hwnd = win32gui.GetForegroundWindow()
+            if hwnd:
+                twitch_bot_utils.printer("Found window! hwnd: %s" % hwnd)
+                break
+            else:
+                twitch_bot_utils.printer("No windows %s" % hwnd)
+        except win32gui.error:
+            twitch_bot_utils.printer("Error: window not found")
+            
+    for i in range(0,times):
+        win32gui.SetWindowPos(hwnd,None,random.randint(0, 1280),random.randint(0, 1024),0,0,1)
+        time.sleep(1)
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+    return
+    
 #Slow strobe the monitor effect
 def flicker(times=5,scare=0):
     twitch_bot_utils.printer("Flicker scare!")
@@ -744,6 +770,14 @@ def master_commands(user,data):
             scare.daemon = True
             scare.start() 
             return True    
+            
+        #Wiggle active window
+        if data.find ( 'wiggle' ) != -1:
+            twitch_bot_utils.printer("WIGGLE WIGGLE!!")
+            scare = threading.Thread(target=wiggle,args=(wait+3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True 
             
         #flip the main monitor and switch control (broken atm)
         if data.find ( 'flicker' ) != -1:
