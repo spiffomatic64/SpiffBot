@@ -22,6 +22,7 @@ import twitch_db
 import twitch_bot_midi
 import twitch_bot_serial
 import subprocess
+import twitch_volume
 
 next_scary_game = "http://strawpoll.me/3580719"
 
@@ -475,6 +476,29 @@ def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(0)
     if scare==0:
         switch()
+        
+def spasm_scare(wait,scare):
+    scare_lock(1)
+    scare_status("Spasm!!!!!")
+    twitch_bot_utils.printer("Spasm scare, scare=%s" % scare)
+    status_length = 3
+    ser.write("#%c%c\x00%c" % (10,130,254))
+    ser.write("#%c%c\x00%c" % (9,130,254))
+    ser.write("#%c%c\x00%c" % (3,0,254))
+    ser.write("#%c%c\x00%c" % (11,1,253))
+    ser.write("#%c%c\x00%c" % (5,0,254))
+    time.sleep(status_length)
+    ser.write("#%c%c\x00%c" % (10,40,254))
+    ser.write("#%c%c\x00%c" % (9,40,254))
+    ser.write("#%c%c\x00%c" % (3,180,254))
+    ser.write("#%c%c\x00%c" % (11,0,253))
+    ser.write("#%c%c\x00%c" % (5,180,254))
+    time.sleep(status_length)
+    scare_status(-1)
+    time.sleep(wait-status_length)
+    scare_lock(0)
+    if scare==0:
+        switch()
     
 def play_sound(sound,left,right):
     twitch_bot_utils.printer(pygame.mixer.get_init())
@@ -508,6 +532,18 @@ def turn_off_monitors(msg,wait,scare=0):
     scare_lock(0)
     if scare==0:
         switch()
+        
+def change_volume(wait,level,scare=0):
+    scare_lock(1)
+    scare_status("Changing volume!")
+    vol_scare.set_volume(level)
+    time.sleep(wait)
+    vol_scare.set_volume(-20.0)
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+    return
     
 def scare_status(status):
     f = open('scarestatus.txt', 'w')
@@ -540,6 +576,8 @@ twitch_profile("")
 twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 seconds")
 twitch_profile("")
 twitch_profile("**!flicker** : Strobes the monitor (30 frames of black 10 frames of video)")
+twitch_profile("")
+twitch_profile("**volume**, **mute** : Disables audio completely (for me only) for a short period of time")
 twitch_profile("")
 twitch_profile("##Scary sound commands for the user in \"Control\"")
 twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
@@ -671,9 +709,16 @@ def master_commands(user,data):
             scare.start() 
             return True
             
-        #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
+        #Move the servo down my shirt
         if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving neck servo",1,wait,3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
+        if data.find ( 'spasm' ) != -1 or data.find ( 'shake' ) != -1 or data.find ( 'shiver' ) != -1 or data.find ( 'electrocute' ) != -1:
+            scare = threading.Thread(target=spasm_scare,args=(wait,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -692,6 +737,13 @@ def master_commands(user,data):
             scare.daemon = True
             scare.start() 
             return True
+        #changes volume
+        if data.find ( 'volume' ) != -1 or data.find ( 'mute' ) != -1:
+            twitch_bot_utils.printer("Setting Volume!")
+            scare = threading.Thread(target=change_volume,args=(wait+3,-50.0,admin))
+            scare.daemon = True
+            scare.start() 
+            return True    
             
         #flip the main monitor and switch control (broken atm)
         if data.find ( 'flicker' ) != -1:
@@ -1310,6 +1362,9 @@ ser = twitch_bot_serial.twitch_serial("Com4",115200)
 
 #db stuff
 db = twitch_db.twitchdb(auth.get_db_user(),auth.get_db_pass(),"127.0.0.1","twitch")
+
+#import external scares
+vol_scare = twitch_volume.volume_change()
 
 #setup audio
 pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
