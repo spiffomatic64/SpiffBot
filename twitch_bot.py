@@ -595,15 +595,17 @@ twitch_profile("**touch**, **shoulder**, or **tapping** :This will move a servo 
 twitch_profile("")
 twitch_profile("**rattle**, **fall**, **rumble**, or **vibe** :Turns on a vibration motor I took out of an xbox controller, that will rattle around making noise/vibrations/ and movement out of the corner of my eye... Will most likely also scare the pants off me...")
 twitch_profile("")
-twitch_profile("**heart**, **chest**, **buzz**, **neck** : This will move a servo (twice) attached to my neck that emulates someone tapping on it")
+twitch_profile("**back**, **spine**, **buzz**, **neck** : This will move a servo (twice) attached to my neck that emulates someone tapping on it")
 twitch_profile("")
-twitch_profile("**!flip** : Flips my main monitor image 180 degrees (vertically) for 30 full seconds (everything should look normal on the stream though)")
+twitch_profile("**flip** : Flips my main monitor image 180 degrees (vertically) for 30 full seconds (everything should look normal on the stream though)")
 twitch_profile("")
-twitch_profile("**!monitor** : Turns off all monitors at once, for a solid 2.5 seconds")
+twitch_profile("**monitor** : Turns off all monitors at once, for a solid 2.5 seconds")
 twitch_profile("")
-twitch_profile("**!flicker** : Strobes the monitor (30 frames of black 10 frames of video)")
+twitch_profile("**flicker** : Strobes the monitor (30 frames of black 10 frames of video)")
 twitch_profile("")
-twitch_profile("**volume**, **mute** : Disables audio completely (for me only) for a short period of time")
+twitch_profile("**volume**, **mute** : Disables audio completely (for me only) for a short period of time (cheatme1)")
+twitch_profile("")
+twitch_profile("**spasm**, **shake**, **shiver**, **electrocute&& : Enables all scares for a short second (Falconslaver87)")
 twitch_profile("")
 twitch_profile("##Scary sound commands for the user in \"Control\"")
 twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
@@ -736,7 +738,7 @@ def master_commands(user,data):
             return True
             
         #Move the servo down my shirt
-        if data.find ( 'heart' ) != -1 or data.find ( 'chest' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
+        if data.find ( 'back' ) != -1 or data.find ( 'spine' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving neck servo",1,wait,3,admin))
             scare.daemon = True
             scare.start() 
@@ -1202,6 +1204,10 @@ def user_commands(user,data):
         
     if command == "!github":
         irc.msg("Add suggestions here! https://github.com/spiffomatic64/SpiffBot/issues")
+        return True
+        
+    if command == "!twitter":
+        irc.msg("Follow me on twitter for stream related updates! https://twitter.com/spiffomatic64")
         return True
     
     if command == "!game" or data.find ( 'what game' ) != -1:
