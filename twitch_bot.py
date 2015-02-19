@@ -1145,6 +1145,19 @@ def user_commands(user,data):
     #Scary mode only commands
     if mode == 0:
         hide = False
+        if data.find("!scarecommands") != -1:
+            irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, and spasm. Use !scaresounds to list sound scares.",hide)
+            return True
+        if data.find("!scaresounds") != -1:
+            temp = ""
+            for sound, file in sounds.iteritems():
+                temp = temp + sound + ", "
+            temp = temp[:-2]
+            irc.msg("Scare sounds: %s" % temp,hide)
+            return True
+        if data.find("!scarecommands") != -1:
+            irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, and spasm",hide)
+            return True
         if data.find("!hide") != -1:
             hide = True
         if data.find("!patience") != -1:
