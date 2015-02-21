@@ -170,6 +170,7 @@ def opt(user,inout,passed=None):
                     switch()
                 
 def autoOptIn(user,data):
+    global next
     if user not in db.getUsers():
         twitch_bot_utils.printer("Auto Opting %s in!" % user)
         opt(user,True)
@@ -1294,7 +1295,7 @@ def user_commands(user,data):
             irc.msg("Spiff was just notified %s seconds ago!" % elapsed )
         return True
     
-    if command == "!getmode" or "!whichmode":
+    if command == "!getmode" or command == "!whichmode":
         if mode == 0:
             irc.msg("ITS SCARY TIME!!!")
             return True
