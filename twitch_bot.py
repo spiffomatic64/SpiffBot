@@ -23,6 +23,7 @@ import twitch_bot_midi
 import twitch_bot_serial
 import subprocess
 import twitch_volume
+import ctypes
 
 next_scary_game = "http://strawpoll.me/3580719"
 
@@ -73,6 +74,24 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "subsonic" : "subsonic.ogg",
 "mgalert" : "metalgearalert.ogg"
 }
+
+class XINPUT_VIBRATION(ctypes.Structure):
+    _fields_ = [("wLeftMotorSpeed", ctypes.c_ushort),
+                ("wRightMotorSpeed", ctypes.c_ushort)]
+
+xinput = ctypes.windll.xinput1_1
+
+XInputSetState = xinput.XInputSetState
+XInputSetState.argtypes = [ctypes.c_uint, ctypes.POINTER(XINPUT_VIBRATION)]
+XInputSetState.restype = ctypes.c_uint
+
+vibration = XINPUT_VIBRATION(0, 0)
+XInputSetState(0, ctypes.byref(vibration))
+
+def set_vibration(controller, left_motor, right_motor):
+    vibration = XINPUT_VIBRATION(int(left_motor * 65535), int(right_motor * 65535))
+    XInputSetState(controller, ctypes.byref(vibration))
+
 def set_animating(status):
     global animating
     
@@ -571,6 +590,18 @@ def change_volume(wait,level,scare=0):
         switch()
     return
     
+def vibrate(wait,left,right,scare=0):
+    scare_lock(1)
+    scare_status("Vibrating controller!")
+    set_vibration(0,left,right)
+    time.sleep(wait)
+    set_vibration(0,0,0)
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+    return
+    
 def scare_status(status):
     f = open('scarestatus.txt', 'w')
     if status==-1:
@@ -593,7 +624,7 @@ twitch_profile("**brush**, **pants**, **spider**, or **crawl** :This is by far t
 twitch_profile("")
 twitch_profile("**touch**, **shoulder**, or **tapping** :This will move a servo (twice) attached to my shoulder that emulates someone tapping on it")
 twitch_profile("")
-twitch_profile("**rattle**, **fall**, **rumble**, or **vibe** :Turns on a vibration motor I took out of an xbox controller, that will rattle around making noise/vibrations/ and movement out of the corner of my eye... Will most likely also scare the pants off me...")
+twitch_profile("**rattle**, **fall**, or **desk** :Turns on a vibration motor I took out of an xbox controller, that will rattle around making noise/vibrations/ and movement out of the corner of my eye... Will most likely also scare the pants off me...")
 twitch_profile("")
 twitch_profile("**back**, **spine**, **buzz**, **neck** : This will move a servo (twice) attached to my neck that emulates someone tapping on it")
 twitch_profile("")
@@ -605,7 +636,7 @@ twitch_profile("**flicker** : Strobes the monitor (30 frames of black 10 frames 
 twitch_profile("")
 twitch_profile("**volume**, **mute** : Disables audio completely (for me only) for a short period of time (cheatme1)")
 twitch_profile("")
-twitch_profile("**spasm**, **shake**, **shiver**, **electrocute&& : Enables all scares for a short second (Falconslaver87)")
+twitch_profile("**spasm**, **shake**, **shiver** or **electrocute&& : Enables all scares for a short second (Falconslaver87)")
 twitch_profile("")
 twitch_profile("##Scary sound commands for the user in \"Control\"")
 twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
@@ -731,7 +762,7 @@ def master_commands(user,data):
             return True
         
         #rattle the vibration motor for 2 seconds, then wait 20 seconds
-        if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'rumble' ) != -1 or data.find ( 'vibe' ) != -1:
+        if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'desk' ) != -1:
             scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,wait,1,admin))
             scare.daemon = True
             scare.start() 
@@ -784,6 +815,25 @@ def master_commands(user,data):
         #flip the main monitor and switch control (broken atm)
         if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(wait+3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        if data.find ( 'vibe' ) != -1:
+            left = 0
+            right = 0
+            if data.find ( 'left' ) != -1:
+                left = 1
+            if data.find ( 'right' ) != -1:
+                right = 1
+            if left==0 and right==0:
+                left = 1
+                right = 1
+            if data.find ( 'soft' ) != -1:
+                left = left * 0.3
+                right = right * 0.3
+            
+            scare = threading.Thread(target=vibrate,args=(wait+3,left,right,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -870,7 +920,7 @@ def strobe():
         ser.write("#\x00\x00\x00\xff!")
         pygame.time.wait(40)
         if scaring==1:
-            printer("Scare! Stopping user command")
+            twitch_bot_utils.printer("Scare! Stopping user command")
             set_animating(0)
             return
     modedefault()
@@ -887,7 +937,7 @@ def disco_strobe():
         ser.write("#\x00\x00\x00\xff!")
         pygame.time.wait(40)
         if scaring==1:
-            printer("Scare! Stopping user command")
+            twitch_bot_utils.printer("Scare! Stopping user command")
             set_animating(0)
             return
     modedefault()
@@ -906,7 +956,7 @@ def chase(r, g, b,num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                printer("Scare! Stopping user command")
+                twitch_bot_utils.printer("Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -933,7 +983,7 @@ def disco_chase(num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                printer("Scare! Stopping user command")
+                twitch_bot_utils.printer("Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -958,7 +1008,7 @@ def bounce(r, g, b,num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                printer("Scare! Stopping user command")
+                twitch_bot_utils.printer("Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -982,7 +1032,7 @@ def centerchase(r, g, b,num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                printer("Scare! Stopping user command")
+                twitch_bot_utils.printer("Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -1005,7 +1055,7 @@ def alternate(r1,g1,b1,r2,g2,b2):
                 ser.write("#%c%c%c%c" % (r2,g2,b2,x))
         ser.write("!")
         if scaring==1:
-            printer("Scare! Stopping alternate")
+            twitch_bot_utils.printer("Scare! Stopping alternate")
             set_animating(0)
             return
         time.sleep(0.5)
@@ -1028,7 +1078,7 @@ def disco_alternate():
             else: #and the second to 15-30
                 ser.write("#%c%c%c%c" % (rgb2[0],rgb2[1],rgb2[2],z)) 
         if scaring==1:
-            printer("Scare! Stopping user command")
+            twitch_bot_utils.printer("Scare! Stopping user command")
             set_animating(0)
             return
         ser.write("!")    
@@ -1051,7 +1101,7 @@ def fire(r1,g1,b1,r2,g2,b2):
                 ser.write("#%c%c%c%c" % (r2,g2,b2,x) )
         ser.write("!")
         if scaring==1:
-            printer("Scare! Stopping fire")
+            twitch_bot_utils.printer("Scare! Stopping fire")
             set_animating(0)
             return
         time.sleep(0.1)
@@ -1070,7 +1120,7 @@ def disco_fire():
             ser.write("#%c%c%c%c" % (c[0],c[1],c[2],x) )
         ser.write("!")
         if scaring==1:
-            printer("Scare! Stopping disco fire")
+            twitch_bot_utils.printer("Scare! Stopping disco fire")
             set_animating(0)
             return
         time.sleep(0.1)
@@ -1235,7 +1285,7 @@ def user_commands(user,data):
         irc.msg("Wife Scare Part 1: https://www.youtube.com/watch?v=Q-xaW7IIa3I Part 2: https://www.youtube.com/watch?v=VROLA7HS8KI")
         return True
     
-    if command == "!spiff":
+    if data.find("!spiff") != -1:
         elapsed = alert.notify()
         if elapsed > 0:
             irc.msg("Spiff was just notified %s seconds ago!" % elapsed )
