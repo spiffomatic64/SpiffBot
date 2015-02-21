@@ -1124,7 +1124,15 @@ def user_commands(user,data):
         if elapsed > 0:
             irc.msg("Spiff was just notified %s seconds ago!" % elapsed )
         return True
-        
+    
+    if command == "!getmode" or "!whichmode":
+        if mode == 0:
+            irc.msg("ITS SCARY TIME!!!")
+            return True
+        if mode == 1:
+            irc.msg("Playing normal games")
+            return True
+
     if scaring == 1 or animating == 1:
         twitch_bot_utils.printer("Busy, adding to stack: scaring: %s animating: %s" % (scaring,animating))
         user_stack.append([user,data])
