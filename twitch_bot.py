@@ -624,6 +624,27 @@ def vibrate(wait,left,right,scare=0):
         switch()
     return
     
+def wasd(wait,scare=0):
+    scare_lock(1)
+    scare_status("Random WASD!")
+    
+    times = random.randint(30, 60)
+    keys = [0x41,0x44,0x53,0x57]
+    
+    for i in range(0,times):
+        key = random.choice(keys)
+        win32.keybd_event(key,0,0,0) 
+        time.sleep(random.randint(5, 20)/10)
+        win32.keybd_event(key,0,2,0)
+        time.sleep(random.randint(1, 10)/20)
+    
+    time.sleep(wait)
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+    return
+    
 def scare_status(status):
     f = open('scarestatus.txt', 'w')
     if status==-1:
@@ -841,9 +862,16 @@ def master_commands(user,data):
             scare.start() 
             return True
             
-        #flip the main monitor and switch control (broken atm)
+        #Dim the main monitor
         if data.find ( 'dark' ) != -1:
             scare = threading.Thread(target=dark,args=(wait+3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        #send random wasd keys
+        if data.find ( 'wasd' ) != -1:
+            scare = threading.Thread(target=wasd,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -1224,7 +1252,7 @@ def user_commands(user,data):
     #Scary mode only commands
     if mode == 0:
         hide = False
-        if data.find("!scarecommands") != -1 or data.find("!scarelist") != -1:
+        if data.find("!scarecommands") != -1 or data.find("!scarelist") != -1 or data.find("!scares") != -1:
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
         if data.find("!scaresounds") != -1:
