@@ -482,6 +482,12 @@ def wiggle(times=20,scare=0):
             hwnd = win32gui.GetForegroundWindow()
             if hwnd:
                 twitch_bot_utils.printer("Found window! hwnd: %s" % hwnd)
+                rect = win32gui.GetWindowRect(hwnd)
+                x = rect[0]
+                y = rect[1]
+                w = rect[2] - x
+                h = rect[3] - y
+                twitch_bot_utils.printer("x: %d y: %d w: %d h: %d" % (x,y,w,h))
                 break
             else:
                 twitch_bot_utils.printer("No windows %s" % hwnd)
@@ -489,8 +495,9 @@ def wiggle(times=20,scare=0):
             twitch_bot_utils.printer("Error: window not found")
             
     for i in range(0,times):
-        win32gui.SetWindowPos(hwnd,None,random.randint(0, 1280),random.randint(0, 1024),0,0,1)
+        win32gui.SetWindowPos(hwnd,None,random.randint(-2312, 2712-w),random.randint(0, 1024-h),0,0,1)
         time.sleep(1)
+    win32gui.SetWindowPos(hwnd,None,x,y,w,h,1)
     scare_status(-1)
     scare_lock(0)
     if scare==0:
