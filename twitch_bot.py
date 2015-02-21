@@ -515,6 +515,17 @@ def flicker(times=5,scare=0):
     scare_lock(0)
     if scare==0:
         switch()
+        
+def dark(times=5,scare=0):
+    twitch_bot_utils.printer("Dimming Monitor!")
+    scare_lock(1)
+    scare_status("Dimming Monitor!")
+    p = subprocess.Popen(["python", "twitch_bot_dim.py"])
+    p.wait()
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
       
 def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(1)
@@ -826,6 +837,13 @@ def master_commands(user,data):
         #flip the main monitor and switch control (broken atm)
         if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(wait+3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        #flip the main monitor and switch control (broken atm)
+        if data.find ( 'dark' ) != -1:
+            scare = threading.Thread(target=dark,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -1206,7 +1224,7 @@ def user_commands(user,data):
     #Scary mode only commands
     if mode == 0:
         hide = False
-        if data.find("!scarecommands") != -1:
+        if data.find("!scarecommands") != -1 or data.find("!scarelist") != -1:
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
         if data.find("!scaresounds") != -1:
