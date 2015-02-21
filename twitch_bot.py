@@ -174,7 +174,10 @@ def autoOptIn(user,data):
         twitch_bot_utils.printer("Auto Opting %s in!" % user)
         opt(user,True)
         irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
-
+        twitch_bot_utils.printer("Setting next user to: %s" % user)
+        irc.msg("Giving next control to our newest viewer: %s" % user)
+        next=user
+        return True
 
 def scare_lock(status):
     global scaring
