@@ -1258,7 +1258,7 @@ def user_commands(user,data):
         if command == "!scarecommands" or command == "!scarelist" or command == "!scares":
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
-        if data.find("!scaresounds") != -1:
+        if command == "!sounds" or command == "!soundsscares" or command == "!soundlist":
             temp = ""
             for sound, file in sounds.iteritems():
                 temp = temp + sound + ", "
