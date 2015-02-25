@@ -527,6 +527,17 @@ def dark(times=5,scare=0):
     scare_lock(0)
     if scare==0:
         switch()
+        
+def box(times=5,scare=0):
+    twitch_bot_utils.printer("Drawing Box!")
+    scare_lock(1)
+    scare_status("Dimming Monitor!")
+    p = subprocess.Popen(["python", "twitch_bot_box.py"])
+    p.wait()
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
       
 def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(1)
@@ -868,6 +879,13 @@ def master_commands(user,data):
         #Dim the main monitor
         if data.find ( 'dark' ) != -1:
             scare = threading.Thread(target=dark,args=(wait+3,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        #Dim the main monitor
+        if data.find ( 'box' ) != -1:
+            scare = threading.Thread(target=box,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -1255,18 +1273,18 @@ def user_commands(user,data):
     #Scary mode only commands
     if mode == 0:
         hide = False
-        if command == "!scarecommands" or command == "!scarelist" or command == "!scares":
+        if data.find("!hide") != -1:
+            hide = True
+        if data.find("!scarecommands") != -1 or data.find("!scarelist") != -1 or data.find("!scares") != -1:
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
-        if command == "!sounds" or command == "!soundsscares" or command == "!soundlist":
+        if data.find("!sounds") != -1 or data.find("!soundscares") != -1 or data.find("!soundlist") != -1:
             temp = ""
             for sound, file in sounds.iteritems():
                 temp = temp + sound + ", "
             temp = temp[:-2]
             irc.msg("Scare sounds: %s" % temp,hide)
             return True
-        if data.find("!hide") != -1:
-            hide = True
         if data.find("!patience") != -1:
             irc.msg("You can only do scares when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
             return True
