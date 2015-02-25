@@ -24,6 +24,7 @@ import twitch_bot_serial
 import subprocess
 import twitch_volume
 import ctypes
+import twitch_bot_input
 
 next_scary_game = "http://strawpoll.me/3580719"
 
@@ -615,8 +616,10 @@ def change_volume(wait,level,scare=0):
 def vibrate(wait,left,right,scare=0):
     scare_lock(1)
     scare_status("Vibrating controller!")
-    set_vibration(0,left,right)
-    time.sleep(wait)
+    stop = time.time()+wait
+    while time.time() < stop:
+        time.sleep(0.5)
+        set_vibration(0,left,right)
     set_vibration(0,0,0)
     scare_status(-1)
     scare_lock(0)
@@ -629,16 +632,16 @@ def wasd(wait,scare=0):
     scare_status("Random WASD!")
     
     times = random.randint(30, 60)
-    keys = [0x41,0x44,0x53,0x57]
+    #keys = [0x41,0x44,0x53,0x57]
+    keys = [0xCB,0xCD,0xC8,0xD0]
     
-    for i in range(0,times):
+    stop = time.time()+times
+    while time.time() < stop:
         key = random.choice(keys)
-        win32.keybd_event(key,0,0,0) 
-        time.sleep(random.randint(5, 20)/10)
-        win32.keybd_event(key,0,2,0)
-        time.sleep(random.randint(1, 10)/20)
-    
-    time.sleep(wait)
+        twitch_bot_input.PressKey(key)
+        time.sleep(random.randint(1, 10)/10.0)
+        twitch_bot_input.PressKey(key,10)
+        time.sleep(random.randint(1, 8)/2.0)
     scare_status(-1)
     scare_lock(0)
     if scare==0:
@@ -1257,7 +1260,7 @@ def user_commands(user,data):
             return True
         if data.find("!scaresounds") != -1:
             temp = ""
-            for sound, file in sounds.iteritems():swwddwwaadaasasa
+            for sound, file in sounds.iteritems():
                 temp = temp + sound + ", "
             temp = temp[:-2]
             irc.msg("Scare sounds: %s" % temp,hide)
