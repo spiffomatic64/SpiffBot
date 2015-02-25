@@ -1270,13 +1270,22 @@ def user_commands(user,data):
         if data.find("!patience") != -1:
             irc.msg("You can only do scares when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
             return True
-        if data.find("!status") != -1:
-            timeleft = round(300 - (time.time() - counter))
-            irc.msg("%s is currently in control, with %s seconds left!" % (master,timeleft),hide)
-            return True
-        if data.find("!whosgotit") != -1:
-            irc.msg("%s is currently in control!" % (master),hide)
-            return True
+        if data.find("!status") != -1 or data.find("!timeleft") != -1 or data.find("!whosgotit") != -1:
+            if scaring == 1:
+                irc.msg("%s is currently scaring..." % master,hide)
+                return True
+            if data.find("!status") != -1:
+                timeleft = round(300 - (time.time() - counter))
+                irc.msg("%s is currently in control, with %s seconds left!" % (master,timeleft),hide)
+                return True
+            #let viewers know how much time is left    
+            if data.find("!timeleft") != -1:
+                timeleft = 300 - (time.time() - counter)
+                irc.msg("%s has %s seconds left!" % (master,round(timeleft)),hide)
+                return True
+            if data.find("!whosgotit") != -1:
+                irc.msg("%s is currently in control!" % (master),hide)
+                return True
         #opt a user in, and switch if they were in control
         if command == "!optin":
             opt(user,True)
@@ -1294,11 +1303,6 @@ def user_commands(user,data):
             if db.getUserOpted(parts[1]):
                 opt_status = "in"
             irc.msg("%s is opted %s!" % (parts[1],opt_status))
-            return True
-        #let viewers know how much time is left    
-        if data.find("!timeleft") != -1:
-            timeleft = 300 - (time.time() - counter)
-            irc.msg("%s has %s seconds left!" % (master,round(timeleft)),hide)
             return True
         if data.find("am i opted") != -1:
             if user in db.getOptedUsers():
