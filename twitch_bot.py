@@ -1339,7 +1339,9 @@ def user_commands(user,data):
     if command == "!nextscarygame" or ( data.find ( 'what game' ) != -1 and data.find ( 'next' ) != -1 ):
         irc.msg("The next scary game is determined by you! Vote/Check the status here: %s!" % next_scary_game )
         return True
-    
+    if command == "!colors":
+        irc.msg("Color commands: disco, disco strobe, disco alternate, disco chase, disco fire, fire(red|blue), strobe, chase(red|white|blue), centerhase(red|white|blue), alternate(red|blue), randomcolor")
+        return True
     if command == "!intro":
         irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
         return True
