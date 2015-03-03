@@ -484,7 +484,6 @@ def wiggle(times=20,scare=0):
     scare_lock(1)
     scare_status("Wiggling window!")
     #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
-    time.sleep(2)
     while True:
         time.sleep(0.001)
         try:
