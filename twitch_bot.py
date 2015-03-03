@@ -1288,7 +1288,7 @@ def user_commands(user,data):
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
         if data.find("!trollcommands") != -1 or data.find("!trolllist") != -1 or data.find("!trolls") != -1:
-            irc.msg("Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe, blindspot and spasm. Use !sounds to list sounds.",hide)
+            irc.msg("Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe and blindspot. Use !sounds to list sounds.",hide)
             return True
         if data.find("!sounds") != -1 or data.find("!soundscares") != -1 or data.find("!soundlist") != -1:
             temp = ""
