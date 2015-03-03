@@ -110,10 +110,16 @@ def setMode(type):
         irc.msg("ITS SCARY TIME!!!")
         modedefault()
         return True
-    if type == "normal" or type == 1:
+    if type == "troll" or type == 1:
         mode = 1
-        twitch_bot_utils.printer("Normal time!")
-        irc.msg("Playing normal games")
+        twitch_bot_utils.printer("Troll time!")
+        irc.msg("LETS TROLL SPIFF!!!")
+        modedefault()
+        return True
+    if type == "light" or type == 2:
+        mode = 2
+        twitch_bot_utils.printer("Lights time!")
+        irc.msg("LIGHTS ARE PRETTY!!!")
         modedefault()
         return True
 
@@ -149,7 +155,7 @@ def twitch_profile(data):
 twitch_profile(-1)
 twitch_profile("Here are the commands you can use to play along, and interact with my \"spiffbot\"")
 twitch_profile("")
-twitch_profile("Spiffbot has 2 main modes: Scary (Thurs-Sunday), Normal (Mon-Weds)")
+twitch_profile("Spiffbot has 3 main modes: Scary (Thurs-Sunday), Troll (Mon-Weds), Light (Only control of lights)")
 twitch_profile("")
 
 def opt(user,inout,passed=None):
@@ -243,7 +249,7 @@ def mastertimer():
     counter = time.time()
     
     while True:
-        if mode == 0:
+        if mode <= 1:
             elapsed = time.time() - counter
             if elapsed >390 or elapsed<0:
                 scare_lock(0)
@@ -310,7 +316,7 @@ def switch(user="",pass_control=0):
         elif pass_control==1: #increment pass_counter
             pass_counter = pass_counter +1
         if pass_counter>2 and pass_control!=-1:
-            irc.msg("Too many passes to specific users, use a scare command, or !pass without a username") 
+            irc.msg("Too many passes to specific users, use a command, or !pass without a username") 
             switching = 0
             return
             
@@ -427,7 +433,7 @@ def admin_commands(user,data):
                 #check that user is already opted in
                 opt(parts[1],False)
                 return True
-            #change mode from scary to normal
+            #change mode between scary troll and light
             if command == "!mode":
                 if setMode(parts[1]):
                     return True
@@ -507,7 +513,7 @@ def wiggle(times=20,scare=0):
     
 #Slow strobe the monitor effect
 def flicker(times=5,scare=0):
-    twitch_bot_utils.printer("Flicker scare!")
+    twitch_bot_utils.printer("Flicker!")
     scare_lock(1)
     scare_status("Flickering Monitor!")
     p = subprocess.Popen(["python", "twitch_bot_flicker.py"])
@@ -715,7 +721,7 @@ def master_commands(user,data):
     global last_pass
     
     #check that the user is the master, and we are in scary mode
-    if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==auth.get_streamer()) and mode==0:
+    if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==auth.get_streamer()) and mode <= 1:
         if user.lower()==auth.get_streamer():
             twitch_bot_utils.printer("User is admin, dont switch")
             admin = 1
@@ -790,54 +796,15 @@ def master_commands(user,data):
             return True
         
         #select a random scare command
-        if command == "!randomscare":
-            data = random.choice(['quiet', "rattle", "touch","brush","monitor"])
+        if command == "!randomscare" and mode == 0:
+            data = random.choice(["drop","brush","tapping","spine","rattle","spasm","vibe","flip","monitor","mute","wiggle","flicker","dark","blindspot","wasd"])
+            
+        if command == "!randomtroll" and mode == 1:
+            data = random.choice(["flip","monitor","mute","wiggle","flicker","dark","blindspot","wasd"])
         
         wait = random.randint(4, 30)
         twitch_bot_utils.printer("Random wait: %s" % wait)
         
-        #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
-        if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,wait,1,admin))
-            scare.daemon = True
-            scare.start() 
-            return True
-            
-        #Move the servo attached to my legs
-        if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,wait,1,admin))
-            scare.daemon = True
-            scare.start() 
-            return True
-            
-        #Move the servo attached to my shoulder
-        if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(3,0,180,254,"Moving shoulder servo",1,wait,3,admin))
-            scare.daemon = True
-            scare.start() 
-            return True
-        
-        #rattle the vibration motor for 2 seconds, then wait 20 seconds
-        if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'desk' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,wait,1,admin))
-            scare.daemon = True
-            scare.start() 
-            return True
-            
-        #Move the servo down my shirt
-        if data.find ( 'back' ) != -1 or data.find ( 'spine' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving spine servo",1,wait,3,admin))
-            scare.daemon = True
-            scare.start() 
-            return True
-            
-        #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
-        if data.find ( 'spasm' ) != -1 or data.find ( 'shake' ) != -1 or data.find ( 'shiver' ) != -1 or data.find ( 'electrocute' ) != -1:
-            scare = threading.Thread(target=spasm_scare,args=(wait,admin))
-            scare.daemon = True
-            scare.start() 
-            return True
-            
         #flip the main monitor
         if data.find ( 'flip' ) != -1:
             scare = threading.Thread(target=flip,args=(30+wait,admin))
@@ -890,30 +857,73 @@ def master_commands(user,data):
             return True
             
         #send random wasd keys
-        '''if data.find ( 'wasd' ) != -1:
+        if data.find ( 'wasd' ) != -1:
             scare = threading.Thread(target=wasd,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
-            
-        if data.find ( 'vibe' ) != -1:
-            left = 0
-            right = 0
-            if data.find ( 'left' ) != -1:
-                left = 1
-            if data.find ( 'right' ) != -1:
-                right = 1
-            if left==0 and right==0:
-                left = 1
-                right = 1
-            if data.find ( 'soft' ) != -1:
-                left = left * 0.3
-                right = right * 0.3
-            
-            scare = threading.Thread(target=vibrate,args=(wait+3,left,right,admin))
-            scare.daemon = True
-            scare.start() 
             return True
+        
+        if mode == 0:
+            #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
+            if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
+                scare = threading.Thread(target=arduino_scare,args=(10,130,40,254,"Dropping box",1,wait,1,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+                
+            #Move the servo attached to my legs
+            if data.find ( 'brush' ) != -1 or data.find ( 'pants' ) != -1 or data.find ( 'spider' ) != -1 or data.find ( 'crawl' ) != -1:
+                scare = threading.Thread(target=arduino_scare,args=(9,130,40,254,"Moving leg servo",1,wait,1,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+                
+            #Move the servo attached to my shoulder
+            if data.find ( 'touch' ) != -1 or data.find ( 'shoulder' ) != -1 or data.find ( 'tapping' ) != -1:
+                scare = threading.Thread(target=arduino_scare,args=(3,0,180,254,"Moving shoulder servo",1,wait,3,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+            
+            #rattle the vibration motor for 2 seconds, then wait 20 seconds
+            if data.find ( 'rattle' ) != -1 or data.find ( 'fall' ) != -1 or data.find ( 'desk' ) != -1:
+                scare = threading.Thread(target=arduino_scare,args=(11,1,0,253,"Desk vibe",2,wait,1,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+                
+            #Move the servo down my shirt
+            if data.find ( 'back' ) != -1 or data.find ( 'spine' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
+                scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving spine servo",1,wait,3,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+                
+            #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
+            if data.find ( 'spasm' ) != -1 or data.find ( 'shake' ) != -1 or data.find ( 'shiver' ) != -1 or data.find ( 'electrocute' ) != -1:
+                scare = threading.Thread(target=spasm_scare,args=(wait,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+                
+            if data.find ( 'vibe' ) != -1:
+                left = 0
+                right = 0
+                if data.find ( 'left' ) != -1:
+                    left = 1
+                if data.find ( 'right' ) != -1:
+                    right = 1
+                if left==0 and right==0:
+                    left = 1
+                    right = 1
+                if data.find ( 'soft' ) != -1:
+                    left = left * 0.3
+                    right = right * 0.3
+                
+                scare = threading.Thread(target=vibrate,args=(wait+3,left,right,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
@@ -953,7 +963,7 @@ def modedefault():
         fade_thread = threading.Thread(target=fade,args=(0,0,0,100))
         fade_thread.daemon = True
         fade_thread.start()
-    if mode == 1:
+    if mode >= 1:
         fade_thread = threading.Thread(target=fade,args=(255,255,255,100))
         fade_thread.daemon = True
         fade_thread.start() 
@@ -1270,26 +1280,32 @@ def user_commands(user,data):
         return True
     
     #Scary mode only commands
-    if mode == 0:
+    if mode <= 1:
         hide = False
         if data.find("!hide") != -1:
             hide = True
         if data.find("!scarecommands") != -1 or data.find("!scarelist") != -1 or data.find("!scares") != -1:
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
+        if data.find("!trollcommands") != -1 or data.find("!trolllist") != -1 or data.find("!trolls") != -1:
+            irc.msg("Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe and spasm. Use !sounds to list sounds.",hide)
+            return True
         if data.find("!sounds") != -1 or data.find("!soundscares") != -1 or data.find("!soundlist") != -1:
             temp = ""
             for sound, file in sounds.iteritems():
                 temp = temp + sound + ", "
             temp = temp[:-2]
-            irc.msg("Scare sounds: %s" % temp,hide)
+            irc.msg("Available sounds: %s" % temp,hide)
             return True
         if data.find("!patience") != -1:
-            irc.msg("You can only do scares when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
+            irc.msg("You can only do scares/trolls when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
             return True
         if data.find("!status") != -1 or data.find("!timeleft") != -1 or data.find("!whosgotit") != -1:
             if scaring == 1:
-                irc.msg("%s is currently scaring..." % master,hide)
+                if mode == 0:
+                    irc.msg("%s is currently scaring..." % master,hide)
+                if mode == 1:
+                    irc.msg("%s is currently trolling..." % master,hide)
                 return True
             if data.find("!status") != -1:
                 timeleft = round(300 - (time.time() - counter))
@@ -1376,7 +1392,10 @@ def user_commands(user,data):
             irc.msg("ITS SCARY TIME!!!")
             return True
         if mode == 1:
-            irc.msg("Playing normal games")
+            irc.msg("LETS TROLL SPIFF!!!")
+            return True
+        if mode == 2:
+            irc.msg("LIGHTS ARE PRETTY!!!")
             return True
 
     if scaring == 1 or animating == 1:
