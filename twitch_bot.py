@@ -26,7 +26,7 @@ import twitch_volume
 import ctypes
 import twitch_bot_input
 
-next_scary_game = "http://strawpoll.me/3580719"
+next_scary_game = "http://strawpoll.me/3743145"
 
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
@@ -531,7 +531,7 @@ def dark(times=5,scare=0):
 def box(times=5,scare=0):
     twitch_bot_utils.printer("Drawing Box!")
     scare_lock(1)
-    scare_status("Dimming Monitor!")
+    scare_status("Drawing Blind Spot!")
     p = subprocess.Popen(["python", "twitch_bot_box.py"])
     p.wait()
     scare_status(-1)
@@ -643,15 +643,14 @@ def wasd(wait,scare=0):
     scare_status("Random WASD!")
     
     times = random.randint(30, 60)
-    #keys = [0x41,0x44,0x53,0x57]
-    keys = [0xCB,0xCD,0xC8,0xD0]
+    keys = [[0x11,0x57],[0x1e,0x41],[0x1f,0x53],[0x20,0x44]]
     
     stop = time.time()+times
     while time.time() < stop:
         key = random.choice(keys)
-        twitch_bot_input.PressKey(key)
+        twitch_bot_input.PressKey(key[0],key[1],True)
         time.sleep(random.randint(1, 10)/10.0)
-        twitch_bot_input.PressKey(key,10)
+        twitch_bot_input.PressKey(key[0],key[1],False)
         time.sleep(random.randint(1, 8)/2.0)
     scare_status(-1)
     scare_lock(0)
@@ -827,7 +826,7 @@ def master_commands(user,data):
             
         #Move the servo down my shirt
         if data.find ( 'back' ) != -1 or data.find ( 'spine' ) != -1 or data.find ( 'buzz' ) != -1 or data.find ( 'neck' ) != -1:
-            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving neck servo",1,wait,3,admin))
+            scare = threading.Thread(target=arduino_scare,args=(5,0,180,254,"Moving spine servo",1,wait,3,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -884,18 +883,18 @@ def master_commands(user,data):
             return True
             
         #Dim the main monitor
-        if data.find ( 'box' ) != -1:
+        if data.find ( 'blindspot' ) != -1:
             scare = threading.Thread(target=box,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
             
         #send random wasd keys
-        if data.find ( 'wasd' ) != -1:
+        '''if data.find ( 'wasd' ) != -1:
             scare = threading.Thread(target=wasd,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
             
         if data.find ( 'vibe' ) != -1:
             left = 0

@@ -1,5 +1,6 @@
 import ctypes
 import time
+import win32api
 
 SendInput = ctypes.windll.user32.SendInput
 
@@ -36,9 +37,20 @@ class Input(ctypes.Structure):
 
 # Actuals Functions
 # directx scan codes http://www.gamespp.com/directx/directInputKeyboardScanCodes.html
-def PressKey(hexKeyCode,state=8):
-    extra = ctypes.c_ulong(0)
-    ii_ = Input_I()
-    ii_.ki = KeyBdInput( 0, hexKeyCode, state, 0, ctypes.pointer(extra) )
-    x = Input( ctypes.c_ulong(1), ii_ )
-    ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
+def PressKey(DIK_SCAN,VK_SCAN,press=True):
+    if press:
+        d_state = 8
+        k_state = 1
+    else:
+        d_state = 10
+        k_state = 0x2
+    if DIK_SCAN:
+        extra = ctypes.c_ulong(0)
+        ii_ = Input_I()
+        ii_.ki = KeyBdInput( 0, DIK_SCAN, d_state, 0, ctypes.pointer(extra) )
+        x = Input( ctypes.c_ulong(1), ii_ )
+        ctypes.windll.user32.SendInput(1, ctypes.pointer(x), ctypes.sizeof(x))
+    if VK_SCAN:
+        win32api.keybd_event(VK_SCAN,0,k_state,0)
+        
+    print "DIK_SCAN %x VK_SCAN %x Press %d" % (DIK_SCAN,VK_SCAN,k_state)
