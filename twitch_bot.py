@@ -863,6 +863,25 @@ def master_commands(user,data):
             scare.start() 
             return True
         
+        if data.find ( 'vibe' ) != -1:
+                left = 0
+                right = 0
+                if data.find ( 'left' ) != -1:
+                    left = 1
+                if data.find ( 'right' ) != -1:
+                    right = 1
+                if left==0 and right==0:
+                    left = 1
+                    right = 1
+                if data.find ( 'soft' ) != -1:
+                    left = left * 0.3
+                    right = right * 0.3
+                
+                scare = threading.Thread(target=vibrate,args=(wait+3,left,right,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+        
         if mode == 0:
             #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
             if data.find ( 'quiet' ) != -1 or data.find ( 'door' ) != -1 or data.find ( 'drop' ) != -1 or data.find ( 'gun' ) != -1:
@@ -902,25 +921,6 @@ def master_commands(user,data):
             #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
             if data.find ( 'spasm' ) != -1 or data.find ( 'shake' ) != -1 or data.find ( 'shiver' ) != -1 or data.find ( 'electrocute' ) != -1:
                 scare = threading.Thread(target=spasm_scare,args=(wait,admin))
-                scare.daemon = True
-                scare.start() 
-                return True
-                
-            if data.find ( 'vibe' ) != -1:
-                left = 0
-                right = 0
-                if data.find ( 'left' ) != -1:
-                    left = 1
-                if data.find ( 'right' ) != -1:
-                    right = 1
-                if left==0 and right==0:
-                    left = 1
-                    right = 1
-                if data.find ( 'soft' ) != -1:
-                    left = left * 0.3
-                    right = right * 0.3
-                
-                scare = threading.Thread(target=vibrate,args=(wait+3,left,right,admin))
                 scare.daemon = True
                 scare.start() 
                 return True
@@ -1288,7 +1288,7 @@ def user_commands(user,data):
             irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
         if data.find("!trollcommands") != -1 or data.find("!trolllist") != -1 or data.find("!trolls") != -1:
-            irc.msg("Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe and spasm. Use !sounds to list sounds.",hide)
+            irc.msg("Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe, blindspot and spasm. Use !sounds to list sounds.",hide)
             return True
         if data.find("!sounds") != -1 or data.find("!soundscares") != -1 or data.find("!soundlist") != -1:
             temp = ""
