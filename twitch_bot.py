@@ -480,9 +480,11 @@ def flip(duration=20,scare=0):
     
 #Flip the monitor using winapi's
 def wiggle(times=20,scare=0):
+    global counter
     scare_lock(1)
     scare_status("Wiggling window!")
     #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
+    time.sleep(2)
     while True:
         time.sleep(0.001)
         try:
@@ -500,11 +502,17 @@ def wiggle(times=20,scare=0):
                 twitch_bot_utils.printer("No windows %s" % hwnd)
         except win32gui.error:
             twitch_bot_utils.printer("Error: window not found")
-            
-    for i in range(0,times):
-        win32gui.SetWindowPos(hwnd,None,random.randint(-2312, 2712-w),random.randint(0, 1024-h),0,0,1)
-        time.sleep(1)
-    win32gui.SetWindowPos(hwnd,None,x,y,w,h,1)
+    try:        
+        for i in range(0,times):
+            win32gui.SetWindowPos(hwnd,None,random.randint(-2312, 2712-w),random.randint(0, 1024-h),0,0,1)
+            time.sleep(1)
+        win32gui.SetWindowPos(hwnd,None,x,y,w,h,1)
+    except:
+        irc.msg("Wiggle failed! Returning control to %s" % master)
+        scare_status(-1)
+        scare_lock(0)
+        counter = time.time()
+        return
     scare_status(-1)
     scare_lock(0)
     if scare==0:
