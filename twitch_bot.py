@@ -653,18 +653,19 @@ def vibrate(wait,left,right,scare=0):
     
 def wasd(wait,scare=0):
     scare_lock(1)
-    scare_status("Random WASD!")
     
     times = random.randint(30, 60)
-    keys = [[0x11,0x57],[0x1e,0x41],[0x1f,0x53],[0x20,0x44]]
+    keys = [["W",0x11,0x57],["A",0x1e,0x41],["S",0x1f,0x53],["D",0x20,0x44]]
     
     stop = time.time()+times
     while time.time() < stop:
         key = random.choice(keys)
-        twitch_bot_input.PressKey(key[0],key[1],True)
+        twitch_bot_input.PressKey(key[1],key[2],True)
+        scare_status("Pressing [%s]" % key[0])
         time.sleep(random.randint(1, 10)/10.0)
-        twitch_bot_input.PressKey(key[0],key[1],False)
-        time.sleep(random.randint(1, 8)/2.0)
+        twitch_bot_input.PressKey(key[1],key[2],False)
+        scare_status("Pressing")
+        time.sleep(random.randint(1, 8)/5.0)
     scare_status(-1)
     scare_lock(0)
     if scare==0:
