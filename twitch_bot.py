@@ -568,6 +568,26 @@ def gif(wait,scare=0):
     scare_lock(0)
     if scare==0:
         switch()
+        
+def noput(scare=0):
+    scare_lock(1)
+    
+    times = random.randint(30, 60)
+    
+    stop = time.time()+times
+    while time.time() < stop:
+        ctypes.windll.user32.BlockInput(1)
+        scare_status("REDLIGHT!")
+        time.sleep(random.randint(1, 10)/10.0)
+        ctypes.windll.user32.BlockInput(0)
+        scare_status("GREENLIGHT!")
+        time.sleep(random.randint(1, 8)/5.0)
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+    return
+        
       
 def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(1)
@@ -668,7 +688,7 @@ def vibrate(wait,left,right,scare=0):
         switch()
     return
     
-def wasd(wait,scare=0):
+def wasd(scare=0):
     scare_lock(1)
     
     times = random.randint(30, 60)
@@ -723,9 +743,11 @@ twitch_profile("**flicker** : Strobes the monitor (30 frames of black 10 frames 
 twitch_profile("")
 twitch_profile("**volume**, **mute** : Disables audio completely (for me only) for a short period of time (cheatme1)")
 twitch_profile("")
-twitch_profile("**spasm**, **shake**, **shiver** or **electrocute** : Enables all scares for a short second (Falconslaver87)")
+twitch_profile("**spasm**, **shake**, **shiver** or **electrocute** : Enables all scares for a short second (Falconslayer87)")
 twitch_profile("")
 twitch_profile("**spoopy**: Show scary gif in the middle of the monitor for split second (molecularswords)")
+twitch_profile("")
+twitch_profile("**noput**: Disable mouse and keyboard sporadically (Falconslayer87)")
 twitch_profile("")
 twitch_profile("##Scary sound commands for the user in \"Control\"")
 twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
@@ -864,21 +886,21 @@ def master_commands(user,data):
             
         #flip the main monitor and switch control (broken atm)
         if data.find ( 'flicker' ) != -1:
-            scare = threading.Thread(target=flicker,args=(admin))
+            scare = threading.Thread(target=flicker,args=(admin,))
             scare.daemon = True
             scare.start() 
             return True
             
         #Dim the main monitor
         if data.find ( 'dark' ) != -1:
-            scare = threading.Thread(target=dark,args=(admin))
+            scare = threading.Thread(target=dark,args=(admin,))
             scare.daemon = True
             scare.start() 
             return True
             
         #Dim the main monitor
         if data.find ( 'blindspot' ) != -1:
-            scare = threading.Thread(target=box,args=(admin))
+            scare = threading.Thread(target=box,args=(admin,))
             scare.daemon = True
             scare.start() 
             return True
@@ -892,7 +914,7 @@ def master_commands(user,data):
             
         #send random wasd keys
         if data.find ( 'wasd' ) != -1:
-            scare = threading.Thread(target=wasd,args=(wait+3,admin))
+            scare = threading.Thread(target=wasd,args=(admin,))
             scare.daemon = True
             scare.start() 
             return True
@@ -915,6 +937,12 @@ def master_commands(user,data):
                 scare.daemon = True
                 scare.start() 
                 return True
+                
+        if data.find ( 'noput' ) != -1:
+            scare = threading.Thread(target=noput,args=(admin,))
+            scare.daemon = True
+            scare.start() 
+            return True
         
         if mode == 0:
             #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
