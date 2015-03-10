@@ -73,7 +73,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "rezombie" : "rezombie.ogg",
 "recreature" : "recreature.ogg",
 "subsonic" : "subsonic.ogg",
-"mgalert" : "metalgearalert.ogg"
+"mgalert" : "metalgearalert.ogg",
+"headshot" : "headshot.ogg"
 }
 
 class XINPUT_VIBRATION(ctypes.Structure):
@@ -822,7 +823,7 @@ def master_commands(user,data):
             return True
         
         #select a random scare command
-        if command == "!randomscare" and mode == 0:
+        if (command == "!randomscare" or command == "!butts") and mode == 0:
             data = random.choice(["drop","brush","tapping","spine","rattle","spasm","vibe","flip","monitor","mute","wiggle","flicker","dark","blindspot","spoopy","wasd"])
             
         if command == "!randomtroll" and mode == 1:
@@ -1412,6 +1413,10 @@ def user_commands(user,data):
         
     if command == "!halley":
         irc.msg("Wife Scare Part 1: https://www.youtube.com/watch?v=Q-xaW7IIa3I Part 2: https://www.youtube.com/watch?v=VROLA7HS8KI")
+        return True
+       
+    if command == "!potsandpans":
+        irc.msg("My wife busting into the room banging pots and pans to scare me: https://www.youtube.com/watch?v=ZDkJJJQbN8Q")
         return True
     
     if data.find("!spiff") != -1:
