@@ -26,7 +26,7 @@ import twitch_volume
 import ctypes
 import twitch_bot_input
 
-next_scary_game = "http://strawpoll.me/3743145"
+next_scary_game = "http://strawpoll.me/3800715"
 
 #Map of sound commands to sound files
 sounds = { "slam" : "SOUND_1277.ogg",
@@ -183,8 +183,9 @@ def autoOptIn(user,data):
         opt(user,True)
         irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
         twitch_bot_utils.printer("Setting next user to: %s" % user)
-        irc.msg("Giving next control to our newest viewer: %s" % user)
-        next=user
+        if mode == 0:
+            irc.msg("Giving next control to our newest viewer: %s" % user)
+            next.append(user)
         return True
 
 def scare_lock(status):
@@ -344,12 +345,12 @@ def switch(user="",pass_control=0):
 
         
         #if a "next" user is specified, switch to that user
-        if next:
+        if len(next)>0:
             twitch_bot_utils.printer("next was set to: %s" % next)
             if user=="":
                 twitch_bot_utils.printer("user is not set")
-                user = next
-                next = None
+                user = next.pop(0)
+                
         #Switch to user if specified
         if user in viewers:
             twitch_bot_utils.printer("User is set: %s" % user)
@@ -439,7 +440,7 @@ def admin_commands(user,data):
                     return True
             if command == "!switchnext":
                 twitch_bot_utils.printer("Setting next user to: %s" % parts[1])
-                next=parts[1]
+                next.append(parts[1])
                 return True
 
 #Not used, for debugging to list all monitors
@@ -1569,7 +1570,7 @@ scaring = 0
 switching = 0
 writing = 0
 set_animating(0)
-next = None
+next = []
 stayAlive = 1
 
 mode = twitch_bot_utils.scaryDay()
