@@ -520,7 +520,7 @@ def wiggle(times=20,scare=0):
     return
     
 #Slow strobe the monitor effect
-def flicker(times=5,scare=0):
+def flicker(scare=0):
     twitch_bot_utils.printer("Flicker!")
     scare_lock(1)
     scare_status("Flickering Monitor!")
@@ -531,7 +531,7 @@ def flicker(times=5,scare=0):
     if scare==0:
         switch()
         
-def dark(times=5,scare=0):
+def dark(scare=0):
     twitch_bot_utils.printer("Dimming Monitor!")
     scare_lock(1)
     scare_status("Dimming Monitor!")
@@ -542,12 +542,27 @@ def dark(times=5,scare=0):
     if scare==0:
         switch()
         
-def box(times=5,scare=0):
+def box(scare=0):
     twitch_bot_utils.printer("Drawing Box!")
     scare_lock(1)
     scare_status("Drawing Blind Spot!")
     p = subprocess.Popen(["python", "twitch_bot_box.py"])
     p.wait()
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+        
+def gif(wait,scare=0):
+    twitch_bot_utils.printer("GIF SCARE!")
+    scare_lock(1)
+    scare_status("GIF SCARE!")
+    status_length = 3
+    p = subprocess.Popen(["python", "twitch_bot_gif.py"])
+    p.wait()
+    time.sleep(status_length)
+    scare_status(-1)
+    time.sleep(wait-status_length)
     scare_status(-1)
     scare_lock(0)
     if scare==0:
@@ -707,7 +722,9 @@ twitch_profile("**flicker** : Strobes the monitor (30 frames of black 10 frames 
 twitch_profile("")
 twitch_profile("**volume**, **mute** : Disables audio completely (for me only) for a short period of time (cheatme1)")
 twitch_profile("")
-twitch_profile("**spasm**, **shake**, **shiver** or **electrocute&& : Enables all scares for a short second (Falconslaver87)")
+twitch_profile("**spasm**, **shake**, **shiver** or **electrocute** : Enables all scares for a short second (Falconslaver87)")
+twitch_profile("")
+twitch_profile("**spoopy**: Show scary gif in the middle of the monitor for split second (molecularswords)")
 twitch_profile("")
 twitch_profile("##Scary sound commands for the user in \"Control\"")
 twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
@@ -806,7 +823,7 @@ def master_commands(user,data):
         
         #select a random scare command
         if command == "!randomscare" and mode == 0:
-            data = random.choice(["drop","brush","tapping","spine","rattle","spasm","vibe","flip","monitor","mute","wiggle","flicker","dark","blindspot","wasd"])
+            data = random.choice(["drop","brush","tapping","spine","rattle","spasm","vibe","flip","monitor","mute","wiggle","flicker","dark","blindspot","spoopy","wasd"])
             
         if command == "!randomtroll" and mode == 1:
             data = random.choice(["flip","monitor","mute","wiggle","flicker","dark","blindspot","wasd"])
@@ -846,21 +863,28 @@ def master_commands(user,data):
             
         #flip the main monitor and switch control (broken atm)
         if data.find ( 'flicker' ) != -1:
-            scare = threading.Thread(target=flicker,args=(wait+3,admin))
+            scare = threading.Thread(target=flicker,args=(admin))
             scare.daemon = True
             scare.start() 
             return True
             
         #Dim the main monitor
         if data.find ( 'dark' ) != -1:
-            scare = threading.Thread(target=dark,args=(wait+3,admin))
+            scare = threading.Thread(target=dark,args=(admin))
             scare.daemon = True
             scare.start() 
             return True
             
         #Dim the main monitor
         if data.find ( 'blindspot' ) != -1:
-            scare = threading.Thread(target=box,args=(wait+3,admin))
+            scare = threading.Thread(target=box,args=(admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        #Show gif scare
+        if data.find ( 'spoopy' ) != -1:
+            scare = threading.Thread(target=gif,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
@@ -1209,7 +1233,7 @@ def fire(r1,g1,b1,r2,g2,b2):
 def disco_fire():
     wait_animating()
     set_animating(1)
-    irc.msg("FIRE!!!")
+    irc.msg("DISCO FIRE!!!")
     for y in range( 0, 30 ):
         for x in range( 0, 30 ):
             c = twitch_bot_utils.Wheel(((random.randint(1, 32)+random_color)*7)%255)
@@ -1294,17 +1318,17 @@ def user_commands(user,data):
         if data.find("!hide") != -1:
             hide = True
         if data.find("!scarecommands") != -1 or data.find("!scarelist") != -1 or data.find("!scares") != -1:
-            irc.msg("Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
+            irc.msg("!hide Scare commands: !randomscare, drop, brush, tapping, rattle, spine, flip, monitor, flicker, mute, dark, wasd, wiggle, and spasm. Use !scaresounds to list sound scares.",hide)
             return True
         if data.find("!trollcommands") != -1 or data.find("!trolllist") != -1 or data.find("!trolls") != -1:
-            irc.msg("Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe and blindspot. Use !sounds to list sounds.",hide)
+            irc.msg("!hide Troll commands: !randomtroll, flip, monitor, flicker, mute, dark, wasd, wiggle, vibe and blindspot. Use !sounds to list sounds.",hide)
             return True
         if data.find("!sounds") != -1 or data.find("!soundscares") != -1 or data.find("!soundlist") != -1:
             temp = ""
             for sound, file in sounds.iteritems():
                 temp = temp + sound + ", "
             temp = temp[:-2]
-            irc.msg("Available sounds: %s" % temp,hide)
+            irc.msg("!hide Available sounds: %s" % temp,hide)
             return True
         if data.find("!patience") != -1:
             irc.msg("You can only do scares/trolls when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
@@ -1410,7 +1434,7 @@ def user_commands(user,data):
     if scaring == 1 or animating == 1:
         twitch_bot_utils.printer("Busy, adding to stack: scaring: %s animating: %s" % (scaring,animating))
         user_stack.append([user,data])
-        del user_stack[5:]
+        del user_stack[10:]
         temp = []
         for stack in user_stack:
             temp.append(stack[1])
