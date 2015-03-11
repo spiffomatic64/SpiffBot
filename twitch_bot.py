@@ -74,7 +74,8 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "recreature" : "recreature.ogg",
 "subsonic" : "subsonic.ogg",
 "mgalert" : "metalgearalert.ogg",
-"headshot" : "headshot.ogg"
+"headshot" : "headshot.ogg",
+"ding" : "ding.ogg"
 }
 
 class XINPUT_VIBRATION(ctypes.Structure):
@@ -102,6 +103,7 @@ def set_animating(status):
 
 def setMode(type):
     global mode
+    global counter
     
     if type == "scary" or type == 0:
         mode = 0
@@ -114,6 +116,7 @@ def setMode(type):
     if type == "troll" or type == 1:
         mode = 1
         twitch_bot_utils.printer("Troll time!")
+        counter = time.time()
         irc.msg("LETS TROLL SPIFF!!!")
         modedefault()
         return True
@@ -308,7 +311,7 @@ def switch(user="",pass_control=0):
     twitch_bot_utils.printer("Switching with user: %s" % user)
     #if warn timer is not -1, set warn timer to -1, then back to 0 at the end of the function
     #This is used to lock the switch thread (to prevent double switching)
-    if switching == 0 and scaring == 0:
+    if switching == 0 and scaring == 0 and mode <=2 :
         switching = 1
         
         #pass limiting logic
@@ -587,7 +590,20 @@ def noput(scare=0):
     if scare==0:
         switch()
     return
-        
+
+def cdrom(wait,scare):
+    scare_lock(1)
+    scare_status("Opening CDROM!")
+    twitch_bot_utils.printer("CDROM scare, scare=%s" % scare)
+    status_length = 3
+    ctypes.windll.WINMM.mciSendStringW(u"set cdaudio door open", None, 0, None)
+    ctypes.windll.WINMM.mciSendStringW(u"set cdaudio door closed", None, 0, None)
+    time.sleep(status_length)
+    scare_status(-1)
+    time.sleep(wait-status_length)
+    scare_lock(0)
+    if scare==0:
+        switch()
       
 def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(1)
@@ -709,6 +725,25 @@ def wasd(scare=0):
         switch()
     return
     
+def minimize(wait,scare):
+    win = 0x5B
+    d = 0x44
+    scare_lock(1)
+    scare_status("Minimize!!!")
+    twitch_bot_utils.printer("Minimize scare, scare=%s" % scare)
+    status_length = 3
+    twitch_bot_input.PressKey(0,win,True)
+    twitch_bot_input.PressKey(0,d,True)
+    time.sleep(0.5)
+    twitch_bot_input.PressKey(0,d,False)
+    twitch_bot_input.PressKey(0,win,False)
+    time.sleep(status_length)
+    scare_status(-1)
+    time.sleep(wait-status_length)
+    scare_lock(0)
+    if scare==0:
+        switch()
+    
 def scare_status(status):
     f = open('scarestatus.txt', 'w')
     if status==-1:
@@ -745,9 +780,13 @@ twitch_profile("**volume**, **mute** : Disables audio completely (for me only) f
 twitch_profile("")
 twitch_profile("**spasm**, **shake**, **shiver** or **electrocute** : Enables all scares for a short second (Falconslayer87)")
 twitch_profile("")
-twitch_profile("**spoopy**: Show scary gif in the middle of the monitor for split second (molecularswords)")
+twitch_profile("**spoopy**: Show scary gif in the middle of the monitor for split second (MolecularSwords)")
 twitch_profile("")
-twitch_profile("**noput**: Disable mouse and keyboard sporadically (Falconslayer87)")
+twitch_profile("**noput**: Disable mouse and keyboard sporadically (Falconslayer87/MolecularSwords)")
+twitch_profile("")
+twitch_profile("**cdrom**: Open Cdrom drive SillyBilly79")
+twitch_profile("")
+twitch_profile("**minimize**: Minimize all windows SillyBilly79")
 twitch_profile("")
 twitch_profile("##Scary sound commands for the user in \"Control\"")
 twitch_profile("You can preview the sounds [Here](http://spiffomatic64.com/twitch/sounds)")
@@ -943,6 +982,12 @@ def master_commands(user,data):
             scare.daemon = True
             scare.start() 
             return True
+            
+        if data.find ( 'minimize' ) != -1:
+            scare = threading.Thread(target=minimize,args=(wait,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
         
         if mode == 0:
             #Drop the box on me by moving the arm down for 2 seconds, then waiting 20 seconds
@@ -983,6 +1028,13 @@ def master_commands(user,data):
             #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
             if data.find ( 'spasm' ) != -1 or data.find ( 'shake' ) != -1 or data.find ( 'shiver' ) != -1 or data.find ( 'electrocute' ) != -1:
                 scare = threading.Thread(target=spasm_scare,args=(wait,admin))
+                scare.daemon = True
+                scare.start() 
+                return True
+                
+            #rattle the smaller vibration motor for 2 seconds, then wait 20 seconds
+            if data.find ( 'cdrom' ) != -1:
+                scare = threading.Thread(target=cdrom,args=(wait,admin))
                 scare.daemon = True
                 scare.start() 
                 return True
