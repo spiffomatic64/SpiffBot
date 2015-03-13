@@ -15,7 +15,7 @@ namespace Spiff.Core
         //Public Vars
         public string Channel { get; private set; }
         public string BotName { get; private set; }
-        private string BotPass { get; set; }
+        private string oauth { get; set; }
 
         //Client vars
         private readonly TcpClient _client;
@@ -34,18 +34,14 @@ namespace Spiff.Core
         private Dictionary<string, ICommand> Commands;  
 
         //Instance
-        private static TwitchIRC _instance;
 
-        public static TwitchIRC Instance
-        {
-            get { return _instance; }
-        }
+        public static TwitchIRC Instance { get; private set; }
 
-        public TwitchIRC(string channel, string botName, string botPass)
+        public TwitchIRC(string channel, string botName, string outh)
         {
             Channel = channel;
             BotName = botName;
-            BotPass = botPass;
+            oauth = outh;
 
              _client = new TcpClient("irc.twitch.tv", 6667);
             _nwStream = _client.GetStream();
@@ -54,7 +50,9 @@ namespace Spiff.Core
 
             WriteOut = new OutUtils(_writer);
 
+            Commands = new Dictionary<string, ICommand>();
 
+            Instance = this;
         }
 
         public void Start()
@@ -106,9 +104,9 @@ namespace Spiff.Core
 
         private void Login()
         {
-            WriteOut.SendCustom("USER " + BotName + "tmi twitch :" + BotName);
-            WriteOut.SendCustom("PASS " + BotPass);
+            WriteOut.SendCustom("PASS oauth:" + oauth);
             WriteOut.SendCustom("NICK " + BotName);
+            WriteOut.SendCustom("USER " + BotName + " :SpiffBot");
         }
 
         private void Listener()
@@ -123,10 +121,12 @@ namespace Spiff.Core
                     string _channel = "";
                     string _message = "";
 
+                    Console.WriteLine(data);
                     var ex = data.Split(new[] { ' ' }, 5);
                     if (ex[0] == "PING")
                     {
                         WriteOut.SendCustom("PONG " + ex[1]);
+                        continue;
                     }
 
                     string[] split1 = data.Split(':');
@@ -164,21 +164,24 @@ namespace Spiff.Core
 
                         if (_message.StartsWith("!"))
                         {
+                            //Console.WriteLine(_message.Split(' ')[0]);
                             ICommand _command;
-                            Commands.TryGetValue(data.Split(' ')[0], out _command);
+                            Commands.TryGetValue(_message.Split(' ')[0], out _command);
 
                             if (_command != null)
                             {
-                                _command.Run(data.Split(' '), data, _channel.TrimStart('#'), _nick);
+                                _command.Run(_message.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries), _message, _channel.TrimStart('#'), _nick);
                             }
                         }
                     }
-                    Console.WriteLine(data);
+                    //Console.WriteLine(data);
                 }
             }
             catch (Exception e)
             {
-                listen.Abort();
+                Console.WriteLine(e);
+                Console.ReadKey();
+                //listen.Abort();
             }
         }
     }

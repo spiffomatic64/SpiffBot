@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Newtonsoft.Json.Linq;
@@ -25,7 +26,8 @@ namespace Spiff.Core
             {
                 var json = JObject.Parse(client.DownloadString(string.Format("https://api.twitch.tv/kraken/streams/{0}", streamer)));
 
-                return json["stream"] != null ? (string)json["stream"]["game"] : string.Empty;
+                //Console.WriteLine(json["stream"]);
+                return !string.IsNullOrEmpty((string) json["stream"]) ? (string)json["stream"]["game"] : string.Empty;
             }
         }
 

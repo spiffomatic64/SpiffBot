@@ -1,4 +1,5 @@
-﻿using Spiff.Core;
+﻿using System;
+using Spiff.Core;
 using Spiff.Core.API.Commands;
 
 namespace Spiffbot.Commands
@@ -17,7 +18,7 @@ namespace Spiffbot.Commands
 
         public override void Run(string[] parts, string complete, string channel, string nick)
         {
-            if (parts.Length <= 1)
+            if (parts.Length < 2)
             {
                 TwitchIRC.Instance.WriteOut.SendMessage("Usage: !help commandname", channel);
                 return;
