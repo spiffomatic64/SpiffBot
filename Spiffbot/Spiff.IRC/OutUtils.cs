@@ -19,7 +19,7 @@ namespace Spiff.IRC
 
         public void SendChannelJoin(string channel)
         {
-            _writer.WriteLine("PRIVMSG #{0}", channel);
+            _writer.WriteLine("JOIN #{0}", channel);
             _writer.Flush();
         }
 
