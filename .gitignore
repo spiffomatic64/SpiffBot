@@ -3,6 +3,9 @@ bin/
 obj/
 packages/
 
+#windows ini
+Config.ini
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
