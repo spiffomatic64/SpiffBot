@@ -1,4 +1,6 @@
-﻿using Spiff.IRC;
+﻿using System;
+using Spiff.IRC;
+using Spiff.IRC.API.EventArgs;
 using Spiffbot.Commands;
 
 namespace Spiffbot
@@ -12,7 +14,13 @@ namespace Spiffbot
 
             LoadCommands();
 
+            _server.OnChatHandler += OnChatHandler;
             _server.Start();
+        }
+
+        private static void OnChatHandler(object sender, ChatEvent chatEvent)
+        {
+            Console.WriteLine("[Chat][" + chatEvent.Channel + "]" + chatEvent.User + ": " + chatEvent.Message);
         }
 
         static void LoadCommands()

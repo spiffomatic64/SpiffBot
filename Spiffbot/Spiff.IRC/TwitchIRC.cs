@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Spiff.IRC.API.Commands;
+using Spiff.IRC.API.EventArgs;
 
 namespace Spiff.IRC
 {
@@ -23,7 +24,10 @@ namespace Spiff.IRC
         private readonly StreamWriter _writer;
         public OutUtils WriteOut { get; private set; }
 
-        //Listen thread
+        //event Args
+        public EventHandler<ChatEvent> OnChatHandler;
+
+            //Listen thread
         Thread listen;
 
         //Command List
@@ -59,6 +63,7 @@ namespace Spiff.IRC
             listen.Start();
 
             Login();
+            WriteOut.SendChannelJoin(Channel);
         }
 
         public void AddCommand(ICommand command)
@@ -149,6 +154,14 @@ namespace Spiff.IRC
                             }
                         }
 
+                        if (_type == "PRIVMSG" && _channel.Contains("#"))
+                        {
+                            if (OnChatHandler != null)
+                            {
+                                OnChatHandler(this, new ChatEvent(_channel, _nick, _message));
+                            }
+                        }
+
                         if (_message.StartsWith("!"))
                         {
                             ICommand _command;
@@ -156,7 +169,7 @@ namespace Spiff.IRC
 
                             if (_command != null)
                             {
-                                _command.Run(data.Split(' '), data, _channel, _nick);
+                                _command.Run(data.Split(' '), data, _channel.TrimStart('#'), _nick);
                             }
                         }
                     }
