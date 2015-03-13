@@ -1,4 +1,16 @@
-SpiffBot
+SpiffBot (C#)
+========
+In the C# Branch of Spiffbot is a C# implantation of spiffbot from it's python form into a more suitable version in C#, which will allow some of the following things
+<ol>
+<li>Easy to program plug-in interface</li>
+<li>Easy to manage Ops (outside of the twitch supported)</li>
+<li>Permissions for users</li>
+<li>And tons more to come</li>
+</ol>
+
+C# Branch is maintained by Toyz 
+
+SpiffBot (Python) - OLD
 ========
 
 Interactive Twitch IRC bot
