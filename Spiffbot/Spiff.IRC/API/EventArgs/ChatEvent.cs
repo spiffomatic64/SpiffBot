@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Spiff.IRC.API.EventArgs
+﻿namespace Spiff.Core.API.EventArgs
 {
     public class ChatEvent : System.EventArgs
     {

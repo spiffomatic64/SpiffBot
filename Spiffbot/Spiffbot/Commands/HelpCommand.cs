@@ -1,5 +1,5 @@
-﻿using Spiff.IRC;
-using Spiff.IRC.API.Commands;
+﻿using Spiff.Core;
+using Spiff.Core.API.Commands;
 
 namespace Spiffbot.Commands
 {

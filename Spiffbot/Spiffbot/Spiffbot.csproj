@@ -47,9 +47,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Spiff.IRC\Spiff.IRC.csproj">
+    <ProjectReference Include="..\Spiff.IRC\Spiff.Core.csproj">
       <Project>{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}</Project>
-      <Name>Spiff.IRC</Name>
+      <Name>Spiff.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

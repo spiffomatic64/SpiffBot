@@ -1,6 +1,6 @@
-﻿using Spiff.IRC.API.Commands;
+﻿using Spiff.Core.API.Commands;
 
-namespace Spiff.IRC.API
+namespace Spiff.Core.API
 {
     public abstract class Plugin
     {

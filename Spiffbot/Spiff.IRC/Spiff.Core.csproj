@@ -7,8 +7,8 @@
     <ProjectGuid>{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Spiff.IRC</RootNamespace>
-    <AssemblyName>Spiff.IRC</AssemblyName>
+    <RootNamespace>Spiff.Core</RootNamespace>
+    <AssemblyName>Spiff.Core</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\Commands\ICommand.cs" />
+    <Compile Include="API\EventArgs\ChatEvent.cs" />
     <Compile Include="API\Plugin.cs" />
     <Compile Include="OutUtils.cs" />
     <Compile Include="TwitchIRC.cs" />

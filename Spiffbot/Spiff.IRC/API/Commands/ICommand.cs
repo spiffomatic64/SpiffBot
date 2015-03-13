@@ -1,4 +1,4 @@
-﻿namespace Spiff.IRC.API.Commands
+﻿namespace Spiff.Core.API.Commands
 {
     public abstract class ICommand
     {

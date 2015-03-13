@@ -1,6 +1,6 @@
 ﻿using System;
-using Spiff.IRC;
-using Spiff.IRC.API.EventArgs;
+using Spiff.Core;
+using Spiff.Core.API.EventArgs;
 using Spiffbot.Commands;
 
 namespace Spiffbot
@@ -13,7 +13,6 @@ namespace Spiffbot
             _server = new TwitchIRC("channel", "Username", "Password");
 
             LoadCommands();
-
             _server.OnChatHandler += OnChatHandler;
             _server.Start();
         }

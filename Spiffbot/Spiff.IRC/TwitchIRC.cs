@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using Spiff.IRC.API.Commands;
-using Spiff.IRC.API.EventArgs;
+using Spiff.Core.API.Commands;
+using Spiff.Core.API.EventArgs;
 
-namespace Spiff.IRC
+namespace Spiff.Core
 {
     public class TwitchIRC
     {

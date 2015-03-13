@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spiffbot", "Spiffbot\Spiffbot.csproj", "{633B7398-506E-4A92-96C4-D5289ABD6366}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spiff.IRC", "Spiff.IRC\Spiff.IRC.csproj", "{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spiff.Core", "Spiff.IRC\Spiff.Core.csproj", "{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
