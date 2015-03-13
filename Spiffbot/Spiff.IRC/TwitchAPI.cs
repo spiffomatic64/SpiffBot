@@ -27,7 +27,7 @@ namespace Spiff.Core
                 var json = JObject.Parse(client.DownloadString(string.Format("https://api.twitch.tv/kraken/streams/{0}", streamer)));
 
                 //Console.WriteLine(json["stream"]);
-                return !string.IsNullOrEmpty((string) json["stream"]) ? (string)json["stream"]["game"] : string.Empty;
+                return json["stream"] != null ? (string)json["stream"]["game"] : string.Empty;
             }
         }
 

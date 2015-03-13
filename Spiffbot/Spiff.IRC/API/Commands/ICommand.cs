@@ -17,5 +17,12 @@ namespace Spiff.Core.API.Commands
 
             return user != null && user.IsMod;
         }
+
+        protected TwitchAPI.Viewer GetViewer(string nick)
+        {
+            var users = TwitchAPI.GetChatters(TwitchIRC.Instance.Channel);
+
+            return (from s in users where s.Username.ToLower().Equals(nick.ToLower()) select s).FirstOrDefault();
+        }
     }
 }

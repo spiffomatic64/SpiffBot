@@ -1,0 +1,26 @@
+﻿using Spiff.Core;
+using Spiff.Core.API.Commands;
+using Spiff.Core.Extensions;
+
+namespace DefaultCommands.Commands
+{
+    public class RandomViewer : ICommand
+    {
+        public override string CommandName
+        {
+            get { return "rndviewer"; }
+        }
+
+        public override string CommandInfo
+        {
+            get { return "Return a random viewer fom the chat"; }
+        }
+
+        public override void Run(string[] parts, string complete, string channel, string nick)
+        {
+            var viewers = TwitchAPI.GetChatters(channel);
+
+            TwitchIRC.Instance.WriteOut.SendMessage("Random User is: " + viewers.PickRandom().Username, channel);
+        }
+    }
+}

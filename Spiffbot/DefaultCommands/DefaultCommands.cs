@@ -27,6 +27,7 @@ namespace DefaultCommands
             RegisterCommand(new AllCommands());
             RegisterCommand(new HelpCommand());
             RegisterCommand(new GameCommand());
+            RegisterCommand(new RandomViewer());
         }
 
         public override void Destory()
