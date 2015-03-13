@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Spiff.Core
+namespace Spiff.Core.Utils
 {
     public class OutUtils
     {

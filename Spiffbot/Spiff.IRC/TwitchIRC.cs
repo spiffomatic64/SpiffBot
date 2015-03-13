@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using Spiff.Core.API.Commands;
 using Spiff.Core.API.EventArgs;
+using Spiff.Core.Utils;
 
 namespace Spiff.Core
 {
@@ -14,7 +15,7 @@ namespace Spiff.Core
         //Public Vars
         public string Channel { get; private set; }
         public string BotName { get; private set; }
-        public string BotPass { get; private set; }
+        private string BotPass { get; set; }
 
         //Client vars
         private readonly TcpClient _client;
