@@ -4,7 +4,10 @@ namespace Spiff.Core.API
 {
     public abstract class Plugin
     {
-        public abstract TwitchIRC TwitchIrc { get; set; }
+        //Plugin Info
+        public abstract string Name { get; }
+        public abstract string Author { get; }
+        public abstract string Description { get; }
 
         public abstract void Start();
 

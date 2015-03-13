@@ -1,7 +1,7 @@
 ﻿using Spiff.Core;
 using Spiff.Core.API.Commands;
 
-namespace Spiffbot.Commands
+namespace DefaultCommands.Commands
 {
     public class AllCommands : ICommand
     {

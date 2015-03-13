@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
+using Spiff.Core.API;
 using Spiff.Core.API.Commands;
 using Spiff.Core.API.EventArgs;
 using Spiff.Core.Utils;
@@ -31,10 +33,10 @@ namespace Spiff.Core
         Thread listen;
 
         //Command List
-        private Dictionary<string, ICommand> Commands;  
+        private Dictionary<string, ICommand> Commands;
+        private List<Plugin> BotPlugins = new List<Plugin>(); 
 
         //Instance
-
         public static TwitchIRC Instance { get; private set; }
 
         public TwitchIRC(string channel, string botName, string outh)
@@ -100,6 +102,28 @@ namespace Spiff.Core
         public Dictionary<string, ICommand> AllCommands()
         {
             return Commands;
+        }
+
+        public void LoadPlugin(Assembly plugin)
+        {
+            if (plugin != null)
+            {
+                Type[] types = plugin.GetTypes();
+                foreach (Type type in types)
+                {
+                    if (!type.IsInterface && !type.IsAbstract)
+                    {
+                        if (type.IsSubclassOf(typeof(Plugin)))
+                        {
+                            Plugin pin = (Plugin) Activator.CreateInstance(type);
+                            Console.WriteLine("[" + pin.Name + "]Loading Plugin");
+                            pin.Start();
+                            BotPlugins.Add(pin);
+                            break;
+                        }
+                    }
+                }
+            } 
         }
 
         private void Login()
