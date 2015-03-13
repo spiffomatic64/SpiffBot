@@ -1,5 +1,6 @@
 #visual studio stuff
 bin/
+obj/
 
 # Windows image file caches
 Thumbs.db

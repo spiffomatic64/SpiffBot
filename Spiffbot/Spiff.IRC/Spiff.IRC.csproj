@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{633B7398-506E-4A92-96C4-D5289ABD6366}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Spiffbot</RootNamespace>
-    <AssemblyName>Spiffbot</AssemblyName>
+    <RootNamespace>Spiff.IRC</RootNamespace>
+    <AssemblyName>Spiff.IRC</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -41,16 +39,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands\AllCommands.cs" />
-    <Compile Include="Commands\HelpCommand.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="API\Commands\ICommand.cs" />
+    <Compile Include="API\Plugin.cs" />
+    <Compile Include="OutUtils.cs" />
+    <Compile Include="TwitchIRC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Spiff.IRC\Spiff.IRC.csproj">
-      <Project>{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}</Project>
-      <Name>Spiff.IRC</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
