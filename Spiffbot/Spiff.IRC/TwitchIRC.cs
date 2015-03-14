@@ -106,12 +106,20 @@ namespace Spiff.Core
                 foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
                 {
                     Logger.Info("[Info][" + pin.Name + "]Loading Plugin");
-                    pin.Start();
                     BotPlugins.Add(pin);
                     break;
                 }
             }
         }
+
+        public void StartPlugins()
+        {
+            foreach (var plugin in BotPlugins)
+            {
+                plugin.Start();
+            }
+        }
+
         #endregion
 
         #region Privates

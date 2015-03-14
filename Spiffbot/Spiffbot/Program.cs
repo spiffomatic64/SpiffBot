@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Spiff.Core;
 using Spiff.Core.API.EventArgs;
@@ -37,11 +38,12 @@ namespace Spiffbot
 
         static void LoadPlugins()
         {
-            foreach (var dll in Directory.GetFiles(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins"), "*.dll"))
+            foreach (var assembly in Directory.GetFiles(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins"), "*.dll").Select(dll => Assembly.LoadFile(dll)))
             {
-                Assembly assembly = Assembly.LoadFile(dll);
                 TwitchIRC.Instance.LoadPlugin(assembly);
             }
+
+            TwitchIRC.Instance.StartPlugins();
         }
     }
 }
