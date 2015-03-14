@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using CustomCommands.Commands;
 using Spiff.Core.API;
-using Spiff.Core.API.Config;
+using Spiff.Core.Utils;
 
 namespace CustomCommands
 {

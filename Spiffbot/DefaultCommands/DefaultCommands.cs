@@ -1,6 +1,6 @@
-﻿using System;
-using DefaultCommands.Commands;
+﻿using DefaultCommands.Commands;
 using Spiff.Core.API;
+using Spiff.Core.Utils;
 
 namespace DefaultCommands
 {
@@ -23,7 +23,7 @@ namespace DefaultCommands
 
         public override void Start()
         {
-            Console.WriteLine("[Default Commands]Loading Plugin Commands");
+            Logger.Write("Loading Plugin Commands", Name);
             RegisterCommand(new AllCommands());
             RegisterCommand(new HelpCommand());
             RegisterCommand(new GameCommand());
@@ -32,7 +32,7 @@ namespace DefaultCommands
 
         public override void Destory()
         {
-            Console.WriteLine("[Default Commands]Stopping");
+            Logger.Write("[Default Commands]Stopping", Name);
         }
     }
 }

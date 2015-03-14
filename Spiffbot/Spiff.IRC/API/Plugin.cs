@@ -1,6 +1,6 @@
 ﻿using System.IO;
 using Spiff.Core.API.Commands;
-using Spiff.Core.API.Config;
+using Spiff.Core.Utils;
 
 namespace Spiff.Core.API
 {
@@ -23,7 +23,7 @@ namespace Spiff.Core.API
                     {
                         Directory.CreateDirectory(Path.Combine("Plugins", Name));
                     }
-                    _config = new Ini(Path.Combine("Plugins", Name, "Confin.ini"));
+                    _config = new Ini(Path.Combine("Plugins", Name, "Config.ini"));
                 }
 
                 return _config;

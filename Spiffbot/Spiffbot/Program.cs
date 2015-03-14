@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using Spiff.Core;
-using Spiff.Core.API.Config;
 using Spiff.Core.API.EventArgs;
 using Spiff.Core.IRC;
 using Spiff.Core.Utils;
