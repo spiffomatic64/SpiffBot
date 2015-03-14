@@ -113,7 +113,7 @@ namespace Spiff.Core
                 Type[] types = plugin.GetTypes();
                 foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
                 {
-                    Logger.Info("[Info][" + pin.Name + "]Loading Plugin");
+                    Logger.Info(string.Format("Loading Plugin - {0}(V -> {1})", pin.Name, pin.Version), "Plugin Engine");
                     if(start)
                         pin.Start();
                     BotPlugins.Add(pin);

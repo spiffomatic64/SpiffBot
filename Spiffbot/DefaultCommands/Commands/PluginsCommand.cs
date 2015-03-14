@@ -21,7 +21,7 @@ namespace DefaultCommands.Commands
         {
             List<string> pluginNames = TwitchIRC.Instance.AllPlugins().Select(plugin => plugin.Name).ToList();
 
-            Boardcast(string.Format("Loaded Plugins: {0}", string.Join(", ", pluginNames)));
+            Boardcast(string.Format("Loaded Plugins({0}): {1}", pluginNames.Count, string.Join(", ", pluginNames)));
         }
     }
 }
