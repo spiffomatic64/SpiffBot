@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Newtonsoft.Json.Linq;
+using Spiff.Core.Utils;
 
 namespace Spiff.Core
 {
@@ -27,7 +28,14 @@ namespace Spiff.Core
                 var json = JObject.Parse(client.DownloadString(string.Format("https://api.twitch.tv/kraken/streams/{0}", streamer)));
 
                 //Console.WriteLine(json["stream"]);
-                return json["stream"] != null ? (string)json["stream"]["game"] : string.Empty;
+                try
+                {
+                    return (string) json["stream"]["game"];
+                }
+                catch (Exception e)
+                {
+                    return string.Empty;
+                }
             }
         }
 
@@ -37,10 +45,20 @@ namespace Spiff.Core
             //https://tmi.twitch.tv/group/user/%s/chatters
             using (var client = new WebClient())
             {
-                var json = JObject.Parse(client.DownloadString(string.Format("https://tmi.twitch.tv/group/user/{0}/chatters", streamer)));
+                try
+                {
+                    var json =
+                        JObject.Parse(
+                            client.DownloadString(string.Format("https://tmi.twitch.tv/group/user/{0}/chatters",
+                                streamer)));
 
-                users.AddRange(json["chatters"]["viewers"].Select(viewer => new Viewer((string) viewer, false)));
-                users.AddRange(json["chatters"]["viewers"].Select(viewer => new Viewer((string)viewer, true)));
+                    users.AddRange(json["chatters"]["viewers"].Select(viewer => new Viewer((string) viewer, false)));
+                    users.AddRange(json["chatters"]["moderators"].Select(viewer => new Viewer((string) viewer, true)));
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "TwitchAPI");
+                }
             }
 
             return users;

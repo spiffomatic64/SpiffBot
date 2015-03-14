@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Spiff.Core;
 using Spiff.Core.API.EventArgs;
 using Spiff.Core.IRC;
@@ -24,6 +25,8 @@ namespace Spiffbot
             _server.OnChatHandler += OnChatHandler;
             _server.IrcClient.OnTwitchDataDebugOut += IrcClientOnOnTwitchDataDebugOut;
             _server.IrcClient.Start();
+
+            new Thread(TitleUpdater).Start();
         }
 
         private static void IrcClientOnOnTwitchDataDebugOut(object sender, TwitchEvent twitchEvent)
@@ -44,6 +47,18 @@ namespace Spiffbot
             }
 
             TwitchIRC.Instance.StartPlugins();
+        }
+
+        static void TitleUpdater()
+        {
+            while (true)
+            {
+                var viewers = TwitchAPI.GetChatters(TwitchIRC.Instance.Channel).Count;
+
+                Console.Title = string.Format("Spiffbot - Viewers: {0}", viewers);
+
+                Thread.Sleep(1000);
+            }
         }
     }
 }
