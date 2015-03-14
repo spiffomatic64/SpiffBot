@@ -42,6 +42,7 @@
     <Compile Include="Commands\AllCommands.cs" />
     <Compile Include="Commands\GameCommand.cs" />
     <Compile Include="Commands\HelpCommand.cs" />
+    <Compile Include="Commands\PluginsCommand.cs" />
     <Compile Include="Commands\RandomViewer.cs" />
     <Compile Include="DefaultCommands.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

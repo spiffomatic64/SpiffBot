@@ -2,7 +2,7 @@
 
 namespace CustomCommands.Commands
 {
-    public class ReloadConfigSettings : ICommand
+    public class ReloadConfigSettings : Command
     {
         public override string CommandName
         {

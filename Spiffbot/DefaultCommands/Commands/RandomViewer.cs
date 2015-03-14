@@ -4,7 +4,7 @@ using Spiff.Core.Extensions;
 
 namespace DefaultCommands.Commands
 {
-    public class RandomViewer : ICommand
+    public class RandomViewer : Command
     {
         public override string CommandName
         {

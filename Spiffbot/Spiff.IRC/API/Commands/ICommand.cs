@@ -2,7 +2,7 @@
 
 namespace Spiff.Core.API.Commands
 {
-    public abstract class ICommand
+    public abstract class Command
     {
         public abstract string CommandName { get; }
         public abstract string CommandInfo { get; }
@@ -18,6 +18,11 @@ namespace Spiff.Core.API.Commands
             return user != null && user.IsMod;
         }
 
+        protected bool IsOwner(string nick)
+        {
+            return TwitchIRC.Instance.Channel.ToLower().Equals(nick.ToLower());
+        }
+
         protected TwitchAPI.Viewer GetViewer(string nick)
         {
             var users = TwitchAPI.GetChatters(TwitchIRC.Instance.Channel);
@@ -25,14 +30,11 @@ namespace Spiff.Core.API.Commands
             return (from s in users where s.Username.ToLower().Equals(nick.ToLower()) select s).FirstOrDefault();
         }
 
-        protected bool IsOwner(string nick)
-        {
-            return TwitchIRC.Instance.Channel.ToLower().Equals(nick.ToLower());
-        }
-
         protected void Boardcast(string message)
         {
             TwitchIRC.Instance.WriteOut.SendMessage(message, TwitchIRC.Instance.Channel);
         }
+
+
     }
 }

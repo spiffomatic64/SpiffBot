@@ -26,11 +26,11 @@ namespace Spiff.Core
         public OutUtils WriteOut { get; set; }
 
         //event Args
-        public event EventHandler<ChatEvent> OnChatHandler;
+        public event EventHandler<OnChatEvent> OnChatHandler;
         public event EventHandler<OnCommandEvent> OnCommandHandler;
 
         //Command List
-        public Dictionary<string, ICommand> Commands {get; private set; }
+        public Dictionary<string, Command> Commands {get; private set; }
         public List<Plugin> BotPlugins {get; private set;}
 
         //Instance
@@ -44,7 +44,7 @@ namespace Spiff.Core
             Channel = channel;
             BotName = botName;
             _oauth = outh;
-            Commands = new Dictionary<string, ICommand>();
+            Commands = new Dictionary<string, Command>();
             BotPlugins = new List<Plugin>();
 
             Instance = this;
@@ -55,9 +55,9 @@ namespace Spiff.Core
         }
 
         #region Publics
-        public void AddCommand(ICommand command)
+        public void AddCommand(Command command)
         {
-            ICommand _command;
+            Command _command;
             Commands.TryGetValue("!" + command.CommandName, out _command);
 
             if (_command == null)
@@ -66,9 +66,9 @@ namespace Spiff.Core
             }
         }
 
-        public void RemoveCommand(ICommand command)
+        public void RemoveCommand(Command command)
         {
-            ICommand _command;
+            Command _command;
             Commands.TryGetValue("!" + command.CommandName, out _command);
 
             if (_command == null)
@@ -79,7 +79,7 @@ namespace Spiff.Core
 
         public void RemoveCommand(string command)
         {
-            ICommand _command;
+            Command _command;
             Commands.TryGetValue("!" + command, out _command);
 
             if (_command == null)
@@ -88,7 +88,7 @@ namespace Spiff.Core
             }
         }
 
-        public Dictionary<string, ICommand> AllCommands()
+        public Dictionary<string, Command> AllCommands()
         {
             return Commands;
         }
@@ -147,12 +147,12 @@ namespace Spiff.Core
                 if (type == "PRIVMSG" && channel.Contains("#"))
                 {
                     if (OnChatHandler != null)
-                        OnChatHandler(this, new ChatEvent(channel, nick, message));
+                        OnChatHandler(this, new OnChatEvent(channel, nick, message));
                 }
 
                 if (message.StartsWith("!"))
                 {
-                    ICommand command;
+                    Command command;
                     Commands.TryGetValue(message.Split(' ')[0], out command);
 
                     if (command != null)

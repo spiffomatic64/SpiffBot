@@ -34,7 +34,7 @@ namespace Spiff.Core.API
 
         public abstract void Destory();
 
-        protected void RegisterCommand(ICommand command)
+        protected void RegisterCommand(Command command)
         {
             TwitchIRC.Instance.AddCommand(command);
         }

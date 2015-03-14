@@ -30,7 +30,7 @@ namespace Spiffbot
             Logger.Debug("[Debug]" + twitchEvent.Payload);
         }
 
-        private static void OnChatHandler(object sender, ChatEvent chatEvent)
+        private static void OnChatHandler(object sender, OnChatEvent chatEvent)
         {
             Logger.Write("[Chat][" + chatEvent.Channel + "]" + chatEvent.User + ": " + chatEvent.Message);
         }

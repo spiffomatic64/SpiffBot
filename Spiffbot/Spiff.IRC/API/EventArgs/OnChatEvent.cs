@@ -1,12 +1,12 @@
 ﻿namespace Spiff.Core.API.EventArgs
 {
-    public class ChatEvent : System.EventArgs
+    public class OnChatEvent : System.EventArgs
     {
         public string Channel { get; private set; }
         public string User { get; private set; }
         public string Message { get; private set; }
 
-        public ChatEvent(string channel, string user, string message)
+        public OnChatEvent(string channel, string user, string message)
         {
             Channel = channel;
             User = user;

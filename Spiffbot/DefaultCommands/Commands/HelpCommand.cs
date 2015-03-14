@@ -3,7 +3,7 @@ using Spiff.Core.API.Commands;
 
 namespace DefaultCommands.Commands
 {
-    public class HelpCommand : ICommand
+    public class HelpCommand : Command
     {
         public override string CommandName
         {
@@ -23,7 +23,7 @@ namespace DefaultCommands.Commands
                 return;
             }
 
-            ICommand command;
+            Command command;
 
             TwitchIRC.Instance.AllCommands().TryGetValue("!" + parts[1], out command);
 

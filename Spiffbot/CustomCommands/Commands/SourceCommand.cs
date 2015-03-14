@@ -3,7 +3,7 @@ using Spiff.Core.API.Commands;
 
 namespace CustomCommands.Commands
 {
-    public class SourceCommand : ICommand
+    public class SourceCommand : Command
     {
         public override string CommandName
         {

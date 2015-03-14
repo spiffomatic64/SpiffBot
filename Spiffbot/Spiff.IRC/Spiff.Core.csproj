@@ -45,7 +45,7 @@
   <ItemGroup>
     <Compile Include="API\Commands\ICommand.cs" />
     <Compile Include="Utils\Ini.cs" />
-    <Compile Include="API\EventArgs\ChatEvent.cs" />
+    <Compile Include="API\EventArgs\OnChatEvent.cs" />
     <Compile Include="API\EventArgs\OnCommandEvent.cs" />
     <Compile Include="API\Plugin.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
