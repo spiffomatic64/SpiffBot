@@ -57,7 +57,7 @@ namespace Spiff.Core
                 }
                 catch (Exception e)
                 {
-                    Logger.Error(e, "TwitchAPI");
+                    //Logger.Error(e, "TwitchAPI");
                 }
             }
 
