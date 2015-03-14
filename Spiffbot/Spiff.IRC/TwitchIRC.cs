@@ -98,7 +98,7 @@ namespace Spiff.Core
             return BotPlugins;
         } 
 
-        public void LoadPlugin(Assembly plugin)
+        public void LoadPlugin(Assembly plugin, bool start = false)
         {
             if (plugin != null)
             {
@@ -106,6 +106,8 @@ namespace Spiff.Core
                 foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
                 {
                     Logger.Info("[Info][" + pin.Name + "]Loading Plugin");
+                    if(start)
+                        pin.Start();
                     BotPlugins.Add(pin);
                     break;
                 }
