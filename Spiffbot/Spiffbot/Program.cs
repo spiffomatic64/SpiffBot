@@ -33,14 +33,18 @@ namespace Spiffbot
                 Environment.Exit(0);
             }
 
+            Logger.Info("Please Wait... Spiffbot is loading...", "SpiffBot");
             _server = new TwitchIRC(ConfigFile.GetValue("channel", "channel", "thetoyz"), ConfigFile.GetValue("auth", "Username", "ToyzBot"), ConfigFile.GetValue("auth", "oauth", "oauth"));
 
+            Logger.Info("Loading all plugins", "SpiffBot");
             LoadPlugins();
+            Logger.Info("Plugins have been loaded", "SpiffBot");
             _server.OnChatHandler += OnChatHandler;
             _server.IrcClient.OnTwitchDataDebugOut += IrcClientOnOnTwitchDataDebugOut;
             _server.IrcClient.Start();
 
             new Thread(TitleUpdater).Start();
+            Logger.Info("Spiffbot has started and conntected to twitch", "SpiffBot");
         }
 
         private static void IrcClientOnOnTwitchDataDebugOut(object sender, TwitchEvent twitchEvent)
