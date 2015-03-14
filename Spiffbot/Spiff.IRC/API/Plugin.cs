@@ -1,7 +1,5 @@
 ﻿using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using Spiff.Core.API.Commands;
 using Spiff.Core.Utils;
 
@@ -16,6 +14,10 @@ namespace Spiff.Core.API
         public abstract int Version { get; }
 
         //Abstracts
+        public void Preload()
+        {
+            //Can be overried to Preload stuff  
+        }
         public abstract void Start();
         public abstract void Destory();
 

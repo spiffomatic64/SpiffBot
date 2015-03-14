@@ -51,6 +51,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DefaultCommands\DefaultCommands.csproj">
+      <Project>{F3060D92-F6E7-4F4F-BE72-A6931C8B9B3D}</Project>
+      <Name>DefaultCommands</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Spiff.IRC\Spiff.Core.csproj">
       <Project>{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}</Project>
       <Name>Spiff.Core</Name>

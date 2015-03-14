@@ -34,7 +34,5 @@ namespace Spiff.Core.API.Commands
         {
             TwitchIRC.Instance.WriteOut.SendMessage(message, TwitchIRC.Instance.Channel);
         }
-
-
     }
 }

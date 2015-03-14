@@ -37,6 +37,7 @@ namespace CustomCommands
                 ConfigSettings.Flush();
             }
 
+            Logger.Debug("Is Default Plugin Set: " + ((DefaultCommands.DefaultCommands)GetPlugin("Default Commands") != null), Name);
             RegisterCommand(new SourceCommand());
             RegisterCommand(new SongCommand());
             RegisterCommand(new ReloadConfigSettings());

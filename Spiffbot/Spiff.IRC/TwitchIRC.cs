@@ -2,11 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Security.Principal;
-using System.Text;
-using System.Threading;
 using Spiff.Core.API;
 using Spiff.Core.API.Commands;
 using Spiff.Core.API.EventArgs;
@@ -32,12 +28,13 @@ namespace Spiff.Core
         //Command List
         public Dictionary<string, Command> Commands {get; private set; }
         public List<Plugin> BotPlugins {get; private set;}
+        private Dictionary<string, Assembly> LoadedAssemblies = new Dictionary<string, Assembly>();  
 
         //Instance
         public static TwitchIRC Instance { get; private set; }
 
         //Server IRC stuff
-        public IRC.Client IrcClient;
+        public Client IrcClient;
 
         public TwitchIRC(string channel, string botName, string outh)
         {
@@ -49,9 +46,17 @@ namespace Spiff.Core
 
             Instance = this;
 
-            IrcClient = new IRC.Client(channel, botName, outh, this);
+            IrcClient = new Client(channel, botName, outh, this);
 
             IrcClient.OnTwitchEvent += IrcClientOnOnTwitchEvent;
+
+            AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainOnAssemblyResolve;
+        }
+
+        private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            //Nasty hack to fix talking between plugins but works the best maybe will find a better way later
+            return LoadedAssemblies[args.Name];
         }
 
         #region Publics
@@ -102,6 +107,9 @@ namespace Spiff.Core
         {
             if (plugin != null)
             {
+                if(!LoadedAssemblies.ContainsKey(plugin.FullName))
+                    LoadedAssemblies.Add(plugin.FullName, plugin);
+
                 Type[] types = plugin.GetTypes();
                 foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
                 {
