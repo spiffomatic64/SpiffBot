@@ -21,6 +21,11 @@ namespace DefaultCommands
             get { return "This is default  commands that ship with this bot"; }
         }
 
+        public override int Version
+        {
+            get { return 1; }
+        }
+
         public override void Start()
         {
             Logger.Write("Loading Plugin Commands", Name);

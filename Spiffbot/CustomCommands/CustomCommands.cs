@@ -22,6 +22,11 @@ namespace CustomCommands
             get { return "A few custom commands for my stream"; }
         }
 
+        public override int Version
+        {
+            get { return 1; }
+        }
+
         public static Ini ConfigSettings;
         public override void Start()
         {
