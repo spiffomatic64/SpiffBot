@@ -107,9 +107,6 @@ namespace Spiff.Core
         {
             if (plugin != null)
             {
-                if(!LoadedAssemblies.ContainsKey(plugin.FullName))
-                    LoadedAssemblies.Add(plugin.FullName, plugin);
-
                 Type[] types = plugin.GetTypes();
                 foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
                 {
@@ -121,6 +118,13 @@ namespace Spiff.Core
                 }
             }
         }
+
+        public void RegisterAssembly(Assembly plugin)
+        {
+            if (!LoadedAssemblies.ContainsKey(plugin.FullName))
+                LoadedAssemblies.Add(plugin.FullName, plugin);
+        }
+
 
         public void StartPlugins()
         {

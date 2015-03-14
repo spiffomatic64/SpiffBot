@@ -8,173 +8,168 @@ namespace Spiff.Core.Utils
 {
     public class Ini
     {
-        
-#region "Declarations"
+        #region "Declarations"
 
-		// *** Lock for thread-safe access to file and local cache ***
-		private object m_Lock = new object();
+        // *** Lock for thread-safe access to file and local cache ***
+        private readonly object _mLock = new object();
 
-		// *** File name ***
-		private string m_FileName = null;
-		public string FileName
-		{
-			get
-			{
-				return m_FileName;
-			}
-		}
+        // *** File name ***
+        public string FileName { get; private set; }
 
-		// *** Lazy loading flag ***
-		private bool m_Lazy = false;
+        // *** Lazy loading flag ***
+        private bool _mLazy;
 
         // *** Automatic flushing flag ***
-        private bool m_AutoFlush = false;
+        private bool _mAutoFlush;
 
-		// *** Local cache ***
-        private Dictionary<string, Dictionary<string, string>> m_Sections = new Dictionary<string, Dictionary<string, string>>();
-        private Dictionary<string, Dictionary<string, string>> m_Modified = new Dictionary<string, Dictionary<string, string>>(); 
+        // *** Local cache ***
+        private readonly Dictionary<string, Dictionary<string, string>> _mSections =
+            new Dictionary<string, Dictionary<string, string>>();
 
-		// *** Local cache modified flag ***
-		private bool m_CacheModified = false;
+        private readonly Dictionary<string, Dictionary<string, string>> _mModified =
+            new Dictionary<string, Dictionary<string, string>>();
 
-#endregion
+        // *** Local cache modified flag ***
+        private bool _mCacheModified;
 
-#region "Methods"
+        #endregion
 
-		// *** Constructor ***
-		public Ini(string FileName)
-		{
-			Initialize(FileName, false, false);
-		}
+        #region "Methods"
 
-		public Ini(string FileName, bool Lazy, bool AutoFlush)
-		{
-            Initialize(FileName, Lazy, AutoFlush);
-		}
+        // *** Constructor ***
+        public Ini(string fileName)
+        {
+            FileName = null;
+            Initialize(fileName, false, false);
+        }
 
-		// *** Initialization ***
-        private void Initialize(string FileName, bool Lazy, bool AutoFlush)
-		{
-			m_FileName = FileName;
-			m_Lazy = Lazy;
-            m_AutoFlush = AutoFlush;
-			if (!m_Lazy) Refresh();
-		}
+        public Ini(string fileName, bool lazy, bool autoFlush)
+        {
+            FileName = null;
+            Initialize(fileName, lazy, autoFlush);
+        }
+
+        // *** Initialization ***
+        private void Initialize(string fileName, bool lazy, bool autoFlush)
+        {
+            FileName = fileName;
+            _mLazy = lazy;
+            _mAutoFlush = autoFlush;
+            if (!_mLazy) Refresh();
+        }
 
         // *** Parse section name ***
-        private string ParseSectionName(string Line)
+        private static string ParseSectionName(string line)
         {
-            if (!Line.StartsWith("[")) return null;
-            if (!Line.EndsWith("]")) return null;
-            if (Line.Length < 3) return null;
-            return Line.Substring(1, Line.Length - 2);
+            if (!line.StartsWith("[")) return null;
+            if (!line.EndsWith("]")) return null;
+            if (line.Length < 3) return null;
+            return line.Substring(1, line.Length - 2);
         }
 
         // *** Parse key+value pair ***
-        private bool ParseKeyValuePair(string Line, ref string Key, ref string Value)
+        private static bool ParseKeyValuePair(string line, ref string key, ref string value)
         {
             // *** Check for key+value pair ***
             int i;
-            if ((i = Line.IndexOf('=')) <= 0) return false;
-            
-            int j = Line.Length - i - 1;
-            Key = Line.Substring(0, i).Trim();
-            if (Key.Length <= 0) return false;
+            if ((i = line.IndexOf('=')) <= 0) return false;
 
-            Value = (j > 0) ? (Line.Substring(i + 1, j).Trim()) : ("");
+            var j = line.Length - i - 1;
+            key = line.Substring(0, i).Trim();
+            if (key.Length <= 0) return false;
+
+            value = (j > 0) ? (line.Substring(i + 1, j).Trim()) : ("");
             return true;
         }
 
-		// *** Read file contents into local cache ***
-		public void Refresh()
-		{
-			lock (m_Lock)
-			{
-				StreamReader sr = null;
-				try
-				{
-					// *** Clear local cache ***
-					m_Sections.Clear();
-                    m_Modified.Clear();
+        // *** Read file contents into local cache ***
+        public void Refresh()
+        {
+            lock (_mLock)
+            {
+                StreamReader sr = null;
+                try
+                {
+                    // *** Clear local cache ***
+                    _mSections.Clear();
+                    _mModified.Clear();
 
-					// *** Open the INI file ***
-					try
-					{
-						sr = new StreamReader(m_FileName);
-					}
-					catch (FileNotFoundException)
-					{
-						return;
-					}
+                    // *** Open the INI file ***
+                    try
+                    {
+                        sr = new StreamReader(FileName);
+                    }
+                    catch (FileNotFoundException)
+                    {
+                        return;
+                    }
 
-					// *** Read up the file content ***
-					Dictionary<string, string> CurrentSection = null;
-					string s;
-                    string SectionName;
-                    string Key = null;
-                    string Value = null;
-					while ((s = sr.ReadLine()) != null)
-					{
-						s = s.Trim();
-						
-						// *** Check for section names ***
-                        SectionName = ParseSectionName(s);
-                        if (SectionName != null)
-						{
-						    // *** Only first occurrence of a section is loaded ***
-						    if (m_Sections.ContainsKey(SectionName))
-						    {
-							    CurrentSection = null;
-						    }
-						    else
-						    {
-							    CurrentSection = new Dictionary<string, string>();
-                                m_Sections.Add(SectionName, CurrentSection);
-						    }
-						}
-						else if (CurrentSection != null)
-						{
+                    // *** Read up the file content ***
+                    Dictionary<string, string> currentSection = null;
+                    string s;
+                    string key = null;
+                    string value = null;
+                    while ((s = sr.ReadLine()) != null)
+                    {
+                        s = s.Trim();
+
+                        // *** Check for section names ***
+                        var sectionName = ParseSectionName(s);
+                        if (sectionName != null)
+                        {
+                            // *** Only first occurrence of a section is loaded ***
+                            if (_mSections.ContainsKey(sectionName))
+                            {
+                                currentSection = null;
+                            }
+                            else
+                            {
+                                currentSection = new Dictionary<string, string>();
+                                _mSections.Add(sectionName, currentSection);
+                            }
+                        }
+                        else if (currentSection != null)
+                        {
                             // *** Check for key+value pair ***
-                            if (ParseKeyValuePair(s, ref Key, ref Value))
+                            if (ParseKeyValuePair(s, ref key, ref value))
                             {
                                 // *** Only first occurrence of a key is loaded ***
-                                if (!CurrentSection.ContainsKey(Key))
+                                if (!currentSection.ContainsKey(key))
                                 {
-                                    CurrentSection.Add(Key, Value);
+                                    currentSection.Add(key, value);
                                 }
                             }
-						}
-					}
-				}
-				finally
-				{
-					// *** Cleanup: close file ***
-					if (sr != null) sr.Close();
-					sr = null;
-				}
-			}
-		}
-		
-		// *** Flush local cache content ***
-		public void Flush()
+                        }
+                    }
+                }
+                finally
+                {
+                    // *** Cleanup: close file ***
+                    if (sr != null) sr.Close();
+                }
+            }
+        }
+
+        // *** Flush local cache content ***
+        public void Flush()
         {
-            lock (m_Lock)
+            lock (_mLock)
             {
                 PerformFlush();
             }
         }
 
-        private void PerformFlush()
+        protected virtual void PerformFlush()
         {
             // *** If local cache was not modified, exit ***
-            if (!m_CacheModified) return;
-            m_CacheModified = false;
+            if (!_mCacheModified) return;
+            _mCacheModified = false;
 
             // *** Check if original file exists ***
-            bool OriginalFileExists = File.Exists(m_FileName);
+            var OriginalFileExists = File.Exists(FileName);
 
             // *** Get temporary file name ***
-            string TmpFileName = Path.ChangeExtension(m_FileName, "$n$");
+            var TmpFileName = Path.ChangeExtension(FileName, "$n$");
 
             // *** Copy content of original file to temporary file, replace modified values ***
             StreamWriter sw = null;
@@ -191,7 +186,7 @@ namespace Spiff.Core.Utils
                     try
                     {
                         // *** Open the original file ***
-                        sr = new StreamReader(m_FileName);
+                        sr = new StreamReader(FileName);
 
                         // *** Read the file original content, replace changes with local cache values ***
                         string s;
@@ -199,7 +194,7 @@ namespace Spiff.Core.Utils
                         string Key = null;
                         string Value = null;
                         bool Unmodified;
-                        bool Reading = true;
+                        var Reading = true;
                         while (Reading)
                         {
                             s = sr.ReadLine();
@@ -226,7 +221,7 @@ namespace Spiff.Core.Utils
                                     // *** Write all remaining modified values before leaving a section ****
                                     if (CurrentSection.Count > 0)
                                     {
-                                        foreach (string fkey in CurrentSection.Keys)
+                                        foreach (var fkey in CurrentSection.Keys)
                                         {
                                             if (CurrentSection.TryGetValue(fkey, out Value))
                                             {
@@ -243,7 +238,7 @@ namespace Spiff.Core.Utils
                                 if (Reading)
                                 {
                                     // *** Check if current section is in local modified cache ***
-                                    if (!m_Modified.TryGetValue(SectionName, out CurrentSection))
+                                    if (!_mModified.TryGetValue(SectionName, out CurrentSection))
                                     {
                                         CurrentSection = null;
                                     }
@@ -287,7 +282,7 @@ namespace Spiff.Core.Utils
                 }
 
                 // *** Cycle on all remaining modified values ***
-                foreach (KeyValuePair<string, Dictionary<string, string>> SectionPair in m_Modified)
+                foreach (var SectionPair in _mModified)
                 {
                     CurrentSection = SectionPair.Value;
                     if (CurrentSection.Count > 0)
@@ -300,7 +295,7 @@ namespace Spiff.Core.Utils
                         sw.WriteLine(']');
 
                         // *** Cycle on all key+value pairs in the section ***
-                        foreach (KeyValuePair<string, string> ValuePair in CurrentSection)
+                        foreach (var ValuePair in CurrentSection)
                         {
                             // *** Write the key+value pair ***
                             sw.Write(ValuePair.Key);
@@ -310,14 +305,14 @@ namespace Spiff.Core.Utils
                         CurrentSection.Clear();
                     }
                 }
-                m_Modified.Clear();
+                _mModified.Clear();
 
                 // *** Close the temporary file ***
                 sw.Close();
                 sw = null;
 
                 // *** Rename the temporary file ***
-                File.Copy(TmpFileName, m_FileName, true);
+                File.Copy(TmpFileName, FileName, true);
 
                 // *** Delete the temporary file ***
                 File.Delete(TmpFileName);
@@ -329,85 +324,85 @@ namespace Spiff.Core.Utils
                 sw = null;
             }
         }
-	
-		// *** Read a value from local cache ***
-		public string GetValue(string SectionName, string Key, string DefaultValue)
-		{
-			// *** Lazy loading ***
-			if (m_Lazy)
-			{
-				m_Lazy = false;
-				Refresh();
-			}
 
-			lock (m_Lock)
-			{
-				// *** Check if the section exists ***
-				Dictionary<string, string> Section;
-				if (!m_Sections.TryGetValue(SectionName, out Section)) return DefaultValue;
+        // *** Read a value from local cache ***
+        public string GetValue(string sectionName, string key, string defaultValue)
+        {
+            // *** Lazy loading ***
+            if (_mLazy)
+            {
+                _mLazy = false;
+                Refresh();
+            }
 
-				// *** Check if the key exists ***
-				string Value;
-				if (!Section.TryGetValue(Key, out Value)) return DefaultValue;
-			
-				// *** Return the found value ***
-				return Value;
-			}
-		}
+            lock (_mLock)
+            {
+                // *** Check if the section exists ***
+                Dictionary<string, string> section;
+                if (!_mSections.TryGetValue(sectionName, out section)) return defaultValue;
 
-		// *** Insert or modify a value in local cache ***
-		public void SetValue(string SectionName, string Key, string Value)
-		{
-			// *** Lazy loading ***
-			if (m_Lazy)
-			{
-				m_Lazy = false;
-				Refresh();
-			}
+                // *** Check if the key exists ***
+                string value;
+                if (!section.TryGetValue(key, out value)) return defaultValue;
 
-			lock (m_Lock)
-			{
-				// *** Flag local cache modification ***
-				m_CacheModified = true;
+                // *** Return the found value ***
+                return value;
+            }
+        }
 
-				// *** Check if the section exists ***
-				Dictionary<string, string> Section;
-				if (!m_Sections.TryGetValue(SectionName, out Section))
-				{
-					// *** If it doesn't, add it ***
-					Section = new Dictionary<string, string>();
-					m_Sections.Add(SectionName,Section);
-				}
+        // *** Insert or modify a value in local cache ***
+        public void SetValue(string sectionName, string key, string value)
+        {
+            // *** Lazy loading ***
+            if (_mLazy)
+            {
+                _mLazy = false;
+                Refresh();
+            }
 
-				// *** Modify the value ***
-				if (Section.ContainsKey(Key)) Section.Remove(Key);
-				Section.Add(Key, Value);
+            lock (_mLock)
+            {
+                // *** Flag local cache modification ***
+                _mCacheModified = true;
 
-                // *** Add the modified value to local modified values cache ***
-                if (!m_Modified.TryGetValue(SectionName, out Section))
+                // *** Check if the section exists ***
+                Dictionary<string, string> section;
+                if (!_mSections.TryGetValue(sectionName, out section))
                 {
-                    Section = new Dictionary<string, string>();
-                    m_Modified.Add(SectionName, Section);
+                    // *** If it doesn't, add it ***
+                    section = new Dictionary<string, string>();
+                    _mSections.Add(sectionName, section);
                 }
 
-                if (Section.ContainsKey(Key)) Section.Remove(Key);
-                Section.Add(Key, Value);
+                // *** Modify the value ***
+                if (section.ContainsKey(key)) section.Remove(key);
+                section.Add(key, value);
+
+                // *** Add the modified value to local modified values cache ***
+                if (!_mModified.TryGetValue(sectionName, out section))
+                {
+                    section = new Dictionary<string, string>();
+                    _mModified.Add(sectionName, section);
+                }
+
+                if (section.ContainsKey(key)) section.Remove(key);
+                section.Add(key, value);
 
                 // *** Automatic flushing : immediately write any modification to the file ***
-                if (m_AutoFlush) PerformFlush();
-			}
-		}
+                if (_mAutoFlush) PerformFlush();
+            }
+        }
 
-		// *** Encode byte array ***
-        private string EncodeByteArray(byte[] Value)
+        // *** Encode byte array ***
+        private string EncodeByteArray(byte[] value)
         {
-            if (Value == null) return null;
+            if (value == null) return null;
 
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in Value)
+            var sb = new StringBuilder();
+            foreach (var b in value)
             {
-                string hex = Convert.ToString(b, 16);
-                int l = hex.Length;
+                var hex = Convert.ToString(b, 16);
+                var l = hex.Length;
                 if (l > 2)
                 {
                     sb.Append(hex.Substring(l - 2, 2));
@@ -421,106 +416,103 @@ namespace Spiff.Core.Utils
             return sb.ToString();
         }
 
-		// *** Decode byte array ***
-		private byte[] DecodeByteArray(string Value)
-		{
-			if (Value == null) return null;
-
-			int l = Value.Length;
-			if (l < 2) return new byte[] { };
-			
-			l /= 2;
-			byte[] Result = new byte[l];
-            for (int i = 0; i < l; i++) Result[i] = Convert.ToByte(Value.Substring(i * 2, 2), 16);
-			return Result;
-		}
-
-		// *** Getters for various types ***
-		public bool GetValue(string SectionName, string Key, bool DefaultValue)
-		{
-            string StringValue = GetValue(SectionName, Key, DefaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
-			int Value;
-			if (int.TryParse(StringValue, out Value)) return (Value != 0);
-			return DefaultValue;
-		}
-
-		public int GetValue(string SectionName, string Key, int DefaultValue)
-		{
-            string StringValue = GetValue(SectionName, Key, DefaultValue.ToString(CultureInfo.InvariantCulture));
-			int Value;
-			if (int.TryParse(StringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out Value)) return Value;
-            return DefaultValue;
-		}
-
-        public long GetValue(string SectionName, string Key, long DefaultValue)
+        // *** Decode byte array ***
+        private byte[] DecodeByteArray(string value)
         {
-            string StringValue = GetValue(SectionName, Key, DefaultValue.ToString(CultureInfo.InvariantCulture));
-            long Value;
-            if (long.TryParse(StringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out Value)) return Value;
-            return DefaultValue;
+            if (value == null) return null;
+
+            var l = value.Length;
+            if (l < 2) return new byte[] {};
+
+            l /= 2;
+            var result = new byte[l];
+            for (var i = 0; i < l; i++) result[i] = Convert.ToByte(value.Substring(i*2, 2), 16);
+            return result;
         }
 
-		public double GetValue(string SectionName, string Key, double DefaultValue)
-		{
-            string StringValue = GetValue(SectionName, Key, DefaultValue.ToString(CultureInfo.InvariantCulture));
-			double Value;
-			if (double.TryParse(StringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out Value)) return Value;
-			return DefaultValue;
-		}
-
-		public byte[] GetValue(string SectionName, string Key, byte[] DefaultValue)
-		{
-			string StringValue = GetValue(SectionName, Key, EncodeByteArray(DefaultValue));
-			try
-			{
-				return DecodeByteArray(StringValue);
-			}
-			catch (FormatException)
-			{
-				return DefaultValue;
-			}
-		}
-
-        public DateTime GetValue(string SectionName, string Key, DateTime DefaultValue)
+        // *** Getters for various types ***
+        public bool GetValue(string sectionName, string key, bool defaultValue)
         {
-            string StringValue = GetValue(SectionName, Key, DefaultValue.ToString(CultureInfo.InvariantCulture));
-            DateTime Value;
-            if (DateTime.TryParse(StringValue, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AssumeLocal, out Value)) return Value;
-            return DefaultValue;
+            var stringValue = GetValue(sectionName, key, defaultValue.ToString(CultureInfo.InvariantCulture));
+            int value;
+            if (int.TryParse(stringValue, out value)) return (value != 0);
+            return defaultValue;
         }
 
-		// *** Setters for various types ***
-		public void SetValue(string SectionName, string Key, bool Value)
-		{
-			SetValue(SectionName, Key, (Value) ? ("1") : ("0"));
-		}
-
-        public void SetValue(string SectionName, string Key, int Value)
+        public int GetValue(string sectionName, string key, int defaultValue)
         {
-            SetValue(SectionName, Key, Value.ToString(CultureInfo.InvariantCulture));
+            var stringValue = GetValue(sectionName, key, defaultValue.ToString(CultureInfo.InvariantCulture));
+            int value;
+            return int.TryParse(stringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out value) ? value : defaultValue;
         }
 
-        public void SetValue(string SectionName, string Key, long Value)
+        public long GetValue(string sectionName, string key, long defaultValue)
         {
-            SetValue(SectionName, Key, Value.ToString(CultureInfo.InvariantCulture));
+            var stringValue = GetValue(sectionName, key, defaultValue.ToString(CultureInfo.InvariantCulture));
+            long value;
+            return long.TryParse(stringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out value) ? value : defaultValue;
         }
 
-		public void SetValue(string SectionName, string Key, double Value)
-		{
-			SetValue(SectionName, Key, Value.ToString(CultureInfo.InvariantCulture));
-		}
-
-		public void SetValue(string SectionName, string Key, byte[] Value)
-		{
-			SetValue(SectionName, Key, EncodeByteArray(Value));
-		}
-
-        public void SetValue(string SectionName, string Key, DateTime Value)
+        public double GetValue(string sectionName, string key, double defaultValue)
         {
-            SetValue(SectionName, Key, Value.ToString(CultureInfo.InvariantCulture));
+            var stringValue = GetValue(sectionName, key, defaultValue.ToString(CultureInfo.InvariantCulture));
+            double value;
+            return double.TryParse(stringValue, NumberStyles.Any, CultureInfo.InvariantCulture, out value) ? value : defaultValue;
         }
 
-#endregion
+        public byte[] GetValue(string sectionName, string key, byte[] defaultValue)
+        {
+            var stringValue = GetValue(sectionName, key, EncodeByteArray(defaultValue));
+            try
+            {
+                return DecodeByteArray(stringValue);
+            }
+            catch (FormatException)
+            {
+                return defaultValue;
+            }
+        }
 
+        public DateTime GetValue(string sectionName, string key, DateTime defaultValue)
+        {
+            var stringValue = GetValue(sectionName, key, defaultValue.ToString(CultureInfo.InvariantCulture));
+            DateTime value;
+            return DateTime.TryParse(stringValue, CultureInfo.InvariantCulture,
+                DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.NoCurrentDateDefault | DateTimeStyles.AssumeLocal,
+                out value) ? value : defaultValue;
+        }
+
+        // *** Setters for various types ***
+        public void SetValue(string sectionName, string key, bool value)
+        {
+            SetValue(sectionName, key, (value) ? ("1") : ("0"));
+        }
+
+        public void SetValue(string sectionName, string key, int value)
+        {
+            SetValue(sectionName, key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        public void SetValue(string sectionName, string key, long value)
+        {
+            SetValue(sectionName, key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        public void SetValue(string sectionName, string key, double value)
+        {
+            SetValue(sectionName, key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        public void SetValue(string sectionName, string key, byte[] value)
+        {
+            SetValue(sectionName, key, EncodeByteArray(value));
+        }
+
+        public void SetValue(string sectionName, string key, DateTime value)
+        {
+            SetValue(sectionName, key, value.ToString(CultureInfo.InvariantCulture));
+        }
+
+        #endregion
     }
 }

@@ -58,6 +58,7 @@ namespace Spiffbot
         {
             foreach (var assembly in Directory.GetFiles(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins"), "*.dll").Select(dll => Assembly.LoadFile(dll)))
             {
+                TwitchIRC.Instance.RegisterAssembly(assembly);
                 TwitchIRC.Instance.LoadPlugin(assembly);
             }
 
