@@ -1,4 +1,6 @@
-﻿using Spiff.Core.API.Commands;
+﻿using System.IO;
+using Spiff.Core.API.Commands;
+using Spiff.Core.API.Config;
 
 namespace Spiff.Core.API
 {
@@ -8,6 +10,25 @@ namespace Spiff.Core.API
         public abstract string Name { get; }
         public abstract string Author { get; }
         public abstract string Description { get; }
+
+        private Ini _config;
+
+        public Ini Config
+        {
+            get
+            {
+                if (_config == null)
+                {
+                    if (!Directory.Exists(Path.Combine("Plugins", Name)))
+                    {
+                        Directory.CreateDirectory(Path.Combine("Plugins", Name));
+                    }
+                    _config = new Ini(Path.Combine("Plugins", Name, "Confin.ini"));
+                }
+
+                return _config;
+            }
+        }
 
         public abstract void Start();
 

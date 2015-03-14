@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Spiff.Core.API;
 using Spiff.Core.API.Commands;
 using Spiff.Core.API.EventArgs;
+using Spiff.Core.IRC;
 using Spiff.Core.Utils;
 
 namespace Spiff.Core
@@ -17,18 +20,14 @@ namespace Spiff.Core
         //Public Vars
         public string Channel { get; private set; }
         public string BotName { get; private set; }
-        private string Oauth { get; set; }
+        private readonly string _oauth;
 
         //Client vars
-        private readonly StreamReader _reader;
-        public OutUtils WriteOut { get; private set; }
+        public OutUtils WriteOut { get; set; }
 
         //event Args
         public event EventHandler<ChatEvent> OnChatHandler;
         public event EventHandler<OnCommandEvent> OnCommandHandler;
-
-        //Listen thread
-        Thread _listen;
 
         //Command List
         public Dictionary<string, ICommand> Commands {get; private set; }
@@ -37,35 +36,25 @@ namespace Spiff.Core
         //Instance
         public static TwitchIRC Instance { get; private set; }
 
+        //Server IRC stuff
+        public IRC.Client IrcClient;
+
         public TwitchIRC(string channel, string botName, string outh)
         {
             Channel = channel;
             BotName = botName;
-            Oauth = outh;
-
-             var client = new TcpClient("irc.twitch.tv", 6667);
-            var nwStream = client.GetStream();
-            _reader = new StreamReader(nwStream, Encoding.GetEncoding("iso8859-1"));
-            var writer = new StreamWriter(nwStream, Encoding.GetEncoding("iso8859-1"));
-
-            WriteOut = new OutUtils(writer);
-
+            _oauth = outh;
             Commands = new Dictionary<string, ICommand>();
             BotPlugins = new List<Plugin>();
 
             Instance = this;
+
+            IrcClient = new IRC.Client(channel, botName, outh, this);
+
+            IrcClient.OnTwitchEvent += IrcClientOnOnTwitchEvent;
         }
 
         #region Publics
-        public void Start()
-        {
-            _listen = new Thread(Listener);
-            _listen.Start();
-
-            Login();
-            WriteOut.SendChannelJoin(Channel);
-        }
-
         public void AddCommand(ICommand command)
         {
             ICommand _command;
@@ -114,104 +103,67 @@ namespace Spiff.Core
             if (plugin != null)
             {
                 Type[] types = plugin.GetTypes();
-                foreach (Type type in types)
+                foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
                 {
-                    if (!type.IsInterface && !type.IsAbstract)
-                    {
-                        if (type.IsSubclassOf(typeof(Plugin)))
-                        {
-                            Plugin pin = (Plugin) Activator.CreateInstance(type);
-                            Console.WriteLine("[" + pin.Name + "]Loading Plugin");
-                            pin.Start();
-                            BotPlugins.Add(pin);
-                            break;
-                        }
-                    }
+                    Logger.Info("[Info][" + pin.Name + "]Loading Plugin");
+                    pin.Start();
+                    BotPlugins.Add(pin);
+                    break;
                 }
-            } 
+            }
         }
         #endregion
 
         #region Privates
-        private void Login()
+        private void IrcClientOnOnTwitchEvent(object sender, TwitchEvent twitchEvent)
         {
-            WriteOut.SendCustom("PASS oauth:" + Oauth);
-            WriteOut.SendCustom("NICK " + BotName);
-            WriteOut.SendCustom("USER " + BotName + " :SpiffBot");
-        }
+            string data = twitchEvent.Payload;
+            string message = "";
 
-        protected virtual void Listener()
-        {
-            try
+            string[] split1 = data.Split(':');
+            if (split1.Length > 1)
             {
-                string data;
-                while ((data = _reader.ReadLine()) != null)
+                //Splitting nick, type, chan and message
+                var split2 = split1[1].Split(' ');
+
+                //Nick consists of various things - we only want the nick itself
+                var nick = split2[0];
+                nick = nick.Split('!')[0];
+
+                //Type = PRIVMSG for normal messages. Only thing we need
+                var type = split2[1];
+
+                //Channel posted to
+                var channel = split2[2];
+
+                if (split1.Length > 2)
                 {
-                    string message = "";
-
-                    Console.WriteLine(data);
-                    var ex = data.Split(new[] {' '}, 5);
-                    if (ex[0] == "PING")
+                    for (var i = 2; i < split1.Length; i++)
                     {
-                        WriteOut.SendCustom("PONG " + ex[1]);
-                        continue;
+                        message += split1[i] + " ";
                     }
-
-                    string[] split1 = data.Split(':');
-                    if (split1.Length > 1)
-                    {
-                        //Splitting nick, type, chan and message
-                        var split2 = split1[1].Split(' ');
-
-                        //Nick consists of various things - we only want the nick itself
-                        var nick = split2[0];
-                        nick = nick.Split('!')[0];
-
-                        //Type = PRIVMSG for normal messages. Only thing we need
-                        var type = split2[1];
-
-                        //Channel posted to
-                        var channel = split2[2];
-
-                        //Get message
-                        if (split1.Length > 2)
-                        {
-                            for (var i = 2; i < split1.Length; i++)
-                            {
-                                message += split1[i] + " ";
-                            }
-                        }
-
-                        if (type == "PRIVMSG" && channel.Contains("#"))
-                        {
-                            if (OnChatHandler != null)
-                                OnChatHandler(this, new ChatEvent(channel, nick, message));
-                        }
-
-                        if (message.StartsWith("!"))
-                        {
-                            //Console.WriteLine(_message.Split(' ')[0]);
-                            ICommand command;
-                            Commands.TryGetValue(message.Split(' ')[0], out command);
-
-                            if (command != null)
-                            {
-                                var args = message.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
-                                if (OnCommandHandler != null)
-                                    OnCommandHandler(this, new OnCommandEvent(command, args, message));
-
-                                command.Run(args, message, channel.TrimStart('#'), nick);
-                            }
-                        }
-                    }
-                    //Console.WriteLine(data);
                 }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                Console.ReadKey();
-                //listen.Abort();
+
+                if (type == "PRIVMSG" && channel.Contains("#"))
+                {
+                    if (OnChatHandler != null)
+                        OnChatHandler(this, new ChatEvent(channel, nick, message));
+                }
+
+                if (message.StartsWith("!"))
+                {
+                    ICommand command;
+                    Commands.TryGetValue(message.Split(' ')[0], out command);
+
+                    if (command != null)
+                    {
+                        var args = message.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (OnCommandHandler != null)
+                            OnCommandHandler(this, new OnCommandEvent(command, args, message));
+
+                        command.Run(args, message, channel.TrimStart('#'), nick);
+                    }
+                }
             }
         }
         #endregion

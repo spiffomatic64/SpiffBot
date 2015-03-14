@@ -4,6 +4,8 @@ using System.Reflection;
 using Spiff.Core;
 using Spiff.Core.API.Config;
 using Spiff.Core.API.EventArgs;
+using Spiff.Core.IRC;
+using Spiff.Core.Utils;
 
 namespace Spiffbot
 {
@@ -20,19 +22,24 @@ namespace Spiffbot
 
             LoadPlugins();
             _server.OnChatHandler += OnChatHandler;
-            _server.Start();
+            _server.IrcClient.OnTwitchDataDebugOut += IrcClientOnOnTwitchDataDebugOut;
+            _server.IrcClient.Start();
+        }
+
+        private static void IrcClientOnOnTwitchDataDebugOut(object sender, TwitchEvent twitchEvent)
+        {
+            Logger.Debug("[Debug]" + twitchEvent.Payload);
         }
 
         private static void OnChatHandler(object sender, ChatEvent chatEvent)
         {
-            Console.WriteLine("[Chat][" + chatEvent.Channel + "]" + chatEvent.User + ": " + chatEvent.Message);
+            Logger.Write("[Chat][" + chatEvent.Channel + "]" + chatEvent.User + ": " + chatEvent.Message);
         }
 
         static void LoadPlugins()
         {
             foreach (var dll in Directory.GetFiles(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins"), "*.dll"))
             {
-                Console.WriteLine(dll);
                 Assembly assembly = Assembly.LoadFile(dll);
                 TwitchIRC.Instance.LoadPlugin(assembly);
             }

@@ -24,5 +24,15 @@ namespace Spiff.Core.API.Commands
 
             return (from s in users where s.Username.ToLower().Equals(nick.ToLower()) select s).FirstOrDefault();
         }
+
+        protected bool IsOwner(string nick)
+        {
+            return TwitchIRC.Instance.Channel.ToLower().Equals(nick.ToLower());
+        }
+
+        protected void Boardcast(string message)
+        {
+            TwitchIRC.Instance.WriteOut.SendMessage(message, TwitchIRC.Instance.Channel);
+        }
     }
 }

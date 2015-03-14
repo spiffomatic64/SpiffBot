@@ -49,7 +49,10 @@
     <Compile Include="API\EventArgs\OnCommandEvent.cs" />
     <Compile Include="API\Plugin.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
+    <Compile Include="IRC\Client.cs" />
+    <Compile Include="IRC\TwitchEvent.cs" />
     <Compile Include="TwitchAPI.cs" />
+    <Compile Include="Utils\Logger.cs" />
     <Compile Include="Utils\OutUtils.cs" />
     <Compile Include="TwitchIRC.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

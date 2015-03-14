@@ -1,5 +1,7 @@
-﻿using CustomCommands.Commands;
+﻿using System.IO;
+using CustomCommands.Commands;
 using Spiff.Core.API;
+using Spiff.Core.API.Config;
 
 namespace CustomCommands
 {
@@ -20,9 +22,19 @@ namespace CustomCommands
             get { return "A few custom commands for my stream"; }
         }
 
+        public static Ini ConfigSettings;
         public override void Start()
         {
+            ConfigSettings = Config;
+            if (!File.Exists(Config.FileName))
+            {
+                ConfigSettings.SetValue("config", "Song_File", "c:\\Path\\To\\Song");
+                ConfigSettings.Flush();
+            }
+
             RegisterCommand(new SourceCommand());
+            RegisterCommand(new SongCommand());
+            RegisterCommand(new ReloadConfigSettings());
         }
 
         public override void Destory()

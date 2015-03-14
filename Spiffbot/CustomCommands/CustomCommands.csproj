@@ -39,6 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\ReloadConfigSettings.cs" />
+    <Compile Include="Commands\SongCommand.cs" />
     <Compile Include="Commands\SourceCommand.cs" />
     <Compile Include="CustomCommands.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
