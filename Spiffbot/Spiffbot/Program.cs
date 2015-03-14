@@ -33,7 +33,6 @@ namespace Spiffbot
                 Environment.Exit(0);
             }
 
-            Logger.Debug(ConfigFile.GetValue("adv", "debug", false));
             _server = new TwitchIRC(ConfigFile.GetValue("channel", "channel", "thetoyz"), ConfigFile.GetValue("auth", "Username", "ToyzBot"), ConfigFile.GetValue("auth", "oauth", "oauth"));
 
             LoadPlugins();
