@@ -19,6 +19,21 @@ namespace Spiffbot
             if (!Directory.Exists("Plugins"))
                 Directory.CreateDirectory("Plugins");
 
+            if (!File.Exists("Config.ini"))
+            {
+                ConfigFile.SetValue("auth", "Username", "ToyzBot");
+                ConfigFile.SetValue("auth", "oauth", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+                ConfigFile.SetValue("channel", "channel", "thetoyz");
+                ConfigFile.SetValue("adv", "debug", false);
+                ConfigFile.Flush();
+
+                Logger.Error("Please Edit Config.ini with your settings...");
+
+                Console.ReadKey();
+                Environment.Exit(0);
+            }
+
+            Logger.Debug(ConfigFile.GetValue("adv", "debug", false));
             _server = new TwitchIRC(ConfigFile.GetValue("channel", "channel", "thetoyz"), ConfigFile.GetValue("auth", "Username", "ToyzBot"), ConfigFile.GetValue("auth", "oauth", "oauth"));
 
             LoadPlugins();
@@ -31,7 +46,10 @@ namespace Spiffbot
 
         private static void IrcClientOnOnTwitchDataDebugOut(object sender, TwitchEvent twitchEvent)
         {
-            Logger.Debug("[Debug]" + twitchEvent.Payload);
+            if (ConfigFile.GetValue("adv", "debug", false))
+            {
+                Logger.Debug("[Debug]" + twitchEvent.Payload);
+            }
         }
 
         private static void OnChatHandler(object sender, OnChatEvent chatEvent)
