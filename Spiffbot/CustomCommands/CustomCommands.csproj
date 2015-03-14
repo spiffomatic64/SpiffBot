@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\MouveMouseCommand.cs" />
     <Compile Include="Commands\ReloadConfigSettings.cs" />
     <Compile Include="Commands\SongCommand.cs" />
     <Compile Include="Commands\SourceCommand.cs" />
@@ -58,6 +59,11 @@
     <ProjectReference Include="..\Spiff.IRC\Spiff.Core.csproj">
       <Project>{5FBAAAEE-E98C-46BB-AF7C-01C8540ECFF2}</Project>
       <Name>Spiff.Core</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Win32API\Win32API.csproj">
+      <Project>{44219821-25D1-4165-85D6-B793237E74BA}</Project>
+      <Name>Win32API</Name>
       <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
