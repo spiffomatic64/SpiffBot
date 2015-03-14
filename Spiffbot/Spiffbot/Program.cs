@@ -39,7 +39,6 @@ namespace Spiffbot
             Logger.Info("Loading all plugins", "SpiffBot");
             LoadPlugins();
             Logger.Info("Plugins have been loaded", "SpiffBot");
-            _server.OnChatHandler += OnChatHandler;
             _server.IrcClient.OnTwitchDataDebugOut += IrcClientOnOnTwitchDataDebugOut;
             _server.IrcClient.Start();
 
@@ -51,13 +50,8 @@ namespace Spiffbot
         {
             if (ConfigFile.GetValue("adv", "debug", false))
             {
-                Logger.Debug("[Debug]" + twitchEvent.Payload);
+                Logger.Debug(twitchEvent.Payload, "Debug");
             }
-        }
-
-        private static void OnChatHandler(object sender, OnChatEvent chatEvent)
-        {
-            Logger.Write("[Chat][" + chatEvent.Channel + "]" + chatEvent.User + ": " + chatEvent.Message);
         }
 
         static void LoadPlugins()
