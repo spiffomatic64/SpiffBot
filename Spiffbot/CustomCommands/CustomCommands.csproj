@@ -44,7 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands\MouveMouseCommand.cs" />
+    <Compile Include="Commands\MouseMouseCommand.cs" />
     <Compile Include="Commands\ReloadConfigSettings.cs" />
     <Compile Include="Commands\SongCommand.cs" />
     <Compile Include="Commands\SourceCommand.cs" />

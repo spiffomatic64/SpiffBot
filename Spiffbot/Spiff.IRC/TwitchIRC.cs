@@ -5,6 +5,7 @@ using System.Reflection;
 using Spiff.Core.API;
 using Spiff.Core.API.Commands;
 using Spiff.Core.API.EventArgs;
+using Spiff.Core.Extensions;
 using Spiff.Core.IRC;
 using Spiff.Core.Utils;
 
@@ -15,7 +16,6 @@ namespace Spiff.Core
         //Public Vars
         public string Channel { get; private set; }
         public string BotName { get; private set; }
-        private readonly string _oauth;
 
         //Client vars
         public OutUtils WriteOut { get; set; }
@@ -41,7 +41,7 @@ namespace Spiff.Core
         {
             Channel = channel;
             BotName = botName;
-            _oauth = outh;
+
             Commands = new Dictionary<string, Command>();
             BotPlugins = new List<Plugin>();
 
@@ -108,7 +108,7 @@ namespace Spiff.Core
         {
             if (plugin == null) return;
             var types = plugin.GetTypes();
-            foreach (var pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
+            foreach (var pin in from type in types where !type.IsInterface && !type.IsAbstract where type.HasAbstract(typeof(Plugin)) select (Plugin)Activator.CreateInstance(type))
             {
                 Logger.Info(string.Format("Loading Plugin - {0}(V -> {1})", pin.Name, pin.Version), "Plugin Engine");
                 if(start)
@@ -124,7 +124,6 @@ namespace Spiff.Core
                 _loadedAssemblies.Add(plugin.FullName, plugin);
         }
 
-
         public void StartPlugins()
         {
             foreach (var plugin in BotPlugins)
@@ -138,10 +137,10 @@ namespace Spiff.Core
         #region Privates
         private void IrcClientOnOnTwitchEvent(object sender, TwitchEvent twitchEvent)
         {
-            string data = twitchEvent.Payload;
-            string message = "";
+            var data = twitchEvent.Payload;
+            var message = "";
 
-            string[] split1 = data.Split(':');
+            var split1 = data.Split(':');
             if (split1.Length > 1)
             {
                 //Splitting nick, type, chan and message
@@ -171,16 +170,19 @@ namespace Spiff.Core
                         if (channel.StartsWith("#"))
                             if (OnChatHandler != null)
                                 OnChatHandler(this, new OnChatEvent(channel, nick, message));
+                        Logger.Info(string.Format("{0} -> {1}", nick, message), "Chat");
                         break;
                     case "JOIN":
                         if (channel.StartsWith("#"))
                             if (OnUserJoinHandler != null)
                                 OnUserJoinHandler(this, new OnUserJoinEvent(nick, channel));
+                        Logger.Info(string.Format("{0} has joined the chat", nick), "Joined Chat");
                         break;
                     case "PART":
                         if (channel.StartsWith("#"))
                             if (OnUserLeftHandler != null)
                                 OnUserLeftHandler(this, new OnUserLeftEvent(nick, channel));
+                        Logger.Info(string.Format("{0} has left the chat", nick), "Left Chat");
                         break;
                 }
 
@@ -192,10 +194,17 @@ namespace Spiff.Core
                     if (command != null)
                     {
                         var args = message.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (OnCommandHandler != null)
-                            OnCommandHandler(this, new OnCommandEvent(command, args, message));
+                        try
+                        {
+                            if (OnCommandHandler != null)
+                                OnCommandHandler(this, new OnCommandEvent(command, args, message));
 
-                        command.Run(args, message, channel.TrimStart('#'), nick);
+                            command.Run(args, message, channel.TrimStart('#'), nick);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error("Error in Running Command: " + ex, "Plugin Command Error");
+                        }
                     }
                 }
             }
