@@ -6,6 +6,9 @@ In the C# Branch of Spiffbot is a C# implantation of spiffbot from it's python f
 <li>Easy to manage Ops (outside of the twitch supported)</li>
 <li>Permissions for users</li>
 <li>And tons more to come</li>
+<li>All commands start with "!" regradless of name</li>
+<li>Command name collision checking (Meaning two commands cannot have the same name)</li>
+<li>Plugin Assembly sharing(Meaing plugins can talk to each other look at the Win32API plugin for a example)</li>
 </ol>
 
 C# Branch is maintained by Toyz 
