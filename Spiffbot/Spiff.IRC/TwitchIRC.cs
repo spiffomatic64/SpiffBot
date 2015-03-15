@@ -203,6 +203,7 @@ namespace Spiff.Core
                         }
                         catch (Exception ex)
                         {
+                            RemoveCommand(command);
                             Logger.Error("Error in Running Command: " + ex, "Plugin Command Error");
                         }
                     }
