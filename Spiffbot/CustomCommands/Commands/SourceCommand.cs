@@ -1,5 +1,4 @@
-﻿using Spiff.Core;
-using Spiff.Core.API.Commands;
+﻿using Spiff.Core.API.Commands;
 
 namespace CustomCommands.Commands
 {
@@ -17,7 +16,7 @@ namespace CustomCommands.Commands
 
         public override void Run(string[] parts, string complete, string channel, string nick)
         {
-            TwitchIRC.Instance.WriteOut.SendMessage(string.Format("Hey, {0} here is a link to the code: https://github.com/Toyz/SpiffBot/tree/master/Spiffbot", nick), channel);
+            Boardcast(string.Format("Hey, {0} here is a link to the code: https://github.com/Toyz/SpiffBot/tree/master/Spiffbot", nick));
         }
     }
 }

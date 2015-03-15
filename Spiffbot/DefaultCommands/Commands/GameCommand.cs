@@ -19,7 +19,7 @@ namespace DefaultCommands.Commands
         {
             var game = TwitchAPI.GetGame(channel);
 
-            TwitchIRC.Instance.WriteOut.SendMessage(channel + " is currently playing: " + (string.IsNullOrEmpty(game) ? "Nothing" : game), channel);
+            Boardcast(channel + " is currently playing: " + (string.IsNullOrEmpty(game) ? "Nothing" : game));
         }
     }
 }

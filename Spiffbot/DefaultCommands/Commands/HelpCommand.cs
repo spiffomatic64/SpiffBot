@@ -19,7 +19,7 @@ namespace DefaultCommands.Commands
         {
             if (parts.Length < 2)
             {
-                TwitchIRC.Instance.WriteOut.SendMessage("Usage: !help commandname", channel);
+                Boardcast("Usage: !help commandname");
                 return;
             }
 
@@ -28,9 +28,9 @@ namespace DefaultCommands.Commands
             TwitchIRC.Instance.AllCommands().TryGetValue("!" + parts[1], out command);
 
             if (command == null)
-                TwitchIRC.Instance.WriteOut.SendMessage("Command does not exist", channel);
+                Boardcast("Command does not exist");
             else
-                TwitchIRC.Instance.WriteOut.SendMessage(command.CommandName + " - " + command.CommandInfo, channel);
+                Boardcast(command.CommandName + " - " + command.CommandInfo);
         }
     }
 }

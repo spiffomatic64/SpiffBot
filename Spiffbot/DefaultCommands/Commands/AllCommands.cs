@@ -19,7 +19,7 @@ namespace DefaultCommands.Commands
         {
             var commands = string.Join(", ", TwitchIRC.Instance.AllCommands().Keys);
 
-            TwitchIRC.Instance.WriteOut.SendMessage("All Commands: " + commands, channel);
+            Boardcast("All Commands: " + commands);
         }
     }
 }

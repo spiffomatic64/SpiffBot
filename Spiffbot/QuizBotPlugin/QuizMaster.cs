@@ -49,7 +49,7 @@ namespace QuizBotPlugin
                 //NoPost = true;
                 Timer.Stop();
                 //NoPost = false;
-                TwitchIRC.Instance.WriteOut.SendMessage(onChatEvent.User + " got the anwser correct!", TwitchIRC.Instance.Channel);
+                TwitchIRC.Instance.WriteOut.SendMessage(onChatEvent.User + " got the anwser correct!");
                 _currentItem = getQuizItem();
                 if(Timer != null)
                     Timer.Start();
@@ -64,7 +64,7 @@ namespace QuizBotPlugin
                 return;
             }
             //if (NoPost) return;
-            TwitchIRC.Instance.WriteOut.SendMessage("The anwser for the question was: " + _currentItem.Anwser, TwitchIRC.Instance.Channel);
+            TwitchIRC.Instance.WriteOut.SendMessage("The anwser for the question was: " + _currentItem.Anwser);
             _currentItem = getQuizItem();
             if(Timer != null)
                 Timer.Start();
@@ -76,7 +76,7 @@ namespace QuizBotPlugin
             {
                 _id = 0;
                 TwitchIRC.Instance.OnChatHandler -= InstanceOnOnChatHandler;
-                TwitchIRC.Instance.WriteOut.SendMessage("Game Over... Maybe I will load another :D", TwitchIRC.Instance.Channel);
+                TwitchIRC.Instance.WriteOut.SendMessage("Game Over... Maybe I will load another :D");
                 Timer.Elapsed -= TimerOnTick;
                 Timer.Dispose();
                 Timer = null;
@@ -85,7 +85,7 @@ namespace QuizBotPlugin
             var item = _quizItems[_id];
             _id++;
 
-            TwitchIRC.Instance.WriteOut.SendMessage(item.Question, TwitchIRC.Instance.Channel);
+            TwitchIRC.Instance.WriteOut.SendMessage(item.Question);
             return item;
         }
     }

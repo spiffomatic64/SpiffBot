@@ -44,12 +44,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="API\Commands\Command.cs" />
+    <Compile Include="API\EventArgs\OnUserLeftEvent.cs" />
+    <Compile Include="API\EventArgs\OnUserJoinEvent.cs" />
     <Compile Include="Utils\Ini.cs" />
     <Compile Include="API\EventArgs\OnChatEvent.cs" />
     <Compile Include="API\EventArgs\OnCommandEvent.cs" />
     <Compile Include="API\Plugin.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
-    <Compile Include="IRC\Client.cs" />
+    <Compile Include="IRC\IRCClient.cs" />
     <Compile Include="IRC\TwitchEvent.cs" />
     <Compile Include="TwitchAPI.cs" />
     <Compile Include="Utils\Logger.cs" />

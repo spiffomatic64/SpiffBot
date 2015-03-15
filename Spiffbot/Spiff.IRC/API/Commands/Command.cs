@@ -32,7 +32,7 @@ namespace Spiff.Core.API.Commands
 
         protected void Boardcast(string message)
         {
-            TwitchIRC.Instance.WriteOut.SendMessage(message, TwitchIRC.Instance.Channel);
+            TwitchIRC.Instance.WriteOut.SendMessage(message);
         }
     }
 }

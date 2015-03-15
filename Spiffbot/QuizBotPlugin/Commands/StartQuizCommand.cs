@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Spiff.Core.API.Commands;
+﻿using Spiff.Core.API.Commands;
 
 namespace QuizBotPlugin.Commands
 {

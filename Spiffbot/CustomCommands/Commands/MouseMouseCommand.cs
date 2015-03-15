@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Spiff.Core.API.Commands;
+﻿using Spiff.Core.API.Commands;
+using Win32API;
 
 namespace CustomCommands.Commands
 {
-    public class MouveMouseCommand : Command
+    public class MouseMouseCommand : Command
     {
         public override string CommandName
         {
@@ -22,7 +19,11 @@ namespace CustomCommands.Commands
         {
             if (IsOwner(nick))
             {
-                Win32API.Mouse.Move(int.Parse(parts[1]), int.Parse(parts[2]));
+                if (parts.Length < 3)
+                    return;
+
+                Mouse.Move(int.Parse(parts[1]), int.Parse(parts[2]));
+                Boardcast(string.Format("Moved mouse to: {0}, {1}", parts[1], parts[2]));
             }
         }
     }

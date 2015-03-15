@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace QuizBotPlugin.ListItems
+﻿namespace QuizBotPlugin.ListItems
 {
     public class QuizItem
     {

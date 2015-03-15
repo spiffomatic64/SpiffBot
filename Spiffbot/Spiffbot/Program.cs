@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Spiff.Core;
-using Spiff.Core.API.EventArgs;
 using Spiff.Core.IRC;
 using Spiff.Core.Utils;
 

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -10,13 +7,12 @@ using Spiff.Core.Utils;
 
 namespace Spiff.Core.IRC
 {
-    public class Client
+    public class IRCClient
     {
         private readonly string _channel;
         private readonly string _user;
         private readonly string _oauth;
         private readonly TwitchIRC _twitch;
-
 
         private Thread _serverThread;
         private StreamReader _reader;
@@ -25,7 +21,7 @@ namespace Spiff.Core.IRC
         public event EventHandler<TwitchEvent> OnTwitchEvent;
         public event EventHandler<TwitchEvent> OnTwitchDataDebugOut;
 
-        public Client(string channel, string user, string oauth, TwitchIRC twitch)
+        public IRCClient(string channel, string user, string oauth, TwitchIRC twitch)
         {
             _channel = channel;
             _user = user;
@@ -47,7 +43,7 @@ namespace Spiff.Core.IRC
             _reader = new StreamReader(nwStream, Encoding.GetEncoding("iso8859-1"));
             _streamWriter = new StreamWriter(nwStream, Encoding.GetEncoding("iso8859-1"));
 
-            _twitch.WriteOut = new OutUtils(_streamWriter);
+            _twitch.WriteOut = new OutUtils(_streamWriter, _channel);
         }
 
         private void Startup()
@@ -63,7 +59,7 @@ namespace Spiff.Core.IRC
             writeOut.SendCustom("PASS oauth:" + _oauth);
             writeOut.SendCustom("NICK " + _user);
             writeOut.SendCustom("USER " + _user + " :SpiffBot");
-            writeOut.SendChannelJoin(_channel);
+            writeOut.SendChannelJoin();
         }
 
         private void Listener()

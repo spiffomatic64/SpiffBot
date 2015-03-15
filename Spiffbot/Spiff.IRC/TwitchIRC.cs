@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Spiff.Core.API;
@@ -22,19 +21,21 @@ namespace Spiff.Core
         public OutUtils WriteOut { get; set; }
 
         //event Args
+        public event EventHandler<OnUserJoinEvent> OnUserJoinHandler;
+        public event EventHandler<OnUserLeftEvent> OnUserLeftHandler;
         public event EventHandler<OnChatEvent> OnChatHandler;
         public event EventHandler<OnCommandEvent> OnCommandHandler;
 
         //Command List
         public Dictionary<string, Command> Commands {get; private set; }
         public List<Plugin> BotPlugins {get; private set;}
-        private Dictionary<string, Assembly> LoadedAssemblies = new Dictionary<string, Assembly>();  
+        private readonly Dictionary<string, Assembly> _loadedAssemblies = new Dictionary<string, Assembly>();  
 
         //Instance
         public static TwitchIRC Instance { get; private set; }
 
         //Server IRC stuff
-        public Client IrcClient;
+        public IRCClient IrcClient;
 
         public TwitchIRC(string channel, string botName, string outh)
         {
@@ -46,7 +47,7 @@ namespace Spiff.Core
 
             Instance = this;
 
-            IrcClient = new Client(channel, botName, outh, this);
+            IrcClient = new IRCClient(channel, botName, outh, this);
 
             IrcClient.OnTwitchEvent += IrcClientOnOnTwitchEvent;
 
@@ -56,16 +57,16 @@ namespace Spiff.Core
         private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
         {
             //Nasty hack to fix talking between plugins but works the best maybe will find a better way later
-            return LoadedAssemblies[args.Name];
+            return _loadedAssemblies[args.Name];
         }
 
         #region Publics
         public void AddCommand(Command command)
         {
-            Command _command;
-            Commands.TryGetValue("!" + command.CommandName, out _command);
+            Command outcommand;
+            Commands.TryGetValue("!" + command.CommandName, out outcommand);
 
-            if (_command == null)
+            if (outcommand == null)
             {
                 Commands.Add("!" + command.CommandName, command);
             }
@@ -73,10 +74,10 @@ namespace Spiff.Core
 
         public void RemoveCommand(Command command)
         {
-            Command _command;
-            Commands.TryGetValue("!" + command.CommandName, out _command);
+            Command outcommand;
+            Commands.TryGetValue("!" + command.CommandName, out outcommand);
 
-            if (_command == null)
+            if (outcommand == null)
             {
                 Commands.Remove("!" + command.CommandName);
             }
@@ -84,10 +85,10 @@ namespace Spiff.Core
 
         public void RemoveCommand(string command)
         {
-            Command _command;
-            Commands.TryGetValue("!" + command, out _command);
+            Command outcommand;
+            Commands.TryGetValue("!" + command, out outcommand);
 
-            if (_command == null)
+            if (outcommand == null)
             {
                 Commands.Remove("!" + command);
             }
@@ -105,24 +106,22 @@ namespace Spiff.Core
 
         public void LoadPlugin(Assembly plugin, bool start = false)
         {
-            if (plugin != null)
+            if (plugin == null) return;
+            var types = plugin.GetTypes();
+            foreach (var pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
             {
-                Type[] types = plugin.GetTypes();
-                foreach (Plugin pin in from type in types where !type.IsInterface && !type.IsAbstract where type.IsSubclassOf(typeof(Plugin)) select (Plugin) Activator.CreateInstance(type))
-                {
-                    Logger.Info(string.Format("Loading Plugin - {0}(V -> {1})", pin.Name, pin.Version), "Plugin Engine");
-                    if(start)
-                        pin.Start();
-                    BotPlugins.Add(pin);
-                    break;
-                }
+                Logger.Info(string.Format("Loading Plugin - {0}(V -> {1})", pin.Name, pin.Version), "Plugin Engine");
+                if(start)
+                    pin.Start();
+                BotPlugins.Add(pin);
+                break;
             }
         }
 
         public void RegisterAssembly(Assembly plugin)
         {
-            if (!LoadedAssemblies.ContainsKey(plugin.FullName))
-                LoadedAssemblies.Add(plugin.FullName, plugin);
+            if (!_loadedAssemblies.ContainsKey(plugin.FullName))
+                _loadedAssemblies.Add(plugin.FullName, plugin);
         }
 
 
@@ -166,10 +165,23 @@ namespace Spiff.Core
                     }
                 }
 
-                if (type == "PRIVMSG" && channel.Contains("#"))
+                switch (type)
                 {
-                    if (OnChatHandler != null)
-                        OnChatHandler(this, new OnChatEvent(channel, nick, message));
+                    case "PRIVMSG":
+                        if (channel.StartsWith("#"))
+                            if (OnChatHandler != null)
+                                OnChatHandler(this, new OnChatEvent(channel, nick, message));
+                        break;
+                    case "JOIN":
+                        if (channel.StartsWith("#"))
+                            if (OnUserJoinHandler != null)
+                                OnUserJoinHandler(this, new OnUserJoinEvent(nick, channel));
+                        break;
+                    case "PART":
+                        if (channel.StartsWith("#"))
+                            if (OnUserLeftHandler != null)
+                                OnUserLeftHandler(this, new OnUserLeftEvent(nick, channel));
+                        break;
                 }
 
                 if (message.StartsWith("!"))

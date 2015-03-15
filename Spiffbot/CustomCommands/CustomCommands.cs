@@ -41,7 +41,7 @@ namespace CustomCommands
             RegisterCommand(new SourceCommand());
             RegisterCommand(new SongCommand());
             RegisterCommand(new ReloadConfigSettings());
-            RegisterCommand(new MouveMouseCommand());
+            RegisterCommand(new MouseMouseCommand());
         }
 
         public override void Destory()

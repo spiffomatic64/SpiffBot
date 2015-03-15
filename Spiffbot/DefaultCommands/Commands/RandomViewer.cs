@@ -20,7 +20,7 @@ namespace DefaultCommands.Commands
         {
             var viewers = TwitchAPI.GetChatters(channel);
 
-            TwitchIRC.Instance.WriteOut.SendMessage("Random User is: " + viewers.PickRandom().Username, channel);
+            Boardcast("Random User is: " + viewers.PickRandom().Username);
         }
     }
 }
