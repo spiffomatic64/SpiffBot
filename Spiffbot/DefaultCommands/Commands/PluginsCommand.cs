@@ -19,7 +19,7 @@ namespace DefaultCommands.Commands
 
         public override void Run(string[] parts, string complete, string channel, string nick)
         {
-            List<string> pluginNames = TwitchIRC.Instance.AllPlugins().Select(plugin => plugin.Name).ToList();
+            List<string> pluginNames = SpiffCore.Instance.PluginLoader.LoadedPlugins.Select(plugin => plugin.Name).ToList();
 
             Boardcast(string.Format("Loaded Plugins({0}): {1}", pluginNames.Count, string.Join(", ", pluginNames)));
         }

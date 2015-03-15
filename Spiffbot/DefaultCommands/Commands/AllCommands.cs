@@ -17,7 +17,7 @@ namespace DefaultCommands.Commands
 
         public override void Run(string[] parts, string complete, string channel, string nick)
         {
-            var commands = string.Join(", ", TwitchIRC.Instance.AllCommands().Keys);
+            var commands = string.Join(", ", SpiffCore.Instance.AllCommands().Keys);
 
             Boardcast("All Commands: " + commands);
         }

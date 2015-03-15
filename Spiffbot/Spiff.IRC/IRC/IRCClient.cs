@@ -12,7 +12,7 @@ namespace Spiff.Core.IRC
         private readonly string _channel;
         private readonly string _user;
         private readonly string _oauth;
-        private readonly TwitchIRC _twitch;
+        private readonly SpiffCore _twitch;
 
         private Thread _serverThread;
         private StreamReader _reader;
@@ -21,7 +21,7 @@ namespace Spiff.Core.IRC
         public event EventHandler<TwitchEvent> OnTwitchEvent;
         public event EventHandler<TwitchEvent> OnTwitchDataDebugOut;
 
-        public IRCClient(string channel, string user, string oauth, TwitchIRC twitch)
+        public IRCClient(string channel, string user, string oauth, SpiffCore twitch)
         {
             _channel = channel;
             _user = user;

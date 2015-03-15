@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Spiff.Core.API;
 using Spiff.Core.API.Commands;
 using Spiff.Core.API.EventArgs;
-using Spiff.Core.Extensions;
 using Spiff.Core.IRC;
 using Spiff.Core.Utils;
 
 namespace Spiff.Core
 {
-    public class TwitchIRC
+    public class SpiffCore
     {
         //Public Vars
         public string Channel { get; private set; }
@@ -28,22 +26,20 @@ namespace Spiff.Core
 
         //Command List
         public Dictionary<string, Command> Commands {get; private set; }
-        public List<Plugin> BotPlugins {get; private set;}
-        private readonly Dictionary<string, Assembly> _loadedAssemblies = new Dictionary<string, Assembly>();  
-
+        public PluginLoader PluginLoader { get; private set; }
         //Instance
-        public static TwitchIRC Instance { get; private set; }
+        public static SpiffCore Instance { get; private set; }
 
         //Server IRC stuff
         public IRCClient IrcClient;
 
-        public TwitchIRC(string channel, string botName, string outh)
+        public SpiffCore(string channel, string botName, string outh, string pluginDirectory)
         {
             Channel = channel;
             BotName = botName;
+            PluginLoader = new PluginLoader(pluginDirectory);
 
             Commands = new Dictionary<string, Command>();
-            BotPlugins = new List<Plugin>();
 
             Instance = this;
 
@@ -57,7 +53,7 @@ namespace Spiff.Core
         private Assembly CurrentDomainOnAssemblyResolve(object sender, ResolveEventArgs args)
         {
             //Nasty hack to fix talking between plugins but works the best maybe will find a better way later
-            return _loadedAssemblies[args.Name];
+            return PluginLoader.GetAsm(args.Name);
         }
 
         #region Publics
@@ -97,39 +93,6 @@ namespace Spiff.Core
         public Dictionary<string, Command> AllCommands()
         {
             return Commands;
-        }
-
-        public List<Plugin> AllPlugins()
-        {
-            return BotPlugins;
-        } 
-
-        public void LoadPlugin(Assembly plugin, bool start = false)
-        {
-            if (plugin == null) return;
-            var types = plugin.GetTypes();
-            foreach (var pin in from type in types where !type.IsInterface && !type.IsAbstract where type.HasAbstract(typeof(Plugin)) select (Plugin)Activator.CreateInstance(type))
-            {
-                Logger.Info(string.Format("Loading Plugin - {0}(V -> {1})", pin.Name, pin.Version), "Plugin Engine");
-                if(start)
-                    pin.Start();
-                BotPlugins.Add(pin);
-                break;
-            }
-        }
-
-        public void RegisterAssembly(Assembly plugin)
-        {
-            if (!_loadedAssemblies.ContainsKey(plugin.FullName))
-                _loadedAssemblies.Add(plugin.FullName, plugin);
-        }
-
-        public void StartPlugins()
-        {
-            foreach (var plugin in BotPlugins)
-            {
-                plugin.Start();
-            }
         }
 
         #endregion
@@ -194,18 +157,18 @@ namespace Spiff.Core
                     if (command != null)
                     {
                         var args = message.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                        try
-                        {
+                        //try
+                        //{
                             if (OnCommandHandler != null)
                                 OnCommandHandler(this, new OnCommandEvent(command, args, message));
 
                             command.Run(args, message, channel.TrimStart('#'), nick);
-                        }
+                        /*}
                         catch (Exception ex)
                         {
                             RemoveCommand(command);
                             Logger.Error("Error in Running Command: " + ex, "Plugin Command Error");
-                        }
+                        }*/
                     }
                 }
             }

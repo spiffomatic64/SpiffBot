@@ -1,5 +1,6 @@
 ﻿using Spiff.Core;
 using Spiff.Core.API.Commands;
+using Spiff.Core.API.Twitch;
 
 namespace DefaultCommands.Commands
 {
@@ -17,7 +18,7 @@ namespace DefaultCommands.Commands
 
         public override void Run(string[] parts, string complete, string channel, string nick)
         {
-            var game = TwitchAPI.GetGame(channel);
+            var game = SiteApi.GetGame(channel);
 
             Boardcast(channel + " is currently playing: " + (string.IsNullOrEmpty(game) ? "Nothing" : game));
         }

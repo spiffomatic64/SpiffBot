@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Spiff.Core;
+using Spiff.Core.API.Twitch;
 using Spiff.Core.IRC;
 using Spiff.Core.Utils;
 
@@ -11,7 +11,7 @@ namespace Spiffbot
 {
     class Program
     {
-        private static TwitchIRC _server;
+        private static SpiffCore _server;
         private static readonly Ini ConfigFile = new Ini("Config.ini");
         static void Main(string[] args)
         {
@@ -32,11 +32,13 @@ namespace Spiffbot
                 Environment.Exit(0);
             }
 
+            string pluginPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins");
             Logger.Info("Please Wait... Spiffbot is loading...", "SpiffBot");
-            _server = new TwitchIRC(ConfigFile.GetValue("channel", "channel", "thetoyz"), ConfigFile.GetValue("auth", "Username", "ToyzBot"), ConfigFile.GetValue("auth", "oauth", "oauth"));
+            _server = new SpiffCore(ConfigFile.GetValue("channel", "channel", "thetoyz"), ConfigFile.GetValue("auth", "Username", "ToyzBot"), ConfigFile.GetValue("auth", "oauth", "oauth"), pluginPath);
 
             Logger.Info("Loading all plugins", "SpiffBot");
-            LoadPlugins();
+            SpiffCore.Instance.PluginLoader.LoadPlugins();
+            SpiffCore.Instance.PluginLoader.StartPlugins();
             Logger.Info("Plugins have been loaded", "SpiffBot");
             _server.IrcClient.OnTwitchDataDebugOut += IrcClientOnOnTwitchDataDebugOut;
             _server.IrcClient.Start();
@@ -53,22 +55,11 @@ namespace Spiffbot
             }
         }
 
-        static void LoadPlugins()
-        {
-            foreach (var assembly in Directory.GetFiles(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Plugins"), "*.dll").Select(dll => Assembly.LoadFile(dll)))
-            {
-                TwitchIRC.Instance.RegisterAssembly(assembly);
-                TwitchIRC.Instance.LoadPlugin(assembly);
-            }
-
-            TwitchIRC.Instance.StartPlugins();
-        }
-
         static void TitleUpdater()
         {
             while (true)
             {
-                var viewers = TwitchAPI.GetChatters(TwitchIRC.Instance.Channel).Count;
+                var viewers = SiteApi.GetChatters(SpiffCore.Instance.Channel).Count;
 
                 Console.Title = string.Format("Spiffbot - Viewers: {0}", viewers);
 

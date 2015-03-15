@@ -36,7 +36,7 @@ namespace QuizBotPlugin
 
             _currentItem = getQuizItem();
 
-            TwitchIRC.Instance.OnChatHandler += InstanceOnOnChatHandler;
+            SpiffCore.Instance.OnChatHandler += InstanceOnOnChatHandler;
 
             Timer.Start();
         }
@@ -49,7 +49,7 @@ namespace QuizBotPlugin
                 //NoPost = true;
                 Timer.Stop();
                 //NoPost = false;
-                TwitchIRC.Instance.WriteOut.SendMessage(onChatEvent.User + " got the anwser correct!");
+                SpiffCore.Instance.WriteOut.SendMessage(onChatEvent.User + " got the anwser correct!");
                 _currentItem = getQuizItem();
                 if(Timer != null)
                     Timer.Start();
@@ -64,7 +64,7 @@ namespace QuizBotPlugin
                 return;
             }
             //if (NoPost) return;
-            TwitchIRC.Instance.WriteOut.SendMessage("The anwser for the question was: " + _currentItem.Anwser);
+            SpiffCore.Instance.WriteOut.SendMessage("The anwser for the question was: " + _currentItem.Anwser);
             _currentItem = getQuizItem();
             if(Timer != null)
                 Timer.Start();
@@ -75,8 +75,8 @@ namespace QuizBotPlugin
             if (_id > _quizItems.Count - 1)
             {
                 _id = 0;
-                TwitchIRC.Instance.OnChatHandler -= InstanceOnOnChatHandler;
-                TwitchIRC.Instance.WriteOut.SendMessage("Game Over... Maybe I will load another :D");
+                SpiffCore.Instance.OnChatHandler -= InstanceOnOnChatHandler;
+                SpiffCore.Instance.WriteOut.SendMessage("Game Over... Maybe I will load another :D");
                 Timer.Elapsed -= TimerOnTick;
                 Timer.Dispose();
                 Timer = null;
@@ -85,7 +85,7 @@ namespace QuizBotPlugin
             var item = _quizItems[_id];
             _id++;
 
-            TwitchIRC.Instance.WriteOut.SendMessage(item.Question);
+            SpiffCore.Instance.WriteOut.SendMessage(item.Question);
             return item;
         }
     }

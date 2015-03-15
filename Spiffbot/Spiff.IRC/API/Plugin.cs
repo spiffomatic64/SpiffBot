@@ -38,13 +38,13 @@ namespace Spiff.Core.API
                 return _config;
             }
         }
-        public TwitchIRC Twitch
+        public SpiffCore SpiffCore
         {
-            get { return TwitchIRC.Instance; }
+            get { return SpiffCore.Instance; }
         }
         public OutUtils Writer
         {
-            get { return Twitch.WriteOut; }
+            get { return SpiffCore.WriteOut; }
         }
 
         public string PluginDirectory
@@ -61,14 +61,17 @@ namespace Spiff.Core.API
 
         protected void RegisterCommand(Command command)
         {
-            TwitchIRC.Instance.AddCommand(command);
+            SpiffCore.Instance.AddCommand(command);
         }
 
         protected Plugin GetPlugin(string name)
         {
-            var plugin = (from s in Twitch.AllPlugins() where s.Name == name select s).FirstOrDefault();
+            return SpiffCore.PluginLoader.GetPlugin(name);
+        }
 
-            return plugin;
+        protected Plugin GetPlugin(Plugin plugin)
+        {
+            return SpiffCore.PluginLoader.GetPlugin(plugin);
         }
     }
 }

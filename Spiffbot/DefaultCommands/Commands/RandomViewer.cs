@@ -1,5 +1,6 @@
 ﻿using Spiff.Core;
 using Spiff.Core.API.Commands;
+using Spiff.Core.API.Twitch;
 using Spiff.Core.Extensions;
 
 namespace DefaultCommands.Commands
@@ -18,7 +19,7 @@ namespace DefaultCommands.Commands
 
         public override void Run(string[] parts, string complete, string channel, string nick)
         {
-            var viewers = TwitchAPI.GetChatters(channel);
+            var viewers = SiteApi.GetChatters(channel);
 
             Boardcast("Random User is: " + viewers.PickRandom().Username);
         }

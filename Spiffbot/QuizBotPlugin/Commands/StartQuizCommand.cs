@@ -18,7 +18,7 @@ namespace QuizBotPlugin.Commands
         {
             if (IsOwner(nick))
             {
-                new QuizMaster(parts[1] + ".xml");
+               new QuizMaster(parts[1] + ".xml");
             }
         }
     }

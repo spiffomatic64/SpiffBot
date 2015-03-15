@@ -25,7 +25,7 @@ namespace DefaultCommands.Commands
 
             Command command;
 
-            TwitchIRC.Instance.AllCommands().TryGetValue("!" + parts[1], out command);
+            SpiffCore.Instance.AllCommands().TryGetValue("!" + parts[1], out command);
 
             if (command == null)
                 Boardcast("Command does not exist");

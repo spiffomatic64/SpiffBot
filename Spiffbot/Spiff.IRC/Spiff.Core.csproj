@@ -46,6 +46,7 @@
     <Compile Include="API\Commands\Command.cs" />
     <Compile Include="API\EventArgs\OnUserLeftEvent.cs" />
     <Compile Include="API\EventArgs\OnUserJoinEvent.cs" />
+    <Compile Include="API\PluginLoader.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Utils\Ini.cs" />
     <Compile Include="API\EventArgs\OnChatEvent.cs" />
@@ -54,10 +55,10 @@
     <Compile Include="Extensions\ListExtensions.cs" />
     <Compile Include="IRC\IRCClient.cs" />
     <Compile Include="IRC\TwitchEvent.cs" />
-    <Compile Include="TwitchAPI.cs" />
+    <Compile Include="API\Twitch\SiteApi.cs" />
     <Compile Include="Utils\Logger.cs" />
     <Compile Include="Utils\OutUtils.cs" />
-    <Compile Include="TwitchIRC.cs" />
+    <Compile Include="SpiffCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

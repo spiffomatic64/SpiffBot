@@ -5,7 +5,7 @@ using System.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace Spiff.Core
+namespace Spiff.Core.API.Twitch
 {
     public class TwitchJson
     {
@@ -58,7 +58,7 @@ namespace Spiff.Core
         }
     }
 
-    public static class TwitchAPI
+    public static class SiteApi
     {
         public class Viewer
         {

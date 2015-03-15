@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Spiff.Core.API.Twitch;
 
 namespace Spiff.Core.API.Commands
 {
@@ -12,7 +13,7 @@ namespace Spiff.Core.API.Commands
 
         protected bool IsMod(string nick)
         {
-            var users = TwitchAPI.GetChatters(TwitchIRC.Instance.Channel);
+            var users = SiteApi.GetChatters(SpiffCore.Instance.Channel);
             var user = (from s in users where s.Username == nick select s).FirstOrDefault();
 
             return user != null && user.IsMod;
@@ -20,19 +21,19 @@ namespace Spiff.Core.API.Commands
 
         protected bool IsOwner(string nick)
         {
-            return TwitchIRC.Instance.Channel.ToLower().Equals(nick.ToLower());
+            return SpiffCore.Instance.Channel.ToLower().Equals(nick.ToLower());
         }
 
-        protected TwitchAPI.Viewer GetViewer(string nick)
+        protected SiteApi.Viewer GetViewer(string nick)
         {
-            var users = TwitchAPI.GetChatters(TwitchIRC.Instance.Channel);
+            var users = SiteApi.GetChatters(SpiffCore.Instance.Channel);
 
             return (from s in users where s.Username.ToLower().Equals(nick.ToLower()) select s).FirstOrDefault();
         }
 
         protected void Boardcast(string message)
         {
-            TwitchIRC.Instance.WriteOut.SendMessage(message);
+            SpiffCore.Instance.WriteOut.SendMessage(message);
         }
     }
 }
