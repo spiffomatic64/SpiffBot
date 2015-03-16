@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace Spiff.Core.Extensions
@@ -20,5 +21,14 @@ namespace Spiff.Core.Extensions
         {
             return source.OrderBy(x => Guid.NewGuid());
         }
+
+        public static IEnumerable<t> Randomize<t>(this IEnumerable<t> target)
+        {
+            Random r = new Random();
+
+            return target.OrderBy(x => (r.Next()));
+        }     
+
+      
     }
 }

@@ -47,6 +47,7 @@
     <Compile Include="API\EventArgs\OnUserLeftEvent.cs" />
     <Compile Include="API\EventArgs\OnUserJoinEvent.cs" />
     <Compile Include="API\PluginLoader.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Utils\Ini.cs" />
     <Compile Include="API\EventArgs\OnChatEvent.cs" />
