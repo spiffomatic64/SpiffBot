@@ -15,6 +15,7 @@ namespace Spiff.Core.API
         public List<Plugin> LoadedPlugins { get; private set; }
         public Dictionary<string, Assembly> LoadedAssemblies { get; private set; }
 
+
         public PluginLoader(string directory)
         {
             _directory = directory;
