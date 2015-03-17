@@ -26,7 +26,8 @@ namespace Spiffbot
                 ConfigFile.SetValue("adv", "debug", false);
                 ConfigFile.Flush();
 
-                Logger.Error("Please Edit Config.ini with your settings...");
+                Logger.Info("...SpiffBot...", "SpiffBot");
+                Logger.Error("Please Edit Config.ini with your settings...", "SpiffBot");
 
                 Console.ReadKey();
                 Environment.Exit(0);

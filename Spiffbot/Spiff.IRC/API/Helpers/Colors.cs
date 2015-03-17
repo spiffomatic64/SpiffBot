@@ -149,6 +149,7 @@ namespace Spiff.Core.API.Helpers
         {
             if(!hex.StartsWith("#"))
                 hex = "#" + hex;
+
             return ColorTranslator.FromHtml(hex);
         }
     }
