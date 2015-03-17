@@ -9,13 +9,6 @@ import random
 times = random.randint(30, 60)
 width = 1280
 height = 1024
-#width = 100
-#height = 100
-
-#WS_EX_LAYERED 0x00080000
-#WS_EX_TOPMOST 0x00000008L
-#WS_EX_TRANSPARENT 0x00000020L
-#0x00080028
 
 frames = random.randint(10, 30)
 visible = (1.0 / 60.0) * frames
@@ -34,6 +27,13 @@ def set_top(hwnd):
     twitch_bot_utils.printer("Set style %X" % style)
     style = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
     twitch_bot_utils.printer("Got style %X after" % style)
+    
+def user_wait(duration):
+    stop = time.time()+duration
+    while time.time() < stop:
+        time.sleep(0.5)
+        pygame.display.set_mode((width, height), pygame.NOFRAME  , 32)
+    return
 
 pygame.init()
 twitch_bot_utils.printer("Dim scare! %s seconds" % times)
@@ -52,5 +52,6 @@ while True:
         twitch_bot_utils.printer("Error: window not found")
 
 win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(0,0,0), 220, win32con.LWA_ALPHA)
-time.sleep(times)
+user_wait(times)
+twitch_bot_utils.printer("Done!")
 

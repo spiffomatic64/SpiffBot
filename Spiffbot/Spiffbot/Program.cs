@@ -20,9 +20,9 @@ namespace Spiffbot
 
             if (!File.Exists("Config.ini"))
             {
-                ConfigFile.SetValue("auth", "Username", "ToyzBot");
-                ConfigFile.SetValue("auth", "oauth", "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-                ConfigFile.SetValue("channel", "channel", "thetoyz");
+                ConfigFile.SetValue("auth", "Username", "spiffbot");
+                ConfigFile.SetValue("auth", "oauth", "mwfsn2k4js16q4z3xba29b6e5e6s8b");
+                ConfigFile.SetValue("channel", "channel", "spiffomatic64");
                 ConfigFile.SetValue("adv", "debug", false);
                 ConfigFile.Flush();
 
