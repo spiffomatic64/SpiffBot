@@ -56,7 +56,7 @@ namespace Spiffbot
             }
         }
 
-        static void TitleUpdater()
+        private static void TitleUpdater()
         {
             while (true)
             {

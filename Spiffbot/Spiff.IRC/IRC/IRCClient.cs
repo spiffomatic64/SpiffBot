@@ -36,6 +36,11 @@ namespace Spiff.Core.IRC
             Login();
         }
 
+        public Thread ServerThread()
+        {
+            return _serverThread;
+        }
+
         private void Setup()
         {
             var client = new TcpClient("irc.twitch.tv", 6667);
