@@ -194,7 +194,7 @@ def set_top(hwnd,x1,y1):
 
 def main():
     pygame.init()
-    gifs = ["scarygif1.gif","scarygif2.gif","scarygif3.gif","scarygif4.gif","scarygif5.gif","nyancat.gif","toasty.gif","doge.gif","dramatic.gif"]
+    gifs = ["scarygif1.gif","scarygif2.gif","scarygif3.gif","scarygif4.gif","scarygif5.gif","shark.gif","nyancat.gif","toasty.gif","doge.gif","dramatic.gif"]
     
     spoopy = GIFImage("images/" + random.choice(gifs))
     screen = pygame.display.set_mode((1,1),pygame.NOFRAME)

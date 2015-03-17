@@ -10,21 +10,24 @@ import requests
 import win32api as win32
 import win32gui
 import win32con
-import twitch_auth
 import string
-import html_colors
-import os 
-import twitch_bot_utils
+import os
 import time
 import traceback
+import subprocess
+import ctypes
 from subprocess import call
-import twitch_db
+
+import twitch_auth
+import twitch_bot_colors
+import twitch_bot_db
+import twitch_bot_input
 import twitch_bot_midi
 import twitch_bot_serial
-import subprocess
-import twitch_volume
-import ctypes
-import twitch_bot_input
+import twitch_bot_volume
+import twitch_bot_utils
+
+
 
 next_scary_game = "http://strawpoll.me/3800715"
 
@@ -557,6 +560,17 @@ def box(scare=0):
     if scare==0:
         switch()
         
+def drunk(scare=0):
+    twitch_bot_utils.printer("DRUNK MOUSE!")
+    scare_lock(1)
+    scare_status("DRUNK MOUSE!")
+    p = subprocess.Popen(["python", "twitch_bot_drunk.py"])
+    p.wait()
+    scare_status(-1)
+    scare_lock(0)
+    if scare==0:
+        switch()
+        
 def gif(wait,scare=0):
     twitch_bot_utils.printer("GIF SCARE!")
     scare_lock(1)
@@ -985,6 +999,12 @@ def master_commands(user,data):
             
         if data.find ( 'minimize' ) != -1:
             scare = threading.Thread(target=minimize,args=(wait,admin))
+            scare.daemon = True
+            scare.start() 
+            return True
+            
+        if data.find ( 'drunk' ) != -1:
+            scare = threading.Thread(target=drunk,args=(admin,))
             scare.daemon = True
             scare.start() 
             return True
@@ -1653,7 +1673,7 @@ def user_commands(user,data):
                     return True
         #html color keys (single color, no animation)
         #todo replace with color converter
-        for key, value in sorted(html_colors.colors.iteritems()):
+        for key, value in sorted(twitch_bot_colors.colors.iteritems()):
             if data.find ( key.lower() ) != -1:
                 set_animating(1)
                 twitch_bot_utils.printer("key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
@@ -1689,10 +1709,10 @@ mode = twitch_bot_utils.scaryDay()
 ser = twitch_bot_serial.twitch_serial("Com4",115200)
 
 #db stuff
-db = twitch_db.twitchdb(auth.get_db_user(),auth.get_db_pass(),"127.0.0.1","twitch")
+db = twitch_bot_db.twitchdb(auth.get_db_user(),auth.get_db_pass(),"127.0.0.1","twitch")
 
 #import external scares
-vol_scare = twitch_volume.volume_change()
+vol_scare = twitch_bot_volume.volume_change()
 
 #setup audio
 pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
