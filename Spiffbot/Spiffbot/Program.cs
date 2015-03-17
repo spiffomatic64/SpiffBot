@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using Spiff.Core;
+using Spiff.Core.API;
 using Spiff.Core.API.Twitch;
 using Spiff.Core.IRC;
 using Spiff.Core.Utils;
@@ -13,6 +14,8 @@ namespace Spiffbot
     {
         private static SpiffCore _server;
         private static readonly Ini ConfigFile = new Ini("Config.ini");
+        private static bool Stopping = false;
+
         static void Main(string[] args)
         {
             if (!Directory.Exists("Plugins"))
@@ -46,6 +49,21 @@ namespace Spiffbot
 
             new Thread(TitleUpdater).Start();
             Logger.Info("Spiffbot has started and conntected to twitch", "SpiffBot");
+
+            Console.CancelKeyPress += ConsoleOnCancelKeyPress;
+        }
+
+        private static void ConsoleOnCancelKeyPress(object sender, ConsoleCancelEventArgs consoleCancelEventArgs)
+        {
+            Stopping = true;
+
+            Logger.Info("SpiffBot is shutting down", "SpiffBot");
+            foreach (var plugin in SpiffCore.Instance.PluginLoader.LoadedPlugins)
+            {
+                plugin.Destory();
+            }
+
+            SpiffCore.Instance.IrcClient.ServerThread().Abort();
         }
 
         private static void IrcClientOnOnTwitchDataDebugOut(object sender, TwitchEvent twitchEvent)
@@ -58,11 +76,11 @@ namespace Spiffbot
 
         private static void TitleUpdater()
         {
-            while (true)
+            while (!Stopping)
             {
                 var viewers = SiteApi.GetChatters(SpiffCore.Instance.Channel).Count;
 
-                Console.Title = string.Format("Spiffbot - Viewers: {0}", viewers);
+                Console.Title = string.Format("Spiffbaot - Viewers: {0}", viewers);
 
                 Thread.Sleep(1000);
             }
