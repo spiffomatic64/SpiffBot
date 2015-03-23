@@ -1,0 +1,2 @@
+ACCESSTOKEN='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+BRIDGEID='xxxxxxxxxxxxx'
