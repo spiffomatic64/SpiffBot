@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Pipes;
 using System.Reflection;
 using System.Drawing;
 using System.Collections;
@@ -9,6 +10,8 @@ using System.Data;
 
 using MDXInfo.DirectX.XInput;
 using vJoyInterfaceWrap;
+using UITimer = System.Windows.Forms.Timer;
+using System.Threading;
 
 namespace XInputDemo
 {
@@ -28,7 +31,7 @@ namespace XInputDemo
         private System.Windows.Forms.TrackBar leftMotor;
         private System.Windows.Forms.TrackBar rightMotor;
         private IContainer components;
-        private Timer timer;
+        private UITimer timer;
         private Bitmap mark;
         private Bitmap markAxisR;
         private Bitmap markAxisL;
@@ -70,6 +73,8 @@ namespace XInputDemo
         private int controllerBox = 0;
         private ToolStripMenuItem customToolStripMenuItem;
         private string path;
+        private Worker workerObject;
+        private Thread workerThread;
         public MainForm()
         {
             // Create one joystick object and a position structure.
@@ -178,10 +183,17 @@ namespace XInputDemo
             pictureBox1.Paint += new PaintEventHandler(pictureBox1_Paint);
             pictureBox2.Paint += new PaintEventHandler(pictureBox2_Paint);
 
-            timer = new Timer();
+            timer = new UITimer();
             timer.Interval = 50;
             timer.Tick += new EventHandler(timer_Tick);
             timer.Start();
+
+            // Create the thread object. This does not start the thread.
+            workerObject = new Worker();
+            workerThread = new Thread(workerObject.DoWork);
+
+            // Start the worker thread.
+            workerThread.Start();
         }
 
         /// <summary>
@@ -191,6 +203,7 @@ namespace XInputDemo
         {
             if (disposing)
             {
+                workerObject.RequestStop();
                 if (components != null)
                 {
                     components.Dispose();
@@ -922,5 +935,51 @@ namespace XInputDemo
         {
             e.Handled = true;
         }
+    }
+
+    public class Worker
+    {
+        // This method will be called when the thread is started. 
+        public void DoWork()
+        {
+            MessageBox.Show("Start", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            var server = new NamedPipeServerStream("SpiffPipe", PipeDirection.InOut, 5);
+
+            StreamReader reader = new StreamReader(server);
+            server.WaitForConnection();
+            MessageBox.Show( "Listening", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            while (!_shouldStop)
+            {
+                try
+                {
+                    if (server.IsConnected)
+                    {
+                        var line = reader.ReadLine();
+                        if (line != null && line.Length > 0) 
+                            MessageBox.Show(line, "Input", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Reconnecting pipe!", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        server.WaitForConnection();
+                    }
+
+                }
+                catch (IOException e)
+                {
+                    MessageBox.Show(e.Message, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+
+            }
+            MessageBox.Show( "Stopped","Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        public void RequestStop()
+        {
+            _shouldStop = true;
+            MessageBox.Show("Stopping", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        // Volatile is used as hint to the compiler that this data 
+        // member will be accessed by multiple threads. 
+        private volatile bool _shouldStop;
     }
 }
