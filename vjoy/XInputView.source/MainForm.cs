@@ -7,6 +7,7 @@ using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
 using System.Data;
+using System.Runtime.InteropServices;
 
 using MDXInfo.DirectX.XInput;
 using vJoyInterfaceWrap;
@@ -75,6 +76,20 @@ namespace XInputDemo
         private string path;
         private Worker workerObject;
         private Thread workerThread;
+        private bool LMouse_button_state = false;
+        private bool RMouse_button_state = false;
+        private bool YMouse_button_state = false;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+        public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+        [DllImport("user32.dll", EntryPoint = "keybd_event", CharSet = CharSet.Auto, ExactSpelling = true)]
+        public static extern void keybd_event(byte vk, byte scan, int flags, int extrainfo);
+        private const int MOUSEEVENTF_MOVE = 0x01;
+        private const int MOUSEEVENTF_LEFTDOWN = 0x02;
+        private const int MOUSEEVENTF_LEFTUP = 0x04;
+        private const int MOUSEEVENTF_RIGHTDOWN = 0x08;
+        private const int MOUSEEVENTF_RIGHTUP = 0x10;
+
         public MainForm()
         {
             // Create one joystick object and a position structure.
@@ -184,7 +199,7 @@ namespace XInputDemo
             pictureBox2.Paint += new PaintEventHandler(pictureBox2_Paint);
 
             timer = new UITimer();
-            timer.Interval = 50;
+            timer.Interval = 10;
             timer.Tick += new EventHandler(timer_Tick);
             timer.Start();
 
@@ -193,7 +208,7 @@ namespace XInputDemo
             workerThread = new Thread(workerObject.DoWork);
 
             // Start the worker thread.
-            workerThread.Start();
+            //workerThread.Start();
         }
 
         /// <summary>
@@ -569,6 +584,7 @@ namespace XInputDemo
 
         private void timer_Tick(object sender, EventArgs e)
         {
+            int X, Y;
             leftTriggerB = XInput.Controllers[controllerBox].State.Gamepad.LeftTrigger > 100;
             joystick.SetAxis(XInput.Controllers[controllerBox].State.Gamepad.LeftTrigger * 128, id, HID_USAGES.HID_USAGE_SL0);
             rightTriggerB = XInput.Controllers[controllerBox].State.Gamepad.RightTrigger > 100;
@@ -579,6 +595,14 @@ namespace XInputDemo
             leftY = XInput.Controllers[controllerBox].State.Gamepad.ThumbLeftY / (32767 / 11);
             joystick.SetAxis(XInput.Controllers[controllerBox].State.Gamepad.ThumbLeftY / 2 + 16384, id, HID_USAGES.HID_USAGE_Y);
 
+            if (Math.Abs(leftX) > 1 || Math.Abs(leftY) > 1)
+            {
+                X = XInput.Controllers[controllerBox].State.Gamepad.ThumbLeftX / (32767 / 20);
+                Y = 0 - XInput.Controllers[controllerBox].State.Gamepad.ThumbLeftY / (32767 / 20);
+                string stuff = X.ToString();
+                mouse_event(MOUSEEVENTF_MOVE, (uint)X, (uint)Y, 0, 0);
+                //MessageBox.Show(stuff, "ERROR", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
 
             rightX = XInput.Controllers[controllerBox].State.Gamepad.ThumbRightX / (32767 / 11);
             joystick.SetAxis(XInput.Controllers[controllerBox].State.Gamepad.ThumbRightX / 2 + 16384, id, HID_USAGES.HID_USAGE_RX);
@@ -587,14 +611,82 @@ namespace XInputDemo
             rightStick.Text = rightX + ";" + rightY;
 
             ControllerButtons buttons = XInput.Controllers[controllerBox].State.Gamepad.Buttons;
+            //************ A
             if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.A)) joystick.SetBtn(true, id, 1);
             else joystick.SetBtn(false, id, 1);
+            if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.A))
+            {
+                if (!LMouse_button_state)
+                {
+                    X = Cursor.Position.X;
+                    Y = Cursor.Position.Y;
+                    LMouse_button_state = true;
+                    mouse_event(MOUSEEVENTF_LEFTDOWN, (uint)X, (uint)Y, 0, 0);
+                }
+                
+                
+            }
+            else
+            {
+                if (LMouse_button_state)
+                {
+                    X = Cursor.Position.X;
+                    Y = Cursor.Position.Y;
+                    LMouse_button_state = false;
+                    mouse_event(MOUSEEVENTF_LEFTUP, (uint)X, (uint)Y, 0, 0);
+                }
+            }
+
+            //****************** B
             if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.B)) joystick.SetBtn(true, id, 2);
             else joystick.SetBtn(false, id, 2);
+            if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.B))
+            {
+                if (!RMouse_button_state)
+                {
+                    X = Cursor.Position.X;
+                    Y = Cursor.Position.Y;
+                    RMouse_button_state = true;
+                    mouse_event(MOUSEEVENTF_RIGHTDOWN, (uint)X, (uint)Y, 0, 0);
+                }
+
+
+            }
+            else
+            {
+                if (RMouse_button_state)
+                {
+                    X = Cursor.Position.X;
+                    Y = Cursor.Position.Y;
+                    RMouse_button_state = false;
+                    mouse_event(MOUSEEVENTF_RIGHTUP, (uint)X, (uint)Y, 0, 0);
+                }
+            }
+
             if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.X)) joystick.SetBtn(true, id, 3);
             else joystick.SetBtn(false, id, 3);
             if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.Y)) joystick.SetBtn(true, id, 4);
             else joystick.SetBtn(false, id, 4);
+
+            if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.Y))
+            {
+                if (!YMouse_button_state)
+                {
+                    YMouse_button_state = true;
+                    keybd_event(0x5B, 0, 0, 0);
+                }
+
+
+            }
+            else
+            {
+                if (YMouse_button_state)
+                {
+                    YMouse_button_state = false;
+                    keybd_event(0x5B, 0, 0, 0x02);
+                }
+            }
+
             if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.ShoulderLeft)) joystick.SetBtn(true, id, 5);
             else joystick.SetBtn(false, id, 5);
             if (XInput.Controllers[controllerBox].IsButtonPressed(ControllerButtons.ShoulderRight)) joystick.SetBtn(true, id, 6);
@@ -942,12 +1034,12 @@ namespace XInputDemo
         // This method will be called when the thread is started. 
         public void DoWork()
         {
-            MessageBox.Show("Start", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //MessageBox.Show("Start", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             var server = new NamedPipeServerStream("SpiffPipe", PipeDirection.InOut, 5);
 
             StreamReader reader = new StreamReader(server);
             server.WaitForConnection();
-            MessageBox.Show( "Listening", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //MessageBox.Show( "Listening", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             while (!_shouldStop)
             {
                 try
@@ -971,12 +1063,12 @@ namespace XInputDemo
                 }
 
             }
-            MessageBox.Show( "Stopped","Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //MessageBox.Show( "Stopped","Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         public void RequestStop()
         {
             _shouldStop = true;
-            MessageBox.Show("Stopping", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //MessageBox.Show("Stopping", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         // Volatile is used as hint to the compiler that this data 
         // member will be accessed by multiple threads. 

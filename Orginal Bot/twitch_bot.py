@@ -81,6 +81,12 @@ sounds = { "slam" : "SOUND_1277.ogg",
 "ding" : "ding.ogg"
 }
 
+spam = { "disco":"Type disco in chat for a DISCO PARTY!!!!", 
+        "!whiteboard":"",
+        "disco chase":"Type chase(color) to have a color you chose chase across my face!",
+        "blah":"Type !spiff to get my attention",
+        "randomcolor":"Type randomcolor to turn all the lights to a random color!"}
+
 class XINPUT_VIBRATION(ctypes.Structure):
     _fields_ = [("wLeftMotorSpeed", ctypes.c_ushort),
                 ("wRightMotorSpeed", ctypes.c_ushort)]
@@ -300,6 +306,15 @@ def mastertimer():
                 
                 twitch_bot_utils.printer(elapsed)
                 twitch_bot_utils.printer(last_pass)
+        elif mode ==2:
+            elapsed = time.time() - counter
+            twitch_bot_utils.printer(elapsed)
+            if elapsed >300 or elapsed<0:
+                spam_msg =  random.choice(spam.keys())
+                send = spam[spam_msg]
+                irc.msg(spam[spam_msg]);
+                user_commands("spiffbot",spam_msg)
+                counter = time.time()
         time.sleep(1)
         
 #switch control to a random person (or specific person if specified)
@@ -915,12 +930,12 @@ def master_commands(user,data):
             return True
             
         #disable all monitors
-        if data.find ( 'monitor' ) != -1:
+        '''if data.find ( 'monitor' ) != -1:
             twitch_bot_utils.printer("Monitor scare!")
             scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
         #changes volume
         if data.find ( 'volume' ) != -1 or data.find ( 'mute' ) != -1:
             twitch_bot_utils.printer("Setting Volume!")
@@ -938,11 +953,11 @@ def master_commands(user,data):
             return True 
             
         #flip the main monitor and switch control (broken atm)
-        if data.find ( 'flicker' ) != -1:
+        '''if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(admin,))
             scare.daemon = True
             scare.start() 
-            return True
+            return True'''
             
         #Dim the main monitor
         if data.find ( 'dark' ) != -1:
@@ -1495,6 +1510,14 @@ def user_commands(user,data):
         irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
         return True
         
+    if command == "!multi" or command == "!multitwitch":
+        irc.msg("Watch me and Rotatedlife here: http://multitwitch.tv/spiffomatic64/rotatedlife")
+        return True
+    
+    if data.find("!whiteboard") != -1:
+        irc.msg("Draw on my screen here: http://webwhiteboard.com/#cra5z59h")
+        return True
+        
     if command == "!github":
         irc.msg("Add suggestions here! https://github.com/spiffomatic64/SpiffBot/issues")
         return True
@@ -1515,7 +1538,7 @@ def user_commands(user,data):
         irc.msg("Wife Scare Part 1: https://www.youtube.com/watch?v=Q-xaW7IIa3I Part 2: https://www.youtube.com/watch?v=VROLA7HS8KI")
         return True
        
-    if command == "!potsandpans":
+    if command == "!pots":
         irc.msg("My wife busting into the room banging pots and pans to scare me: https://www.youtube.com/watch?v=ZDkJJJQbN8Q")
         return True
     
@@ -1703,6 +1726,7 @@ next = []
 stayAlive = 1
 
 mode = twitch_bot_utils.scaryDay()
+mode = 2
 
 #serial stuff
 #todo: add code to find arduino dynamically
@@ -1727,8 +1751,8 @@ irc = twitch_bot_utils.irc_connection("irc.twitch.tv","6667",auth.get_bot(),auth
 t2 = threading.Thread(target=mastertimer)
 t2.daemon = True
 t2.start()
-midi = twitch_bot_midi.midi_lights("MIDISPORT 1x1 In",ser)
-midi.startMidi()
+#midi = twitch_bot_midi.midi_lights("MIDISPORT 1x1 In",ser)
+#midi.startMidi()
 
 
 twitch_bot_utils.printer("Blacking out all pixels!")

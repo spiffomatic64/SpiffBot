@@ -121,7 +121,7 @@ def scaryDay():
         return 0
     else:
         printer("Normal Day!")
-        return 1
+        return 2
 
 #Prints to console, and a log file
 def printer(string):
