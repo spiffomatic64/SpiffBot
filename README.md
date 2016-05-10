@@ -1,19 +1,4 @@
-SpiffBot (C#)
-========
-In the C# Branch of Spiffbot is a C# implantation of spiffbot from it's python form into a more suitable version in C#, which will allow some of the following things
-<ol>
-<li>Easy to program plug-in interface</li>
-<li>Easy to manage Ops (outside of the twitch supported)</li>
-<li>Permissions for users</li>
-<li>And tons more to come</li>
-<li>All commands start with "!" regradless of name</li>
-<li>Command name collision checking (Meaning two commands cannot have the same name)</li>
-<li>Plugin Assembly sharing(Meaing plugins can talk to each other look at the Win32API plugin for a example)</li>
-</ol>
-
-C# Branch is maintained by Toyz 
-
-SpiffBot (Python) - OLD
+SpiffBot 
 ========
 
 Interactive Twitch IRC bot
@@ -23,6 +8,23 @@ This is my IRC bot I threw together hastily night by night to add some fun inter
 I'm using an arduino currently to drive some leds/servo's/vibration motors, but I plan on expanding this.
 
 The code is VERY ugly, VERY buggy, and is changed just about daily... Its literally cobbled together every night about 30 minutes before I stream to add a few features/fix a few bugs here and there. (I avoid large re-writes because it would mean downtime for the stream) which makes it even uglier lol...
+
+<h1>Troll features</h1>
+<ol>
+<li>Playing sounds (in center/left/right ears)</li>
+<li>Turning off all monitors</li>
+<li>Turning off all monitors</li>
+<li>Turning off all volume</li>
+<li>Move game window around monitors randomly</li>
+<li>Strobe game sccreen</li>
+<li>Dim game screen</li>
+<li>Draw a randomly sized black box in the middle of the screen</li>
+<li>Turning off all monitors</li>
+<li>Randomly press keyboard buttons</li>
+<li>Randomly move mouse around</li>
+<li>Randomly disable all keyboard and mouse input</li>
+<li>Minimize all windows</li>
+<li>Turning off all monitors</li>
 
 <h1>Current list of added features:</h1>
 <ol>
@@ -61,3 +63,5 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 <li>!timeleft command to let viewers know how much time is left</li>
 <li>!opted command to let viewers know if they are opted in or not</li>
 </ol>
+
+
