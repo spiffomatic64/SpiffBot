@@ -1,0 +1,54 @@
+
+<html>
+<style>
+#video div{
+    display: inline;
+}
+#chat div{
+    display: inline;
+}
+</style>
+<body>
+<script src= "http://player.twitch.tv/js/embed/v1.js"></script>
+<div id="video" width="100%" >
+    <div id="spiffomatic64" style="width: 50vw;"></div><div id="itabob" style="width: 50vw;"></div>
+</div>
+
+
+<div id="chat" width="100%">
+    <iframe id="spiffchat" frameborder="0" scrolling="no" src="http://twitch.tv/spiffomatic64/chat?popout=" width="50%">
+    </iframe><iframe id="itachat" frameborder="0" scrolling="no" src="http://twitch.tv/itabob/chat?popout=" width="50%">
+    </iframe>
+</div>
+
+
+<script type="text/javascript">
+var w = Math.round(Math.max(document.documentElement.clientWidth, window.innerWidth || 0)/2)-20
+var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+
+    var spiff_options = {
+        width: w,
+        height: Math.round(w*0.5625),
+        channel: "spiffomatic64", 
+        //video: "{VIDEO_ID}"       
+    };
+    var ita_options = {
+        width: w,
+        height: Math.round(w*0.5625),
+        channel: "itabob", 
+        //video: "{VIDEO_ID}"       
+    };
+    var player = new Twitch.Player("spiffomatic64", spiff_options);
+    player.setVolume(0.5);
+    var player = new Twitch.Player("itabob", ita_options);
+    player.setVolume(0.5);
+
+    var chatheight = h-Math.round(w*0.5625);
+    document.getElementById('spiffchat').width=w;
+    document.getElementById('spiffchat').height=chatheight-20;
+    document.getElementById('itachat').width=w;
+    document.getElementById('itachat').height=chatheight-20;
+
+</script>
+</body>
+</html>
