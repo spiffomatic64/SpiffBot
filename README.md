@@ -25,6 +25,7 @@ The code is VERY ugly, VERY buggy, and is changed just about daily... Its litera
 <li>Randomly disable all keyboard and mouse input</li>
 <li>Minimize all windows</li>
 <li>Turning off all monitors</li>
+</ol>
 
 <h1>Current list of added features:</h1>
 <ol>
