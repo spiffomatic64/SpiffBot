@@ -3,7 +3,7 @@ SpiffBot
 
 Interactive Twitch IRC bot
 
-This is my IRC bot I threw together hastily night by night to add some fun interactivity to twitch. Poop
+This is my IRC bot I threw together hastily night by night to add some fun interactivity to twitch. 
 
 I'm using an arduino currently to drive some leds/servo's/vibration motors, but I plan on expanding this.
 
