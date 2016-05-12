@@ -7,6 +7,7 @@ import pygame
 import threading
 import socket
 import string
+import os 
 
 class irc_connection:
     
@@ -228,6 +229,8 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     valueScaled = float(value - leftMin) / float(leftMax - leftMin)
     return rightMin + (valueScaled * (rightMax - rightMin))
 
+if not os.path.isdir('./logs')
+    os.makedirs('./logs')
 log = time.strftime("./logs/%m-%d-%Y_%H-%M-%S.log")
 logging.basicConfig(filename=log,level=logging.INFO)    
 logging.info('Setting up serial connection...')   
