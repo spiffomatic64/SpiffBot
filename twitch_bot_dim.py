@@ -7,8 +7,8 @@ import time
 import random
 
 times = random.randint(30, 60)
-width = 1280
-height = 1024
+width = 1920
+height = 1080
 
 frames = random.randint(10, 30)
 visible = (1.0 / 60.0) * frames
@@ -31,8 +31,9 @@ def set_top(hwnd):
 def user_wait(duration):
     stop = time.time()+duration
     while time.time() < stop:
+        pygame.event.pump()
         time.sleep(0.5)
-        pygame.display.set_mode((width, height), pygame.NOFRAME  , 32)
+        pygame.display.update()
     return
 
 pygame.init()

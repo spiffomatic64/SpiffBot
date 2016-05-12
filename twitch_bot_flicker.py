@@ -7,8 +7,8 @@ import time
 import random
 
 times = random.randint(30, 60)
-width = 1280
-height = 1024
+width = 1920
+height = 1080
 #width = 100
 #height = 100
 

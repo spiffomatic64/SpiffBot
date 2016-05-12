@@ -1,3 +1,13 @@
+#need to install
+# pyserial (pip install pyserial)
+# pygame http://www.pygame.org/download.shtml
+# requests (pip install requests)
+# win32api https://sourceforge.net/projects/pywin32/files/
+# mysql https://dev.mysql.com/downloads/connector/python/
+# comtypes (pip install comtypes)
+# pil (http://www.pythonware.com/products/pil/)
+
+
 import re
 import time
 import serial
@@ -191,7 +201,10 @@ def opt(user,inout,passed=None):
                 
 def autoOptIn(user,data):
     global next
-    if user not in db.getUsers():
+	
+    users =  db.getUsers()
+
+    if not users or user not in db.getUsers():
         twitch_bot_utils.printer("Auto Opting %s in!" % user)
         opt(user,True)
         irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
@@ -482,7 +495,7 @@ def flip(duration=20,scare=0):
     scare_lock(1)
     scare_status("Monitor is flipped!")
     #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
-    device = win32.EnumDisplayDevices(None,1);
+    device = win32.EnumDisplayDevices(None,0);
     twitch_bot_utils.printer("Rotate device %s (%s)"%(device.DeviceString,device.DeviceName));
 
     dm = win32.EnumDisplaySettings(device.DeviceName,win32con.ENUM_CURRENT_SETTINGS)
@@ -930,12 +943,12 @@ def master_commands(user,data):
             return True
             
         #disable all monitors
-        '''if data.find ( 'monitor' ) != -1:
+        if data.find ( 'monitor' ) != -1:
             twitch_bot_utils.printer("Monitor scare!")
             scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
             scare.start() 
-            return True'''
+            return True
         #changes volume
         if data.find ( 'volume' ) != -1 or data.find ( 'mute' ) != -1:
             twitch_bot_utils.printer("Setting Volume!")
@@ -953,12 +966,12 @@ def master_commands(user,data):
             return True 
             
         #flip the main monitor and switch control (broken atm)
-        '''if data.find ( 'flicker' ) != -1:
+        if data.find ( 'flicker' ) != -1:
             scare = threading.Thread(target=flicker,args=(admin,))
             scare.daemon = True
             scare.start() 
-            return True'''
-            
+            return True
+           
         #Dim the main monitor
         if data.find ( 'dark' ) != -1:
             scare = threading.Thread(target=dark,args=(admin,))
@@ -1080,11 +1093,11 @@ def fade(red,green,blue,steps,wait=2):
     diff = {}
     pixels = ser.get_pixels()
     twitch_bot_utils.printer("Fading")
-    for x in range(0,30):
+    for x in range(0,len(pixels)):
         temp = [red-pixels["%s"%x][0],green-pixels["%s"%x][1],blue-pixels["%s"%x][2]]
         diff.update({x:temp})
     for x in range(0, steps+1):
-        for y in range(0, 30):
+        for y in range(0, len(pixels)):
             r=int(round(pixels["%s"%y][0] + ((diff[y][0]/steps)*x)))
             if r<0:
                 r=0
@@ -1760,7 +1773,6 @@ ser.write("#\x00\x00\x00\xff!")
 time.sleep(2)
 modedefault()
 time.sleep(1)
-wait_animating()
 twitch_bot_utils.printer("READY!")
 irc.msg("READY!")
 

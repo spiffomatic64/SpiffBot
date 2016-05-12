@@ -176,12 +176,12 @@ class GIFImage(object):
         return new
         
 def set_top(hwnd,x1,y1):
-    x = 640
-    y = 512
+    x = 960
+    y = 540
     w = int(round(x1/2))
     h = int(round(y1/2))
     
-    win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1280,1024,win32con.SWP_NOACTIVATE)
+    win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1920,1080,win32con.SWP_NOACTIVATE)
     print("SetWindowPos to HWND_TOPMOST and SWP_NOACTIVATE")
     style = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
     print("Got style %X before" % style)
@@ -210,8 +210,8 @@ def main():
             print("Error: window not found")
         time.sleep(0.001)
 
-    stop = time.clock()+0.5
-    screen = pygame.display.set_mode((1280,1024),pygame.NOFRAME)
+    stop = time.clock()+1
+    screen = pygame.display.set_mode((1920,1080),pygame.NOFRAME)
     while time.clock() < stop:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -221,7 +221,7 @@ def main():
         screen.fill((0,0,0))
         w = int(round(spoopy.get_width()/2))
         h = int(round(spoopy.get_height()/2))
-        spoopy.render(screen, (640-w, 512-h))
+        spoopy.render(screen, (960-w, 540-h))
         pygame.display.flip()
 
 if __name__ == "__main__":
