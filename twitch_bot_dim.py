@@ -5,16 +5,41 @@ import win32gui
 import win32con
 import time
 import random
+import argparse
+import logging
 
-times = random.randint(30, 60)
-width = 1920
-height = 1080
+def check_range(arg):
+    try:
+        value = int(arg)
+    except ValueError as err:
+       raise argparse.ArgumentTypeError(str(err))
 
-frames = random.randint(10, 30)
-visible = (1.0 / 60.0) * frames
-frames = 30
-black = (1.0 / 60.0) * frames
+    if value < 0 or value > 255:
+        message = "Expected 0 <= value <= 255, got value = {}".format(value)
+        raise argparse.ArgumentTypeError(message)
 
+    return value
+    
+parser = argparse.ArgumentParser()
+parser.add_argument('duration',type=int,nargs='?', help='Duration in seconds to dim the screen')
+parser.add_argument('-dim', type=check_range, help='Dim value (0-255) Where 0 is transparant and 255 is opaque')
+
+try:
+    options = parser.parse_args()
+except:
+    parser.print_help()
+    sys.exit(0)
+
+if options.duration is None:
+    options.duration = random.randint(30, 60)
+if options.dim is None:
+    options.dim = 220
+    
+logging.log(logging.INFO,"Dimming screen: %d for %d seconds" % (options.dim,options.duration))
+
+width = win32api.GetSystemMetrics(0)
+height = win32api.GetSystemMetrics(1)
+logging.log(logging.INFO,"Monitor %d x %d" %(width,height))
 
 def set_top(hwnd):
     win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,width,height,win32con.SWP_NOACTIVATE)
@@ -37,7 +62,7 @@ def user_wait(duration):
     return
 
 pygame.init()
-logging.log(logging.INFO,"Dim scare! %s seconds" % times)
+logging.log(logging.INFO,"Dim scare! %s seconds" % options.duration)
 pygame.display.set_mode((width, height), pygame.NOFRAME  , 32)
 logging.log(logging.DEBUG,"Looking for window!")
 
@@ -52,7 +77,7 @@ while True:
     except win32gui.error:
         logging.log(logging.ERROR,"Error: window not found")
 
-win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(0,0,0), 220, win32con.LWA_ALPHA)
-user_wait(times)
+win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(0,0,0), options.dim, win32con.LWA_ALPHA)
+user_wait(options.duration)
 logging.log(logging.INFO,"Done!")
 
