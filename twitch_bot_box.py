@@ -6,6 +6,7 @@ import win32con
 import time
 import random
 import sys
+import logging
 
 start = 30
 end = 60
@@ -53,13 +54,7 @@ def set_top(hwnd):
     logging.log(logging.DEBUG,"Got style %X after" % style)
 
 #TODO turn into function    
-def user_wait(duration):
-    stop = time.time()+duration
-    while time.time() < stop:
-        pygame.event.pump()
-        time.sleep(0.5)
-        pygame.display.update()
-    return
+
 
 pygame.init()
 logging.log(logging.INFO,"BOX scare! %s seconds" % times)
@@ -78,6 +73,6 @@ while True:
     except win32gui.error:
         logging.log(logging.ERROR,"Error: window not found")
 
-user_wait(times)
+twitch_bot_utils.pygame_user_wait(times)
 logging.log(logging.INFO,"Done!")
 

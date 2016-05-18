@@ -8,6 +8,7 @@ import threading
 import socket
 import string
 import os 
+import pygame
 
 class irc_connection:
     
@@ -228,6 +229,23 @@ def debugserial(input):
 def translate(value, leftMin, leftMax, rightMin, rightMax):
     valueScaled = float(value - leftMin) / float(leftMax - leftMin)
     return rightMin + (valueScaled * (rightMax - rightMin))
+    
+def pygame_user_wait(duration):
+    stop = time.time()+duration
+    while time.time() < stop:
+        pygame.event.pump()
+        time.sleep(0.5)
+        pygame.display.update()
+    return
+   
+#Need to move scare system to module first   
+'''def user_wait(duration):
+    stop = time.time()+duration
+    while time.time() < stop:
+        pygame.event.pump()
+        time.sleep(0.5)
+        pygame.display.update()
+    return'''
 
 #Initialize logging
 if not os.path.isdir('./logs'):
