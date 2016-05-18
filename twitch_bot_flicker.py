@@ -5,18 +5,26 @@ import win32gui
 import win32con
 import time
 import random
-
-
-if len(sys.argv)==2 and sys.argv[1].isdigit():
-    start = int(sys.argv[1])
-    end = int(sys.argv[1])
-elif len(sys.argv)==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-    start = int(sys.argv[1])
-    end = int(sys.argv[2])
+import argparse
+import sys
+import logging
     
-logging.log(logging.INFO,"Time randomly: %d-%d" % (start, end))
+parser = argparse.ArgumentParser()
+parser.add_argument('times',type=int, nargs='?',default=random.randint(30, 60), help='Times to flicker the screen')
+parser.add_argument('-visible', type=int, default=random.randint(10, 30), help='Number of visible frames')
+parser.add_argument('-black', type=int, default=30, help='Number of black frames')
 
-times = random.randint(start, end)
+try:
+    options = parser.parse_args()
+except:
+    parser.print_help()
+    sys.exit(0)
+
+times = options.times
+visible = (1.0 / 60.0) * options.visible
+black = (1.0 / 60.0) * options.black
+logging.log(logging.INFO,"Flickering %d times. visible: %f black: %f" % (times, visible, black))
+
 
 width = win32api.GetSystemMetrics(0)
 height = win32api.GetSystemMetrics(1)
@@ -26,12 +34,6 @@ logging.log(logging.INFO,"Monitor %d x %d" %(width,height))
 #WS_EX_TOPMOST 0x00000008L
 #WS_EX_TRANSPARENT 0x00000020L
 #0x00080028
-
-frames = random.randint(10, 30)
-visible = (1.0 / 60.0) * frames
-frames = 30
-black = (1.0 / 60.0) * frames
-
 
 def set_top(hwnd):
     win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,width,height,win32con.SWP_NOACTIVATE)
@@ -46,7 +48,6 @@ def set_top(hwnd):
     logging.log(logging.DEBUG,"Got style %X after" % style)
 
 pygame.init()
-logging.log(logging.INFO,"Flicker scare! %s times" % times)
 pygame.display.set_mode((width, height), pygame.NOFRAME  , 32)
 logging.log(logging.DEBUG,"Looking for window!")
 
