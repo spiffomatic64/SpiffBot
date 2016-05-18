@@ -7,22 +7,23 @@ import time
 import random
 import sys
 import logging
+import argparse
 
-start = 30
-end = 60
-
-if len(sys.argv)==2 and sys.argv[1].isdigit():
-    start = int(sys.argv[1])
-    end = int(sys.argv[1])
-elif len(sys.argv)==3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-    start = int(sys.argv[1])
-    end = int(sys.argv[2])
     
-logging.log(logging.INFO,"Time randomly: %d-%d" % (start, end))
+parser = argparse.ArgumentParser()
+parser.add_argument('times',type=int, nargs='?',default=random.randint(30, 60), help='Times to flicker the screen')
 
-times = random.randint(start, end)
+try:
+    options = parser.parse_args()
+except:
+    parser.print_help()
+    sys.exit(0)
+
+times = options.times
+
+logging.log(logging.INFO,"Drawing box for %d seconds" % times)
     
-
+    
 width = win32api.GetSystemMetrics(0)
 height = win32api.GetSystemMetrics(1)
 logging.log(logging.INFO,"Monitor %d x %d" %(width,height))
