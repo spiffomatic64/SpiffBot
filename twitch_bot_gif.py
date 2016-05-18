@@ -12,6 +12,7 @@ import twitch_bot_utils
 import logging
 import os.path
 import sys
+import argparse
 
 # Get monitor size 
 width = win32api.GetSystemMetrics(0)
@@ -201,23 +202,31 @@ def set_top(hwnd,x1,y1):
     style = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
     logging.log(logging.DEBUG,"Got style %X after" % style)
 
+    
 def main():
     pygame.init()
     gifs = ["scarygif1.gif","scarygif2.gif","scarygif3.gif","scarygif4.gif","scarygif5.gif","shark.gif","nyancat.gif","toasty.gif","doge.gif","dramatic.gif"]
-        
-    length=1
-    gif_file = "images/" + random.choice(gifs)
     
-    if len(sys.argv)==2:
-        temp = "images/"+sys.argv[1]
-        if os.path.isfile(temp):
-            gif_file = temp
-    elif len(sys.argv)==3 and sys.argv[2].isdigit():
-        temp = "images/"+sys.argv[1]
-        if os.path.isfile(temp):
-            gif_file = temp
-        length=int(sys.argv[2])/1000.0
+    parser = argparse.ArgumentParser()
+    parser.add_argument('gif_file',type=str, nargs='?',default="images/" + random.choice(gifs), help='Gif file to play')
+    parser.add_argument('-duration', type=int, default=1000, help='Duration to play the Gif')
+
+    try:
+        options = parser.parse_args()
+    except:
+        parser.print_help()
+        sys.exit(0)
+
+    gif_file = options.gif_file
+    length = options.duration / 1000.0
  
+    temp = "images/"+gif_file
+    if not os.path.isfile(gif_file):
+        if os.path.isfile("images/"+gif_file):
+            gif_file = "images/" + gif_file
+        else:
+            gif_file = "images/" + random.choice(gifs)
+            
     spoopy = GIFImage(gif_file)
     
     logging.log(logging.INFO,"Playing gif: %s for: %f" % (gif_file, length))
