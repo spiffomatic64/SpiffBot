@@ -7,9 +7,9 @@ class midi_lights:
     def getMidi(self,midi_device):
 		c = 0
 		for x in range( 0, pygame.midi.get_count() ):
-			twitch_bot_utils.printer(pygame.midi.get_device_info(x)[1])
+			logging.log(logging.DEBUG,pygame.midi.get_device_info(x)[1])
 			if pygame.midi.get_device_info(x)[1] == midi_device:
-				twitch_bot_utils.printer("Found midi: %s" % c)
+				logging.log(logging.INFO,"Found midi: %s" % c)
 				return c
 			c = c + 1
 
@@ -17,7 +17,7 @@ class midi_lights:
         #Midi initialization 
         pygame.midi.init()
         midi_device = self.getMidi("MIDISPORT 1x1 In")
-        twitch_bot_utils.printer("Got midi: %s" % midi_device)
+        logging.log(logging.INFO,"Got midi: %s" % midi_device)
         self.ser = serial_device
         self.midi = pygame.midi.Input(midi_device)
         #setup thread object
@@ -61,7 +61,7 @@ class midi_lights:
     #Midi thread, gets midi data, translates to html rgb values 
     #and lights leds based on that color for 50ms, then turns all leds off
     def midiDrumsThread(self):
-        twitch_bot_utils.printer("Started Midi Thread!")
+        logging.log(logging.INFO,"Started Midi Thread!")
         while self.midi.poll():
             self.midi.read(1000)
         drums = { 38 : "ffffff",    #snare
@@ -85,13 +85,13 @@ class midi_lights:
                 events = self.midi.read(1000)
                 for e in events:
                     if e[0][2] != 64: #ignore note off packets
-                        #twitch_bot_utils.printer("%s:%s" % (e[0][1],e[0][2])) #debug, comment this out while playing, slows down the thread
+                        #logging.log(logging.INFO,"%s:%s" % (e[0][1],e[0][2])) #debug, comment this out while playing, slows down the thread
                         intensity = abs(e[0][2]) * 2
                         if intensity > 255:
                             intensity = 255
                             
                         if e[0][1] in drums:
-                            #twitch_bot_utils.printer(drums[e[0][1]]) #debug, comment this out while playing, slows down the thread
+                            #logging.log(logging.INFO,drums[e[0][1]]) #debug, comment this out while playing, slows down the thread
                             value = drums[e[0][1]]
                         rgb = twitch_bot_utils.hex2chr(value)
                         #before = get_pixels()
@@ -107,4 +107,4 @@ class midi_lights:
             # wait 10ms - this is arbitrary, but wait(0) still resulted
             # in 100% cpu utilization
             pygame.time.wait(10)
-        twitch_bot_utils.printer("Stopped Midi Thread!")
+        logging.log(logging.INFO,"Stopped Midi Thread!")

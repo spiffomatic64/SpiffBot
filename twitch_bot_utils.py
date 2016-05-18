@@ -17,7 +17,7 @@ class irc_connection:
         port = 6667
         self.conn = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
         self.conn.connect ( ( network, port ) )
-        printer("connected")
+        logging.log(logging.INFO,"connected")
         #IRC auth
         self.conn.send("PASS oauth:%s\r\n" % oauth)
         self.bot = bot
@@ -25,8 +25,8 @@ class irc_connection:
         self.conn.send("USER %s %s %s :Python IRC\r\n" % (self.bot,self.bot,self.bot))
         #wait before reading data (needed for twitch)
         time.sleep(0.5)
-        printer(self.conn.recv ( 4096 ))
-        printer("Got stuff")
+        logging.log(logging.INFO,self.conn.recv ( 4096 ))
+        logging.log(logging.INFO,"Got stuff")
         #wait before joining (needed for twitch)
         time.sleep(0.5)
         self.streamer = streamer
@@ -44,7 +44,7 @@ class irc_connection:
         return self.conn.recv ( buf_size )  
     
     def msg(self,msg,hide=False):   
-        printer('PRIVMSG #%s :%s\r\n' % (self.streamer,msg))
+        logging.log(logging.INFO,'PRIVMSG #%s :%s\r\n' % (self.streamer,msg))
         hide_msg = ""
         if hide:
             hide_msg = "!hide "
@@ -57,7 +57,7 @@ class irc_connection:
         self.irc_parsers.append(irc_parser)
         
     def irc_thread(self):
-        printer("Started irc_thread")
+        logging.log(logging.INFO,"Started irc_thread")
         while True:
             orig = self.conn.recv ( 4096 ) #receive irc data
         
@@ -66,7 +66,7 @@ class irc_connection:
                 
             lines = orig.splitlines()
             for line in lines:
-                printer("Line: %s" % line)
+                logging.log(logging.DEBUG,"Line: %s" % line)
                 parts = line.split() #Split irc data by white space
                 if len(parts)>=3 and parts[2][1:].lower()==self.streamer:
                     for parser in self.irc_parsers:
@@ -82,7 +82,7 @@ class irc_connection:
                             for part in parts:
                                 data = data + part + " "
                             data = data.lower()
-                            printer("User: %s Message: %s" % (user,data))
+                            logging.log(logging.INFO,"User: %s Message: %s" % (user,data))
                             for parser in self.msg_parsers:
                                 if parser(user,data):
                                     break
@@ -97,7 +97,7 @@ class notification:
     def notify(self):
         elapsed = time.time() - self.notified
         if elapsed >= self.throttle:
-            printer("Playing notification sound to grab attention %s" % elapsed)
+            logging.log(logging.INFO,"Playing notification sound to grab attention %s" % elapsed)
             sound_scare = pygame.mixer.Sound(self.sound)
             channel = sound_scare.play()
             channel.set_volume(1,1) #set volume to full
@@ -118,16 +118,16 @@ class notification:
 #return scary-0 or normal-1 dependant on the current day (>=4 is between thurs and sunday)
 def scaryDay():
     if datetime.date.today().isoweekday()>=4:
-        printer("Scary Day!")
+        logging.log(logging.INFO,"Scary Day!")
         return 0
     else:
-        printer("Normal Day!")
+        logging.log(logging.INFO,"Normal Day!")
         return 2
 
 #Prints to console, and a log file
-def printer(string):
+'''def printer(string):
     print "%s: %s" % (time.strftime("%d-%m-%Y_%H-%M-%S"),string)
-    logging.info("%s: %s" % (time.strftime("%d-%m-%Y_%H-%M-%S"),string)) 
+    logging.info("%s: %s" % (time.strftime("%d-%m-%Y_%H-%M-%S"),string))'''
 
 #converts a 6 character long (3 bytes) hex string into 3 integers
 def hex2chr(input):
@@ -169,7 +169,7 @@ def convertcolor(input,random_color):
     
     if input == "random":
         random_color = ((random.randint(1, 32)+random_color)*7)%255
-        printer("Random color: %s" % random_color)
+        logging.log(logging.INFO,"Random color: %s" % random_color)
         value = Wheel(random_color)
         stuff.append(value[0])
         stuff.append(value[1])
@@ -220,7 +220,7 @@ def convertcolor(input,random_color):
 def debugserial(input):
     global ser
 	
-    printer(input)
+    logging.log(logging.DEBUG,input)
     ser.write(input)
     
 #Not used at the moment, used to map a number from one range, to another
@@ -229,8 +229,19 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     valueScaled = float(value - leftMin) / float(leftMax - leftMin)
     return rightMin + (valueScaled * (rightMax - rightMin))
 
-if not os.path.isdir('./logs')
+#Initialize logging
+if not os.path.isdir('./logs'):
     os.makedirs('./logs')
-log = time.strftime("./logs/%m-%d-%Y_%H-%M-%S.log")
-logging.basicConfig(filename=log,level=logging.INFO)    
-logging.info('Setting up serial connection...')   
+    
+if len(logging.getLogger("").handlers)==0:
+    # root console logger
+    log_format = "%(levelname)-8s %(filename)s:%(lineno)s %(message)s"   
+    logging.basicConfig(format=log_format,level=logging.DEBUG)    
+    
+    # file logger
+    log = time.strftime("./logs/%m-%d-%Y_%H-%M-%S.log")
+    file = logging.FileHandler(log)
+    file.setLevel(logging.INFO)
+    
+    #file.setFormatter(file_format)
+    logging.getLogger('').addHandler(file)

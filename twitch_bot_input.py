@@ -1,6 +1,7 @@
 import ctypes
 import time
 import win32api
+import twitch_bot_utils
 
 SendInput = ctypes.windll.user32.SendInput
 
@@ -38,6 +39,7 @@ class Input(ctypes.Structure):
 # Actuals Functions
 # directx scan codes http://www.gamespp.com/directx/directInputKeyboardScanCodes.html
 def PressKey(DIK_SCAN,VK_SCAN,press=True):
+    
     if press:
         d_state = 8
         k_state = 1
@@ -53,4 +55,4 @@ def PressKey(DIK_SCAN,VK_SCAN,press=True):
     if VK_SCAN != 0:
         win32api.keybd_event(VK_SCAN,0,k_state,0)
         
-    print "DIK_SCAN %x VK_SCAN %x Press %d" % (DIK_SCAN,VK_SCAN,k_state)
+    logging.log(logging.DEBUG, "DIK_SCAN %x VK_SCAN %x Press %d" % (DIK_SCAN,VK_SCAN,k_state))

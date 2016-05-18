@@ -1,4 +1,4 @@
-#need to install
+# need to install
 # pyserial (pip install pyserial)
 # pygame http://www.pygame.org/download.shtml
 # requests (pip install requests)
@@ -94,7 +94,7 @@ sounds = { "slam" : "SOUND_1277.ogg",
 spam = { "disco":"Type disco in chat for a DISCO PARTY!!!!", 
         "!whiteboard":"",
         "disco chase":"Type chase(color) to have a color you chose chase across my face!",
-        "blah":"Type !spiff to get my attention",
+        "blah":"Type !%s to get my attention" % auth.get_streamer_short(),
         "randomcolor":"Type randomcolor to turn all the lights to a random color!"}
 
 class XINPUT_VIBRATION(ctypes.Structure):
@@ -117,7 +117,7 @@ def set_vibration(controller, left_motor, right_motor):
 def set_animating(status):
     global animating
     
-    twitch_bot_utils.printer("Setting animating to: %s" % status)
+    logging.log(logging.INFO,"Setting animating to: %s" % status)
     animating = status
 
 def setMode(type):
@@ -126,7 +126,7 @@ def setMode(type):
     
     if type == "scary" or type == 0:
         mode = 0
-        twitch_bot_utils.printer("Scary time!")
+        logging.log(logging.INFO,"Scary time!")
         counter = time.time()
         master=auth.get_streamer()
         irc.msg("ITS SCARY TIME!!!")
@@ -134,14 +134,14 @@ def setMode(type):
         return True
     if type == "troll" or type == 1:
         mode = 1
-        twitch_bot_utils.printer("Troll time!")
+        logging.log(logging.INFO,"Troll time!")
         counter = time.time()
-        irc.msg("LETS TROLL SPIFF!!!")
+        irc.msg("LETS TROLL %s!!!" % auth.get_streamer_short().upper())
         modedefault()
         return True
     if type == "light" or type == 2:
         mode = 2
-        twitch_bot_utils.printer("Lights time!")
+        logging.log(logging.INFO,"Lights time!")
         irc.msg("LIGHTS ARE PRETTY!!!")
         modedefault()
         return True
@@ -152,7 +152,7 @@ def inBetween(stuff,first,last):
 def get_next_game():
     try:
         url = "http://api.twitch.tv/api/channels/%s/panels" % auth.get_streamer()
-        twitch_bot_utils.printer("Checking games...")
+        logging.log(logging.INFO,"Checking games...")
         data = requests.get(url)
         binary = data.content
         output = json.loads(binary)
@@ -176,9 +176,9 @@ def twitch_profile(data):
     f.close()
 
 twitch_profile(-1)
-twitch_profile("Here are the commands you can use to play along, and interact with my \"spiffbot\"")
+twitch_profile("Here are the commands you can use to play along, and interact with my \"%s\"" % auth.get_bot())
 twitch_profile("")
-twitch_profile("Spiffbot has 3 main modes: Scary (Thurs-Sunday), Troll (Mon-Weds), Light (Only control of lights)")
+twitch_profile("%s has 3 main modes: Scary (Thurs-Sunday), Troll (Mon-Weds), Light (Only control of lights)" % auth.get_bot)
 twitch_profile("")
 
 def opt(user,inout,passed=None):
@@ -205,10 +205,10 @@ def autoOptIn(user,data):
     users =  db.getUsers()
 
     if not users or user not in db.getUsers():
-        twitch_bot_utils.printer("Auto Opting %s in!" % user)
+        logging.log(logging.INFO,"Auto Opting %s in!" % user)
         opt(user,True)
         irc.msg("Check out this 1 minute video that explains my stream! https://www.youtube.com/watch?v=q0q8SML6d_I")
-        twitch_bot_utils.printer("Setting next user to: %s" % user)
+        logging.log(logging.INFO,"Setting next user to: %s" % user)
         if mode == 0:
             irc.msg("Giving next control to our newest viewer: %s" % user)
             next.append(user)
@@ -216,7 +216,7 @@ def autoOptIn(user,data):
 
 def scare_lock(status):
     global scaring
-    twitch_bot_utils.printer("Setting scaring: %s" % status)
+    logging.log(logging.INFO,"Setting scaring: %s" % status)
     scaring = status
 
         
@@ -233,7 +233,7 @@ def user_wait(duration):
 #gets a "live" list of viewers in chat
 def get_viewers(opted=True):
     url = "https://tmi.twitch.tv/group/user/%s/chatters" % auth.get_streamer()
-    twitch_bot_utils.printer("Checking viewers...")
+    logging.log(logging.INFO,"Checking viewers...")
     data = requests.get(url=url)
     binary = data.content
     output = json.loads(binary)
@@ -241,11 +241,11 @@ def get_viewers(opted=True):
     for viewer in output['chatters']['viewers']:
         if db.getUserOpted(viewer):
             viewers.append(viewer)
-            twitch_bot_utils.printer(viewer)
+            logging.log(logging.DEBUG,viewer)
     for viewer in output['chatters']['moderators']:
         if db.getUserOpted(viewer) and viewer!=auth.get_bot() and viewer!=auth.get_streamer():
             viewers.append(viewer)
-            twitch_bot_utils.printer(viewer)
+            logging.log(logging.DEBUG,viewer)
     return viewers
 
 # This will pick a random user from those that are opted in and display the winner in chat
@@ -256,7 +256,7 @@ def raffle():
 def get_game():
     try:
         url = "https://api.twitch.tv/kraken/streams/%s" % auth.get_streamer()
-        twitch_bot_utils.printer("Checking game...")
+        logging.log(logging.INFO,"Checking game...")
         data = requests.get(url=url)
         binary = data.content
         output = json.loads(binary)
@@ -268,9 +268,7 @@ def get_game():
 #Thread responsible for switching control
 def mastertimer():
     global counter
-    global master
     global switching
-    global mode
 
     warn_timer = 0
     counter = time.time()
@@ -281,20 +279,20 @@ def mastertimer():
             if elapsed >390 or elapsed<0:
                 scare_lock(0)
                 switching = 0
-                twitch_bot_utils.printer("Elapsed out of bounds!: %s" % elapsed);
+                logging.log(logging.WARNING,"Elapsed out of bounds!: %s" % elapsed);
                 
             if scaring == 0 and switching == 0:
                 #every 5 minutes switch control, and remove master from optedin list 300
                 if elapsed>300:
                     if master!=auth.get_bot():
                         irc.msg("5 Minutes elapsed! Switching control, and opting %s out!" % master)  
-                        twitch_bot_utils.printer("Passing control and opting out %s(due to timeout from mastertimer)" % master)
+                        logging.log(logging.WARNING,"Passing control and opting out %s(due to timeout from mastertimer)" % master)
                         if last_pass:
-                            twitch_bot_utils.printer("Passing back to user %s" % last_pass)
+                            logging.log(logging.INFO,"Passing back to user %s" % last_pass)
                             opt(master,False,last_pass)
                         else:
                             opt(master,False)
-                    twitch_bot_utils.printer("Master switch")
+                    logging.log(logging.INFO,"Master switch")
                     counter = time.time()
                     warn_timer = 0
                 #every 2.5 minutes warn the user in control 150 (make sure to only warn once)
@@ -304,7 +302,7 @@ def mastertimer():
                             viewers = get_viewers()
                             if master in viewers:
                                 irc.msg( "2.5 Minutes left %s!" % master)  
-                                twitch_bot_utils.printer("Sending 2.5 minute warning")
+                                logging.log(logging.WARNING,"Sending 2.5 minute warning")
                             else:
                                 irc.msg( "%s is not in viewer list, Switching control!" % master)  
                                 if last_pass:
@@ -314,19 +312,19 @@ def mastertimer():
                                 counter = time.time()
                         except:
                             irc.msg( "2.5 Minutes left %s!" % master)  
-                            twitch_bot_utils.printer("Sending 2.5 minute warning")
+                            logging.log(logging.WARNING,"Sending 2.5 minute warning")
                     warn_timer = 1
                 
-                twitch_bot_utils.printer(elapsed)
-                twitch_bot_utils.printer(last_pass)
+                logging.log(logging.DEBUG,elapsed)
+                logging.log(logging.DEBUG,last_pass)
         elif mode ==2:
             elapsed = time.time() - counter
-            twitch_bot_utils.printer(elapsed)
+            logging.log(logging.DEBUG,elapsed)
             if elapsed >300 or elapsed<0:
                 spam_msg =  random.choice(spam.keys())
                 send = spam[spam_msg]
                 irc.msg(spam[spam_msg]);
-                user_commands("spiffbot",spam_msg)
+                user_commands(auth.get_bot(),spam_msg)
                 counter = time.time()
         time.sleep(1)
         
@@ -339,14 +337,14 @@ def switch(user="",pass_control=0):
     global pass_counter
     global last_pass
     
-    twitch_bot_utils.printer("Switching with user: %s" % user)
+    logging.log(logging.INFO,"Switching with user: %s" % user)
     #if warn timer is not -1, set warn timer to -1, then back to 0 at the end of the function
     #This is used to lock the switch thread (to prevent double switching)
     if switching == 0 and scaring == 0 and mode <=2 :
         switching = 1
         
         #pass limiting logic
-        twitch_bot_utils.printer("Pass Counter: %s" % pass_counter)
+        logging.log(logging.INFO,"Pass Counter: %s" % pass_counter)
         if pass_control==0: #reset pass counter
             pass_counter = 0
         elif pass_control==1: #increment pass_counter
@@ -357,16 +355,16 @@ def switch(user="",pass_control=0):
             return
             
         old = master
-        twitch_bot_utils.printer("getting viewers")
+        logging.log(logging.INFO,"getting viewers")
         try:
             viewers = get_viewers()
         except:
-            twitch_bot_utils.printer("*************Twitch Api is borked*************")
+            logging.log(logging.ERROR,"*************Twitch Api is borked*************")
             master=auth.get_bot()
             last_pass = None
-            twitch_bot_utils.printer("%s is now in control!" % master)
+            logging.log(logging.WARNING,"%s is now in control!" % master)
             irc.msg("%s is now in control!" % master) 
-            twitch_bot_utils.printer("Switching from %s to %s" % (old,master))
+            logging.log(logging.WARNING,"Switching from %s to %s" % (old,master))
             db.updateLastControl(master)
             counter = time.time()
             switching = 0
@@ -381,14 +379,14 @@ def switch(user="",pass_control=0):
         
         #if a "next" user is specified, switch to that user
         if len(next)>0:
-            twitch_bot_utils.printer("next was set to: %s" % next)
+            logging.log(logging.INFO,"next was set to: %s" % next)
             if user=="":
-                twitch_bot_utils.printer("user is not set")
+                logging.log(logging.WARNING,"user is not set")
                 user = next.pop(0)
                 
         #Switch to user if specified
         if user in viewers:
-            twitch_bot_utils.printer("User is set: %s" % user)
+            logging.log(logging.INFO,"User is set: %s" % user)
             master = user
             last_pass = None
         else:
@@ -401,24 +399,21 @@ def switch(user="",pass_control=0):
                     random.shuffle(viewers) #probably not needed, but what the hell :-P
                     master = random.choice(viewers)
             else:
-                twitch_bot_utils.printer("No valid viewers to switch to")
+                logging.log(logging.WARNING,"No valid viewers to switch to")
                 master=auth.get_bot()
             last_pass = None
         #reset counter and notify chat that a new viewer is in control
-        twitch_bot_utils.printer("%s is now in control!" % master)
+        logging.log(logging.INFO,"%s is now in control!" % master)
         irc.msg("%s is now in control!" % master) 
-        twitch_bot_utils.printer("Switching from %s to %s" % (old,master))
+        logging.log(logging.INFO,"Switching from %s to %s" % (old,master))
         db.updateLastControl(master)
         counter = time.time()
         switching = 0
     else:
-        twitch_bot_utils.printer("Another switch is in progress")
+        logging.log(logging.WARNING,"Another switch is in progress")
 
 #commands that will only work for me (and moderators in the future)
 def admin_commands(user,data):
-    global master
-    global counter
-    global mode
     global next
     global stayAlive
     
@@ -426,7 +421,7 @@ def admin_commands(user,data):
     if auth.is_admin(user):
         #split irc messages into parts by white space 
         parts = data.lower().split()
-        twitch_bot_utils.printer("User is admin, checking for commands")
+        logging.log(logging.INFO,"User is admin, checking for commands")
         command = parts[0][1:] #get the first "word" and remove the first character which is ":"
         if command == "!switch":
             #if there is something after switch command, try to switch to that user
@@ -450,7 +445,7 @@ def admin_commands(user,data):
                 irc.msg("Twitch api is borked :(")
             return True
         if command == "!midi":
-            twitch_bot_utils.printer(midi.toggleMidi())
+            logging.log(logging.INFO,midi.toggleMidi())
         if command == "!raffle":
             raffle()
             return True
@@ -458,7 +453,7 @@ def admin_commands(user,data):
         #if there are at least 2 words in the message
         if len(parts) == 2:
             for part in parts:
-                twitch_bot_utils.printer(part)
+                logging.log(logging.DEBUG,part)
             #add user to opted in list
             if command == "!optin":
                 opt(parts[1],True)
@@ -474,7 +469,7 @@ def admin_commands(user,data):
                 if setMode(parts[1]):
                     return True
             if command == "!switchnext":
-                twitch_bot_utils.printer("Setting next user to: %s" % parts[1])
+                logging.log(logging.INFO,"Setting next user to: %s" % parts[1])
                 next.append(parts[1])
                 return True
 
@@ -496,7 +491,7 @@ def flip(duration=20,scare=0):
     scare_status("Monitor is flipped!")
     #manually selecting monitor 2 (Windows reports monitor 2, is actually 1)
     device = win32.EnumDisplayDevices(None,0);
-    twitch_bot_utils.printer("Rotate device %s (%s)"%(device.DeviceString,device.DeviceName));
+    logging.log(logging.DEBUG,"Rotate device %s (%s)"%(device.DeviceString,device.DeviceName));
 
     dm = win32.EnumDisplaySettings(device.DeviceName,win32con.ENUM_CURRENT_SETTINGS)
     dm.DisplayOrientation = win32con.DMDO_180 #flip 180 degrees
@@ -525,18 +520,18 @@ def wiggle(times=20,scare=0):
         try:
             hwnd = win32gui.GetForegroundWindow()
             if hwnd:
-                twitch_bot_utils.printer("Found window! hwnd: %s" % hwnd)
+                logging.log(logging.INFO,"Found window! hwnd: %s" % hwnd)
                 rect = win32gui.GetWindowRect(hwnd)
                 x = rect[0]
                 y = rect[1]
                 w = rect[2] - x
                 h = rect[3] - y
-                twitch_bot_utils.printer("x: %d y: %d w: %d h: %d" % (x,y,w,h))
+                logging.log(logging.INFO,"x: %d y: %d w: %d h: %d" % (x,y,w,h))
                 break
             else:
-                twitch_bot_utils.printer("No windows %s" % hwnd)
+                logging.log(logging.ERROR,"No windows %s" % hwnd)
         except win32gui.error:
-            twitch_bot_utils.printer("Error: window not found")
+            logging.log(logging.ERROR,"Error: window not found")
     try:        
         for i in range(0,times):
             win32gui.SetWindowPos(hwnd,None,random.randint(-2312, 2712-w),random.randint(0, 1024-h),0,0,1)
@@ -556,7 +551,6 @@ def wiggle(times=20,scare=0):
     
 #Slow strobe the monitor effect
 def flicker(scare=0):
-    twitch_bot_utils.printer("Flicker!")
     scare_lock(1)
     scare_status("Flickering Monitor!")
     p = subprocess.Popen(["python", "twitch_bot_flicker.py"])
@@ -567,7 +561,6 @@ def flicker(scare=0):
         switch()
         
 def dark(scare=0):
-    twitch_bot_utils.printer("Dimming Monitor!")
     scare_lock(1)
     scare_status("Dimming Monitor!")
     p = subprocess.Popen(["python", "twitch_bot_dim.py"])
@@ -578,7 +571,6 @@ def dark(scare=0):
         switch()
         
 def box(scare=0):
-    twitch_bot_utils.printer("Drawing Box!")
     scare_lock(1)
     scare_status("Drawing Blind Spot!")
     p = subprocess.Popen(["python", "twitch_bot_box.py"])
@@ -589,7 +581,6 @@ def box(scare=0):
         switch()
         
 def drunk(scare=0):
-    twitch_bot_utils.printer("DRUNK MOUSE!")
     scare_lock(1)
     scare_status("DRUNK MOUSE!")
     p = subprocess.Popen(["python", "twitch_bot_drunk.py"])
@@ -600,7 +591,6 @@ def drunk(scare=0):
         switch()
         
 def gif(wait,scare=0):
-    twitch_bot_utils.printer("GIF SCARE!")
     scare_lock(1)
     scare_status("GIF SCARE!")
     status_length = 3
@@ -615,10 +605,9 @@ def gif(wait,scare=0):
         switch()
         
 def noput(scare=0):
+    logging.log(logging.INFO,"NOPUT!!!")
     scare_lock(1)
-    
     times = random.randint(30, 60)
-    
     stop = time.time()+times
     while time.time() < stop:
         ctypes.windll.user32.BlockInput(1)
@@ -636,7 +625,6 @@ def noput(scare=0):
 def cdrom(wait,scare):
     scare_lock(1)
     scare_status("Opening CDROM!")
-    twitch_bot_utils.printer("CDROM scare, scare=%s" % scare)
     status_length = 3
     ctypes.windll.WINMM.mciSendStringW(u"set cdaudio door open", None, 0, None)
     ctypes.windll.WINMM.mciSendStringW(u"set cdaudio door closed", None, 0, None)
@@ -650,9 +638,9 @@ def cdrom(wait,scare):
 def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
     scare_lock(1)
     scare_status(msg)
-    twitch_bot_utils.printer("Arguino scare, scare=%s" % scare)
+    logging.log(logging.INFO,"Arguino scare, scare=%s" % scare)
     status_length = 3
-    twitch_bot_utils.printer("%s %s time(s)" % (msg,times))
+    logging.log(logging.DEBUG,"%s %s time(s)" % (msg,times))
     for i in range(0,times):
         ser.write("#%c%c\x00%c" % (pin,start,command))
         time.sleep(dur)
@@ -667,7 +655,6 @@ def arduino_scare(pin,start,stop,command,msg,dur,wait,times,scare):
 def spasm_scare(wait,scare):
     scare_lock(1)
     scare_status("Spasm!!!!!")
-    twitch_bot_utils.printer("Spasm scare, scare=%s" % scare)
     status_length = 3
     ser.write("#%c%c\x00%c" % (10,130,254))
     ser.write("#%c%c\x00%c" % (9,130,254))
@@ -688,8 +675,8 @@ def spasm_scare(wait,scare):
         switch()
     
 def play_sound(sound,left,right):
-    twitch_bot_utils.printer(pygame.mixer.get_init())
-    twitch_bot_utils.printer("Playing sound %s" % sound)
+    logging.log(logging.DEBUG,pygame.mixer.get_init())
+    logging.log(logging.INFO,"Playing sound %s" % sound)
     mixer = pygame.mixer.Sound("./sounds/%s" % sound)
     channel = mixer.play()
     channel.set_volume(left,right)
@@ -707,11 +694,9 @@ def sound_scare(sound,left,right,scare=0):
         switch()
     
 def turn_off_monitors(msg,wait,scare=0):
-    twitch_bot_utils.printer("Monitor scare")
-    scare_status(msg)
+    scare_status("Monitors disabled!")
     scare_lock(1)
     status_length = 3
-    twitch_bot_utils.printer(msg)
     call(["nircmd.exe", "monitor", "off"])
     time.sleep(2.5+status_length)
     scare_status(-1)
@@ -723,6 +708,7 @@ def turn_off_monitors(msg,wait,scare=0):
 def change_volume(wait,level,scare=0):
     scare_lock(1)
     scare_status("Changing volume!")
+    logging.log(logging.INFO,"Changing volume: %d"%level)
     vol_scare.set_volume(level)
     time.sleep(wait)
     vol_scare.set_volume(-20.0)
@@ -735,6 +721,7 @@ def change_volume(wait,level,scare=0):
 def vibrate(wait,left,right,scare=0):
     scare_lock(1)
     scare_status("Vibrating controller!")
+    logging.log(logging.INFO,"Vibrating controller: %d:%d" % (left,right))
     stop = time.time()+wait
     while time.time() < stop:
         time.sleep(0.5)
@@ -772,7 +759,6 @@ def minimize(wait,scare):
     d = 0x44
     scare_lock(1)
     scare_status("Minimize!!!")
-    twitch_bot_utils.printer("Minimize scare, scare=%s" % scare)
     status_length = 3
     twitch_bot_input.PressKey(0,win,True)
     twitch_bot_input.PressKey(0,d,True)
@@ -787,16 +773,18 @@ def minimize(wait,scare):
         switch()
     
 def scare_status(status):
+    logging.log(logging.INFO,"Scare status: %s" % status)
     f = open('scarestatus.txt', 'w')
     if status==-1:
         f.truncate()
     else:
         f.write(status)
     f.close()
+    
       
 #Twitch profile generator
 twitch_profile("#Scary mode:")
-twitch_profile("Spiffbot will randomly pick someone in chat to be \"in control\".")
+twitch_profile("%s will randomly pick someone in chat to be \"in control\"." % auth.get_bot())
 twitch_profile("This person will have 5 minutes (with a 2.5 minute warning letting you know how much time is left) to use a \"scare\" command.")
 twitch_profile("")
 twitch_profile("##Scare Commands for the user in \"Control\"")
@@ -853,46 +841,46 @@ def master_commands(user,data):
     #check that the user is the master, and we are in scary mode
     if scaring==0 and switching==0 and (user.lower() == master.lower() or user.lower()==auth.get_streamer()) and mode <= 1:
         if user.lower()==auth.get_streamer():
-            twitch_bot_utils.printer("User is admin, dont switch")
+            logging.log(logging.INFO,"User is admin, dont switch")
             admin = 1
         else:
             admin = 0 
-        twitch_bot_utils.printer("User is in control, checking for commands")
+        logging.log(logging.INFO,"User is in control, checking for commands")
         parts = data.lower().split()
         command = parts[0][1:]
         
-        twitch_bot_utils.printer("%s == %s" % (user.lower(), master.lower()))
+        logging.log(logging.INFO,"%s == %s" % (user.lower(), master.lower()))
         #allow a user to pass to someone else, or to someone random
         if command == "!passnew":
-            twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
+            logging.log(logging.INFO,"%s pasing to whoever has not had control in the longest!" % user.lower())
             switch(-1)
             return True
             
         if command == "!pass":
             if len(parts) == 1:
-                twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
+                logging.log(logging.INFO,"%s pasing to whoever has not had control in the longest!" % user.lower())
                 switch(-1)
                 last_pass = user
                 return True
             if len(parts) == 2:
                 if user.lower() != parts[1].lower():
                     if parts[1].lower() in db.getOptedUsers():
-                        twitch_bot_utils.printer("%s pasing to %s" % (user.lower(),parts[1].lower()))
+                        logging.log(logging.INFO,"%s pasing to %s" % (user.lower(),parts[1].lower()))
                         switch(parts[1],1)
                         last_pass = user
                         return True
                     elif parts[1].lower() == "new" or parts[1].lower() == "newuser":
-                        twitch_bot_utils.printer("%s pasing to whoever has not had control in the longest!" % user.lower())
+                        logging.log(logging.INFO,"%s pasing to whoever has not had control in the longest!" % user.lower())
                         switch(-1)
                         last_pass = user
                         return True
                     else:
                         irc.msg("Can't pass, %s is opted out!" % parts[1].lower())
-                        twitch_bot_utils.printer("%s tried to pass to %s who is opted out" % (user.lower(),parts[1].lower()))
+                        logging.log(logging.WARNING,"%s tried to pass to %s who is opted out" % (user.lower(),parts[1].lower()))
                         return True
                 else:
                     irc.msg("You cant pass to yourself!")
-                    twitch_bot_utils.printer("%s tried to pass to them-self" % user.lower())
+                    logging.log(logging.WARNING,"%s tried to pass to them-self" % user.lower())
                     return True
             
         #sound commands
@@ -900,13 +888,13 @@ def master_commands(user,data):
         
         #select a random sound
         if command == "!randomsound":
-            twitch_bot_utils.printer("Random sound")
+            logging.log(logging.INFO,"Random sound")
             song = random.choice(sounds.values())
             
         #check message for all sound commands
         for sound, file in sounds.iteritems():
             if data.find(sound) != -1:
-                twitch_bot_utils.printer("Found %s in %s" % (sound,data))
+                logging.log(logging.DEBUG,"Found %s in %s" % (sound,data))
                 song = file
                 break #stop after the first sound command is found
         if song != '': #if a sound was selected
@@ -914,10 +902,10 @@ def master_commands(user,data):
             left = 1
             right = 1
             if data.find("left") != -1:
-                twitch_bot_utils.printer("Found left")
+                logging.log(logging.DEBUG,"Found left")
                 right = 0
             elif data.find("right") != -1:
-                twitch_bot_utils.printer("Found right")
+                logging.log(logging.DEBUG,"Found right")
                 left = 0
             #Play sound in a thread
             scare = threading.Thread(target=sound_scare,args=(song,left,right,admin))
@@ -932,8 +920,9 @@ def master_commands(user,data):
         if command == "!randomtroll" and mode == 1:
             data = random.choice(["flip","monitor","mute","wiggle","flicker","dark","blindspot","wasd"])
         
+        #make this configurable
         wait = random.randint(4, 30)
-        twitch_bot_utils.printer("Random wait: %s" % wait)
+        logging.log(logging.INFO,"Random wait: %s" % wait)
         
         #flip the main monitor
         if data.find ( 'flip' ) != -1:
@@ -944,14 +933,12 @@ def master_commands(user,data):
             
         #disable all monitors
         if data.find ( 'monitor' ) != -1:
-            twitch_bot_utils.printer("Monitor scare!")
             scare = threading.Thread(target=turn_off_monitors,args=("Monitors disabled!",wait+3,admin))
             scare.daemon = True
             scare.start() 
             return True
         #changes volume
         if data.find ( 'volume' ) != -1 or data.find ( 'mute' ) != -1:
-            twitch_bot_utils.printer("Setting Volume!")
             scare = threading.Thread(target=change_volume,args=(wait+3,-50.0,admin))
             scare.daemon = True
             scare.start() 
@@ -959,7 +946,6 @@ def master_commands(user,data):
             
         #Wiggle active window
         if data.find ( 'wiggle' ) != -1:
-            twitch_bot_utils.printer("WIGGLE WIGGLE!!")
             scare = threading.Thread(target=wiggle,args=(wait+3,admin))
             scare.daemon = True
             scare.start() 
@@ -1089,10 +1075,10 @@ def master_commands(user,data):
 
 #fade from current color to new color using a number of "frames"
 def fade(red,green,blue,steps,wait=2):
-    twitch_bot_utils.printer("Starting Fade")
+    logging.log(logging.INFO,"Starting Fade")
     diff = {}
     pixels = ser.get_pixels()
-    twitch_bot_utils.printer("Fading")
+    logging.log(logging.INFO,"Fading")
     for x in range(0,len(pixels)):
         temp = [red-pixels["%s"%x][0],green-pixels["%s"%x][1],blue-pixels["%s"%x][2]]
         diff.update({x:temp})
@@ -1109,8 +1095,9 @@ def fade(red,green,blue,steps,wait=2):
                 b=0
             ser.write("#%c%c%c%c" % (r,g,b,y))
         ser.write("!")
+        #make into function
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping user command")
+            logging.log(logging.INFO,"Scare! Stopping user command")
             ser.write("#%c%c%c\xff!" % (red,green,blue))
             set_animating(0)
             return
@@ -1152,7 +1139,7 @@ def disco():
             rgb = twitch_bot_utils.Wheel(y)
             ser.write("#%c%c%c\xff!" % (rgb[0],rgb[1],rgb[2]))
             if scaring==1:
-                twitch_bot_utils.printer("Scare! Stopping user command")
+                logging.log(logging.INFO,"Scare! Stopping user command")
                 modedefault()
                 return
             pygame.time.wait(5)
@@ -1169,7 +1156,7 @@ def strobe():
         ser.write("#\x00\x00\x00\xff!")
         pygame.time.wait(40)
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping user command")
+            logging.log(logging.INFO,"Scare! Stopping user command")
             set_animating(0)
             return
     modedefault()
@@ -1186,7 +1173,7 @@ def disco_strobe():
         ser.write("#\x00\x00\x00\xff!")
         pygame.time.wait(40)
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping user command")
+            logging.log(logging.INFO,"Scare! Stopping user command")
             set_animating(0)
             return
     modedefault()
@@ -1195,7 +1182,7 @@ def disco_strobe():
 def chase(r, g, b,num=6):
     wait_animating()
     set_animating(1)
-    twitch_bot_utils.printer("%s,%s,%s" %(r,g,b))
+    logging.log(logging.DEBUG,"%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
@@ -1205,7 +1192,7 @@ def chase(r, g, b,num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                twitch_bot_utils.printer("Scare! Stopping user command")
+                logging.log(logging.INFO,"Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -1216,7 +1203,7 @@ def chase(r, g, b,num=6):
 def disco_chase(num=6):
     wait_animating()
     set_animating(1)
-    twitch_bot_utils.printer("Disco Chase")
+    logging.log(logging.INFO,"Disco Chase")
     irc.msg("DISCO CHASES!!!!!!!!")
     color=0
     for x in range(0, num): #chase animation num times
@@ -1232,7 +1219,7 @@ def disco_chase(num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                twitch_bot_utils.printer("Scare! Stopping user command")
+                logging.log(logging.INFO,"Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -1244,7 +1231,7 @@ def disco_chase(num=6):
 def bounce(r, g, b,num=6):
     wait_animating()
     set_animating(1)
-    twitch_bot_utils.printer("%s,%s,%s" %(r,g,b))
+    logging.log(logging.DEBUG,"%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
@@ -1257,7 +1244,7 @@ def bounce(r, g, b,num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                twitch_bot_utils.printer("Scare! Stopping user command")
+                logging.log(logging.INFO,"Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -1268,7 +1255,7 @@ def bounce(r, g, b,num=6):
 def centerchase(r, g, b,num=6):
     wait_animating()
     set_animating(1)
-    twitch_bot_utils.printer("%s,%s,%s" %(r,g,b))
+    logging.log(logging.DEBUG,"%s,%s,%s" %(r,g,b))
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
             for z in range(0,30): #draw the pixels
@@ -1281,7 +1268,7 @@ def centerchase(r, g, b,num=6):
                     ser.write("#\x00\x00\x00%c" % z)
             ser.write("!")
             if scaring==1:
-                twitch_bot_utils.printer("Scare! Stopping user command")
+                logging.log(logging.INFO,"Scare! Stopping user command")
                 set_animating(0)
                 return
             pygame.time.wait(10)       
@@ -1292,7 +1279,7 @@ def centerchase(r, g, b,num=6):
 def alternate(r1,g1,b1,r2,g2,b2):
     wait_animating()
     set_animating(1)
-    twitch_bot_utils.printer("%s,%s,%s,%s,%s,%s" %(r1,g1,b1,r2,g2,b2))
+    logging.log(logging.DEBUG,"%s,%s,%s,%s,%s,%s" %(r1,g1,b1,r2,g2,b2))
     for y in range( 0, 10 ):
         r1,r2 = r2,r1 #swap colors
         g1,g2 = g2,g1
@@ -1304,7 +1291,7 @@ def alternate(r1,g1,b1,r2,g2,b2):
                 ser.write("#%c%c%c%c" % (r2,g2,b2,x))
         ser.write("!")
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping alternate")
+            logging.log(logging.INFO,"Scare! Stopping alternate")
             set_animating(0)
             return
         time.sleep(0.5)
@@ -1327,7 +1314,7 @@ def disco_alternate():
             else: #and the second to 15-30
                 ser.write("#%c%c%c%c" % (rgb2[0],rgb2[1],rgb2[2],z)) 
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping user command")
+            logging.log(logging.INFO,"Scare! Stopping user command")
             set_animating(0)
             return
         ser.write("!")    
@@ -1350,7 +1337,7 @@ def fire(r1,g1,b1,r2,g2,b2):
                 ser.write("#%c%c%c%c" % (r2,g2,b2,x) )
         ser.write("!")
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping fire")
+            logging.log(logging.INFO,"Scare! Stopping fire")
             set_animating(0)
             return
         time.sleep(0.1)
@@ -1369,7 +1356,7 @@ def disco_fire():
             ser.write("#%c%c%c%c" % (c[0],c[1],c[2],x) )
         ser.write("!")
         if scaring==1:
-            twitch_bot_utils.printer("Scare! Stopping disco fire")
+            logging.log(logging.INFO,"Scare! Stopping disco fire")
             set_animating(0)
             return
         time.sleep(0.1)
@@ -1388,9 +1375,9 @@ def user_stack_consumer():
 
     while True:
         if len(user_stack)>0 and scaring==0 and animating==0:
-            twitch_bot_utils.printer("user stack consumer DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
+            logging.log(logging.DEBUG,"user stack consumer DEBUG!!!!!!!!!!!: %s %s %s" % (len(user_stack),scaring,animating))
             user,data = user_stack.pop(0)
-            twitch_bot_utils.printer("Checking a buffered string: %s" % data)
+            logging.log(logging.DEBUG,"Checking a buffered string: %s" % data)
             user_commands(user,data)
         time.sleep(1)
 
@@ -1434,7 +1421,7 @@ def user_commands(user,data):
     parts = data.split()
     command = parts[0][1:]
     
-    twitch_bot_utils.printer("Checking %s for user commands..." % data)
+    logging.log(logging.DEBUG,"Checking %s for user commands..." % data)
     
     #start commands
     if data.find ( 'test' ) != -1:
@@ -1460,7 +1447,7 @@ def user_commands(user,data):
             irc.msg("!hide Available sounds: %s" % temp,hide)
             return True
         if data.find("!patience") != -1:
-            irc.msg("You can only do scares/trolls when it is your turn as long as you are optin'd spiffbot will pick you at random",hide)
+            irc.msg("You can only do scares/trolls when it is your turn as long as you are optin'd %s will pick you at random" % auth.get_bot(),hide)
             return True
         if data.find("!status") != -1 or data.find("!timeleft") != -1 or data.find("!whosgotit") != -1:
             if scaring == 1:
@@ -1524,7 +1511,7 @@ def user_commands(user,data):
         return True
         
     if command == "!multi" or command == "!multitwitch":
-        irc.msg("Watch me and Rotatedlife here: http://multitwitch.tv/spiffomatic64/rotatedlife")
+        irc.msg("Watch me and %s here: http://multitwitch.tv/%s/%s"% (auth.get_multi(), auth.get_streamer(), auth.get_multi())
         return True
     
     if data.find("!whiteboard") != -1:
@@ -1536,7 +1523,7 @@ def user_commands(user,data):
         return True
         
     if command == "!twitter":
-        irc.msg("Follow me on twitter for stream related updates! https://twitter.com/spiffomatic64")
+        irc.msg("Follow me on twitter for stream related updates! https://twitter.com/%s" % auth.get_twitter())
         return True
     
     if command == "!game" or data.find ( 'what game' ) != -1:
@@ -1555,10 +1542,10 @@ def user_commands(user,data):
         irc.msg("My wife busting into the room banging pots and pans to scare me: https://www.youtube.com/watch?v=ZDkJJJQbN8Q")
         return True
     
-    if data.find("!spiff") != -1:
+    if data.find("!%s" % auth.get_streamer_short()) != -1:
         elapsed = alert.notify()
         if elapsed > 0:
-            irc.msg("Spiff was just notified %s seconds ago!" % elapsed )
+            irc.msg("%s was just notified %s seconds ago!" % (auth.get_streamer_short(),elapsed) )
         return True
     
     if command == "!getmode" or command == "!whichmode":
@@ -1566,23 +1553,23 @@ def user_commands(user,data):
             irc.msg("ITS SCARY TIME!!!")
             return True
         if mode == 1:
-            irc.msg("LETS TROLL SPIFF!!!")
+            irc.msg("LETS TROLL %s!!!" % auth.get_streamer_short().upper())
             return True
         if mode == 2:
             irc.msg("LIGHTS ARE PRETTY!!!")
             return True
 
     if scaring == 1 or animating == 1:
-        twitch_bot_utils.printer("Busy, adding to stack: scaring: %s animating: %s" % (scaring,animating))
+        logging.log(logging.INFO,"Busy, adding to stack: scaring: %s animating: %s" % (scaring,animating))
         user_stack.append([user,data])
         del user_stack[10:]
         temp = []
         for stack in user_stack:
             temp.append(stack[1])
-        twitch_bot_utils.printer(string.join(temp," - "))
+        logging.log(logging.INFO,string.join(temp," - "))
         return 
     else:
-        twitch_bot_utils.printer("No scare or animation currently, checking for animations")
+        logging.log(logging.INFO,"No scare or animation currently, checking for animations")
         #disco rainbow colors
         if data.find ( 'disco' ) != -1:
             if data.find ( 'strobe' ) != -1:
@@ -1619,7 +1606,7 @@ def user_commands(user,data):
                 
         m = re.search('(\w+)\((.+(?:\|[a-zA-Z0-9#]+)*)\)',data,re.IGNORECASE)
         if m:
-            twitch_bot_utils.printer("regex passed")
+            logging.log(logging.DEBUG,"regex passed")
             parts = m.group(2).split("|")
             if m.group(1).lower()=="chase":
                 if len(parts)>0:
@@ -1632,11 +1619,11 @@ def user_commands(user,data):
                             chase(rgb[0],rgb[1],rgb[2],int(num))
                             time.sleep(1)
                         else:
-                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                            logging.log(logging.ERROR,"Invalid color: %s" % part)
                     modedefault()
                     return True
                 else:
-                    twitch_bot_utils.printer("Not enough colors to chase!")
+                    logging.log(logging.ERROR,"Not enough colors to chase!")
             if m.group(1).lower()=="centerchase":
                 if len(parts)>0:
                     while len(parts)>6:
@@ -1648,11 +1635,11 @@ def user_commands(user,data):
                             centerchase(rgb[0],rgb[1],rgb[2],int(num))
                             time.sleep(1)
                         else:
-                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                            logging.log(logging.ERROR,"Invalid color: %s" % part)
                     modedefault()
                     return True
                 else:
-                    twitch_bot_utils.printer("Not enough colors to centerchase!")
+                    logging.log(logging.ERROR,"Not enough colors to centerchase!")
             if m.group(1).lower()=="bounce":
                 if len(parts)>0:
                     while len(parts)>6:
@@ -1664,11 +1651,11 @@ def user_commands(user,data):
                             bounce(rgb[0],rgb[1],rgb[2],int(num))
                             time.sleep(1)
                         else:
-                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                            logging.log(logging.ERROR,"Invalid color: %s" % part)
                     modedefault()
                     return True
                 else:
-                    twitch_bot_utils.printer("Not enough colors to bounce!")
+                    logging.log(logging.ERROR,"Not enough colors to bounce!")
             if m.group(1).lower()=="cycle":
                 if len(parts)>0:
                     while len(parts)>6:
@@ -1679,10 +1666,10 @@ def user_commands(user,data):
                             num = round(6/len(parts))
                             allleds(rgb[0],rgb[1],rgb[2],num)
                         else:
-                            twitch_bot_utils.printer("Invalid color: %s" % part)
+                            logging.log(logging.ERROR,"Invalid color: %s" % part)
                     return True
                 else:
-                    twitch_bot_utils.printer("Not enough colors to cycle!")
+                    logging.log(logging.ERROR,"Not enough colors to cycle!")
             if len(parts)==1:
                 rgb = twitch_bot_utils.convertcolor(parts[0],random_color)
                 if rgb:
@@ -1703,16 +1690,16 @@ def user_commands(user,data):
                             time.sleep(1)
                             return True
                     else:
-                        twitch_bot_utils.printer("Invalid color: %s" % parts[1])
+                        logging.log(logging.ERROR,"Invalid color: %s" % parts[1])
                 else:
-                    twitch_bot_utils.printer("Invalid color: %s" % parts[0])
+                    logging.log(logging.ERROR,"Invalid color: %s" % parts[0])
                     return True
         #html color keys (single color, no animation)
         #todo replace with color converter
         for key, value in sorted(twitch_bot_colors.colors.iteritems()):
             if data.find ( key.lower() ) != -1:
                 set_animating(1)
-                twitch_bot_utils.printer("key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
+                logging.log(logging.INFO,"key: %s value: %s : %s,%s,%s" % (key,value,int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)))
                 irc.msg("%s!!!" % key.upper())
                 ser.write("#%c%c%c\xff!" % (int("0x"+value[0:2],0),int("0x"+value[2:4],0),int("0x"+value[4:6],0)) )
                 user_wait(5)
@@ -1724,7 +1711,7 @@ def last_seen(user,data):
     
 #constants
 auth = twitch_auth.auth()
-auth.add_admin("spiffbot")
+auth.add_admin(auth.get_bot())
 master = auth.get_streamer()
 alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
 user_stack = []
@@ -1753,9 +1740,9 @@ vol_scare = twitch_bot_volume.volume_change()
 
 #setup audio
 pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=4096)
-twitch_bot_utils.printer("Initiated Pygame Mixer:")
-twitch_bot_utils.printer(pygame.mixer.get_init())
-twitch_bot_utils.printer(pygame.mixer.get_num_channels())
+logging.log(logging.INFO,"Initiated Pygame Mixer:")
+logging.log(logging.DEBUG,pygame.mixer.get_init())
+logging.log(logging.DEBUG,pygame.mixer.get_num_channels())
 
 irc = twitch_bot_utils.irc_connection("irc.twitch.tv","6667",auth.get_bot(),auth.get_oauth(),
     auth.get_streamer(),[autoOptIn,last_seen,admin_commands,master_commands,user_commands])    
@@ -1768,12 +1755,12 @@ t2.start()
 #midi.startMidi()
 
 
-twitch_bot_utils.printer("Blacking out all pixels!")
+logging.log(logging.DEBUG,"Blacking out all pixels!")
 ser.write("#\x00\x00\x00\xff!")
 time.sleep(2)
 modedefault()
 time.sleep(1)
-twitch_bot_utils.printer("READY!")
+logging.log(logging.INFO,"READY!")
 irc.msg("READY!")
 
 

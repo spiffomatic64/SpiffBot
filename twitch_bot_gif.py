@@ -8,6 +8,15 @@ import win32gui
 import win32api
 import time
 import random
+import twitch_bot_utils
+import logging
+import os.path
+import sys
+
+# Get monitor size 
+width = win32api.GetSystemMetrics(0)
+height = win32api.GetSystemMetrics(1)
+logging.log(logging.INFO,"Monitor %d x %d" %(width,height))
 
 class GIFImage(object):
     def __init__(self, filename):
@@ -176,42 +185,60 @@ class GIFImage(object):
         return new
         
 def set_top(hwnd,x1,y1):
-    x = 960
-    y = 540
+    x = int(round(width/2))
+    y = int(round(height/2))
     w = int(round(x1/2))
     h = int(round(y1/2))
     
-    win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,1920,1080,win32con.SWP_NOACTIVATE)
-    print("SetWindowPos to HWND_TOPMOST and SWP_NOACTIVATE")
+    win32gui.SetWindowPos(hwnd,win32con.HWND_TOPMOST,0,0,width,height,win32con.SWP_NOACTIVATE)
+    logging.log(logging.DEBUG,"SetWindowPos to HWND_TOPMOST and SWP_NOACTIVATE")
     style = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-    print("Got style %X before" % style)
+    logging.log(logging.DEBUG,"Got style %X before" % style)
     style = style | win32con.WS_EX_LAYERED | win32con.WS_EX_TRANSPARENT | win32con.WS_EX_TOPMOST
-    print("Setting style %X" % style)
+    logging.log(logging.DEBUG,"Setting style %X" % style)
     win32api.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, style)
-    print("Set style %X" % style)
+    logging.log(logging.DEBUG,"Set style %X" % style)
     style = win32api.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-    print("Got style %X after" % style)
+    logging.log(logging.DEBUG,"Got style %X after" % style)
 
 def main():
     pygame.init()
     gifs = ["scarygif1.gif","scarygif2.gif","scarygif3.gif","scarygif4.gif","scarygif5.gif","shark.gif","nyancat.gif","toasty.gif","doge.gif","dramatic.gif"]
+        
+    length=1
+    gif_file = "images/" + random.choice(gifs)
     
-    spoopy = GIFImage("images/" + random.choice(gifs))
+    if len(sys.argv)==2:
+        temp = "images/"+sys.argv[1]
+        if os.path.isfile(temp):
+            gif_file = temp
+    elif len(sys.argv)==3 and sys.argv[2].isdigit():
+        temp = "images/"+sys.argv[1]
+        if os.path.isfile(temp):
+            gif_file = temp
+        length=int(sys.argv[2])/1000.0
+ 
+    spoopy = GIFImage(gif_file)
+    
+    logging.log(logging.INFO,"Playing gif: %s for: %f" % (gif_file, length))
+    
     screen = pygame.display.set_mode((1,1),pygame.NOFRAME)
+    logging.log(logging.INFO,"Displaying gif: %s" % spoopy)
     
     while True:
         try:
             hwnd = win32gui.FindWindow(None,"pygame window")
             if hwnd:
-                print("Found window! hwnd: %s" % hwnd)
+                logging.log(logging.DEBUG,"Found window! hwnd: %s" % hwnd)
                 set_top(hwnd,spoopy.get_width(),spoopy.get_height())
                 break
         except win32gui.error:
-            print("Error: window not found")
+            logging.log(logging.ERROR,"Error: window not found")
         time.sleep(0.001)
 
-    stop = time.clock()+1
-    screen = pygame.display.set_mode((1920,1080),pygame.NOFRAME)
+    
+    screen = pygame.display.set_mode((width,height),pygame.NOFRAME)
+    stop = time.clock()+length
     while time.clock() < stop:
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -221,7 +248,7 @@ def main():
         screen.fill((0,0,0))
         w = int(round(spoopy.get_width()/2))
         h = int(round(spoopy.get_height()/2))
-        spoopy.render(screen, (960-w, 540-h))
+        spoopy.render(screen, (int(round(width/2))-w, int(round(height/2))-h))
         pygame.display.flip()
 
 if __name__ == "__main__":

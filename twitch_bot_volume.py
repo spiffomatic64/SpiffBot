@@ -3,6 +3,7 @@ from comtypes import *
 import comtypes.client
 from ctypes import POINTER
 from ctypes.wintypes import DWORD, BOOL
+import twitch_bot_utils
 
 MMDeviceApiLib = \
     GUID('{2FDAAFA3-7523-4F66-9957-9D5E7FE698F6}')
@@ -127,16 +128,29 @@ enumerator = comtypes.CoCreateInstance(
 class volume_change:
 
     def __init__(self):
-        print enumerator
+        logging.log(logging.DEBUG,enumerator)
         self.endpoint = enumerator.GetDefaultAudioEndpoint( 0, 1 )
-        print self.endpoint
+        logging.log(logging.DEBUG,self.endpoint)
         self.volume = self.endpoint.Activate( IID_IAudioEndpointVolume, comtypes.CLSCTX_INPROC_SERVER, None )
-        print self.volume
-        print self.volume.GetMasterVolumeLevel()
-        print self.volume.GetVolumeRange()
+        logging.log(logging.DEBUG,self.volume)
+        logging.log(logging.DEBUG,self.volume.GetMasterVolumeLevel())
+        logging.log(logging.DEBUG,self.volume.GetVolumeRange())
+    
     def set_volume(self,level):
-        self.volume.SetMasterVolumeLevel(level, None)
+        logging.log(logging.DEBUG,"Setting volume to: %f" % level)
+        return self.volume.SetMasterVolumeLevel(level, None)
+    
+    def get_volume(self):
+        cur_vol = self.volume.GetMasterVolumeLevel()
+        logging.log(logging.DEBUG,"Current volume: %f" % cur_vol)
+        return cur_vol
         
+    def change_volume(self,diff):
+        logging.log(logging.DEBUG,"Changing volume by: %f" % diff)
+        
+        cur_vol = self.get_volume()
+        cur_vol = cur_vol + diff
+        self.set_volume(cur_vol)
         
 #vol = volume_change()
 #vol.set_volume(-20.0)

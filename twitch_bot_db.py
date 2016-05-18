@@ -7,9 +7,9 @@ class twitchdb:
     def __init__(self,u,p,h,d):
         try:
           self.cnx = mysql.connector.connect(user=u,password=p,host=h,database=d)
-          twitch_bot_utils.printer("Connected to DB!")
+          logging.log(logging.DEBUG,"Connected to DB!")
         except mysql.connector.Error as err:
-            twitch_bot_utils.printer(err)
+            logging.log(logging.ERROR,err)
             
 
     def updateUserPoints(self,username,points):

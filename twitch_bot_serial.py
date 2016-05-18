@@ -11,7 +11,7 @@ class twitch_serial:
         self.Enabled = False
         ports = serial.tools.list_ports.comports()
         for p in ports:
-            print "Checking %s..." % p.device
+            logging.log(logging.INFO,"Checking %s..." % p.device)
             try:
                 ser = serial.Serial(p.device, 115200,timeout=1)
                 time.sleep(1)
@@ -19,16 +19,16 @@ class twitch_serial:
                 line = ser.readline()
                 if len(line)>0:
                     if line == "Arduino Starting...\r\n":
-                        print "Got it! %s" % p.device
+                        logging.log(logging.DEBUG, "Got it! %s" % p.device)
                         port = p.device
                         self.Enabled = True
             except serial.SerialException: 
-                print "nope"
+                logging.log(logging.ERROR, "nope")
                 self.Enabled = False
         if self.Enabled:
             self.ser = ser
         self.writing = False
-        twitch_bot_utils.printer("Opened Serial Port: %s Speed: %s" % (port,speed))
+        logging.log(logging.INFO,"Opened Serial Port: %s Speed: %s" % (port,speed))
 
     def wait(self):
         while self.writing==1:
