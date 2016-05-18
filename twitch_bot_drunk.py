@@ -2,6 +2,9 @@ import win32api, win32con
 import ctypes
 import time
 import random
+import argparse
+import logging
+import twitch_bot_utils
 
 #constants
 import ctypes
@@ -83,6 +86,19 @@ MOUSEEVENTF_XUP = 0x0100
 
 def MouseInput(flags, x, y, data):
     return MOUSEINPUT(x, y, data, flags, 0, None)
+    
+    
+parser = argparse.ArgumentParser()
+parser.add_argument('duration',type=int, nargs='?',default=random.randint(30, 60), help='Duration to move mouse around')
+
+try:
+    options = parser.parse_args()
+except:
+    parser.print_help()
+    sys.exit(0)
+
+length = options.duration
+logging.log(logging.INFO,"Drunk for %d seconds!" % length)
 
 max = 7
     
@@ -97,8 +113,6 @@ yr = 5
 sizey = random.randint(yl, yr)
 ym = sizey
 
-length = random.randint(30, 60)
-print "Drunk for: %d" % length
 stop = time.time()+length
 while time.time() < stop:
     
@@ -113,7 +127,7 @@ while time.time() < stop:
         ym = ym - sy
         if ym <=0 :
             state = 2
-            print "STATE! %d" % state
+            logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #-10,0
     elif state == 2:
@@ -121,7 +135,7 @@ while time.time() < stop:
         ym = ym - sy
         if ym <=-sizey:
             state = 3
-            print "STATE! %d" % state
+            logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #0,-10
     elif state == 3:
@@ -129,7 +143,7 @@ while time.time() < stop:
         ym = ym + sy
         if ym >= sizey:
             state = 4
-            print "STATE! %d" % state
+            logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #0,10
     elif state == 4:
@@ -137,7 +151,7 @@ while time.time() < stop:
         ym = ym - sy
         if ym <= 0:
             state = 5
-            print "STATE! %d" % state
+            logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #10,0
     elif state == 5:
@@ -145,7 +159,7 @@ while time.time() < stop:
         ym = ym - sy
         if ym <= -sizey:
             state = 6
-            print "STATE! %d" % state
+            logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #0,-10
     elif state == 6:
@@ -153,7 +167,7 @@ while time.time() < stop:
         ym = ym + sy
         if ym >= sizey:
             state = 1
-            print "STATE! %d" % state
+            logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #0,-10
 
