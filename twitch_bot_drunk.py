@@ -123,16 +123,16 @@ while time.time() < stop:
     if xm < -max:
         xm = -max
     if state == 1:
-        xm = xm - sx
-        ym = ym - sy
+        xm -= sx
+        ym -= sy
         if ym <=0 :
             state = 2
             logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #-10,0
     elif state == 2:
-        xm = xm + sx
-        ym = ym - sy
+        xm += sx
+        ym -= sy
         if ym <=-sizey:
             state = 3
             logging.log(logging.DEBUG,"STATE %d!" % state)
@@ -140,23 +140,23 @@ while time.time() < stop:
     #0,-10
     elif state == 3:
         #xm = xm + sx
-        ym = ym + sy
+        ym += sy
         if ym >= sizey:
             state = 4
             logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #0,10
     elif state == 4:
-        xm = xm + sx
-        ym = ym - sy
+        xm += sx
+        ym -= sy
         if ym <= 0:
             state = 5
             logging.log(logging.DEBUG,"STATE %d!" % state)
             sizey = random.randint(yl, yr)
     #10,0
     elif state == 5:
-        xm = xm - sx
-        ym = ym - sy
+        xm -= sx
+        ym -= sy
         if ym <= -sizey:
             state = 6
             logging.log(logging.DEBUG,"STATE %d!" % state)
@@ -164,7 +164,7 @@ while time.time() < stop:
     #0,-10
     elif state == 6:
         #xm = xm - sx
-        ym = ym + sy
+        ym += sy
         if ym >= sizey:
             state = 1
             logging.log(logging.DEBUG,"STATE %d!" % state)

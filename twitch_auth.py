@@ -8,6 +8,12 @@ class auth:
     
     def get_streamer(self):
         return "spiffomatic64"
+
+    def get_streamer_short(self):
+        return "spiff"
+
+    def get_twitter(self):
+        return "spiffomatic64"
         
     def get_oauth(self):
         return "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

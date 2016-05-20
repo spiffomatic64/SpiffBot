@@ -11,7 +11,7 @@ class midi_lights:
 			if pygame.midi.get_device_info(x)[1] == midi_device:
 				logging.log(logging.INFO,"Found midi: %s" % c)
 				return c
-			c = c + 1
+            c += 1
 
     def __init__(self,devicename,serial_device):
         #Midi initialization 

@@ -142,7 +142,7 @@ class twitchdb:
                 cursor.execute(query, ([username]))
             else:
                 in_p = ", ".join(map(lambda x: "%s", username))
-                query = query % in_p
+                query %= in_p
                 cursor.execute(query, (username))
             result = cursor.fetchone()
             if result != None:

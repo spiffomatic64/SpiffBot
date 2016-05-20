@@ -9,8 +9,6 @@
 
 
 import re
-import time
-import serial
 import pygame
 import pygame.mixer
 import threading
@@ -21,12 +19,11 @@ import win32api as win32
 import win32gui
 import win32con
 import string
-import os
 import time
-import traceback
 import subprocess
 import ctypes
 from subprocess import call
+import logging
 
 import twitch_auth
 import twitch_bot_colors
@@ -37,6 +34,24 @@ import twitch_bot_serial
 import twitch_bot_volume
 import twitch_bot_utils
 
+
+#constants
+auth = twitch_auth.auth()
+auth.add_admin(auth.get_bot())
+master = auth.get_streamer()
+alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
+user_stack = []
+pass_counter = 3
+last_pass = None
+random_color=1
+scaring = 0
+switching = 0
+animating = 0
+writing = 0
+next_user = []
+stayAlive = 1
+
+mode = 2 #twitch_bot_utils.scaryDay()
 
 
 next_scary_game = "http://strawpoll.me/3800715"
@@ -200,7 +215,7 @@ def opt(user,inout,passed=None):
                     switch()
                 
 def autoOptIn(user,data):
-    global next
+    global next_user
 	
     users =  db.getUsers()
 
@@ -211,7 +226,7 @@ def autoOptIn(user,data):
         logging.log(logging.INFO,"Setting next user to: %s" % user)
         if mode == 0:
             irc.msg("Giving next control to our newest viewer: %s" % user)
-            next.append(user)
+            next_user.append(user)
         return True
 
 def scare_lock(status):
@@ -279,7 +294,7 @@ def mastertimer():
             if elapsed >390 or elapsed<0:
                 scare_lock(0)
                 switching = 0
-                logging.log(logging.WARNING,"Elapsed out of bounds!: %s" % elapsed);
+                logging.log(logging.WARNING,"Elapsed out of bounds!: %s" % elapsed)
                 
             if scaring == 0 and switching == 0:
                 #every 5 minutes switch control, and remove master from optedin list 300
@@ -323,7 +338,7 @@ def mastertimer():
             if elapsed >300 or elapsed<0:
                 spam_msg =  random.choice(spam.keys())
                 send = spam[spam_msg]
-                irc.msg(spam[spam_msg]);
+                irc.msg(spam[spam_msg])
                 user_commands(auth.get_bot(),spam_msg)
                 counter = time.time()
         time.sleep(1)
@@ -333,7 +348,7 @@ def switch(user="",pass_control=0):
     global counter
     global master
     global switching
-    global next
+    global next_user
     global pass_counter
     global last_pass
     
@@ -348,7 +363,7 @@ def switch(user="",pass_control=0):
         if pass_control==0: #reset pass counter
             pass_counter = 0
         elif pass_control==1: #increment pass_counter
-            pass_counter = pass_counter +1
+            pass_counter += 1
         if pass_counter>2 and pass_control!=-1:
             irc.msg("Too many passes to specific users, use a command, or !pass without a username") 
             switching = 0
@@ -378,11 +393,11 @@ def switch(user="",pass_control=0):
 
         
         #if a "next" user is specified, switch to that user
-        if len(next)>0:
-            logging.log(logging.INFO,"next was set to: %s" % next)
+        if len(next_user)>0:
+            logging.log(logging.INFO,"next_user was set to: %s" % next_user)
             if user=="":
                 logging.log(logging.WARNING,"user is not set")
-                user = next.pop(0)
+                user = next_user.pop(0)
                 
         #Switch to user if specified
         if user in viewers:
@@ -414,7 +429,7 @@ def switch(user="",pass_control=0):
 
 #commands that will only work for me (and moderators in the future)
 def admin_commands(user,data):
-    global next
+    global next_user
     global stayAlive
     
     #if user.lower() == auth.get_streamer():
@@ -470,7 +485,7 @@ def admin_commands(user,data):
                     return True
             if command == "!switchnext":
                 logging.log(logging.INFO,"Setting next user to: %s" % parts[1])
-                next.append(parts[1])
+                next_user.append(parts[1])
                 return True
 
 #Not used, for debugging to list all monitors
@@ -480,7 +495,7 @@ def printAllScreen():
         try:
             device = win32.EnumDisplayDevices(None,i);
             print("[%d] %s (%s)"%(i,device.DeviceString,device.DeviceName));
-            i = i+1;
+            i += 1
         except:
             break;
     return i
@@ -997,8 +1012,8 @@ def master_commands(user,data):
                     left = 1
                     right = 1
                 if data.find ( 'soft' ) != -1:
-                    left = left * 0.3
-                    right = right * 0.3
+                    left *= 0.3
+                    right *= 0.3
                 
                 scare = threading.Thread(target=vibrate,args=(wait+3,left,right,admin))
                 scare.daemon = True
@@ -1208,7 +1223,7 @@ def disco_chase(num=6):
     color=0
     for x in range(0, num): #chase animation num times
         for y in range(0, 30): #chase across all 30 leds
-            color=color+10
+            color += 10
             if color>255:
                 color=0
             rgb = twitch_bot_utils.Wheel(color)
@@ -1511,7 +1526,7 @@ def user_commands(user,data):
         return True
         
     if command == "!multi" or command == "!multitwitch":
-        irc.msg("Watch me and %s here: http://multitwitch.tv/%s/%s"% (auth.get_multi(), auth.get_streamer(), auth.get_multi())
+        irc.msg("Watch me and %s here: http://multitwitch.tv/%s/%s"% (auth.get_multi(), auth.get_streamer(), auth.get_multi()))
         return True
     
     if data.find("!whiteboard") != -1:
@@ -1708,25 +1723,7 @@ def user_commands(user,data):
                 
 def last_seen(user,data):
     db.updateLastSeen(user)
-    
-#constants
-auth = twitch_auth.auth()
-auth.add_admin(auth.get_bot())
-master = auth.get_streamer()
-alert = twitch_bot_utils.notification("./sounds/OOT_MainMenu_Select.ogg",60)
-user_stack = []
-pass_counter = 3
-last_pass = None
-random_color=1
-scaring = 0
-switching = 0
-writing = 0
-set_animating(0)
-next = []
-stayAlive = 1
 
-mode = twitch_bot_utils.scaryDay()
-mode = 2
 
 #serial stuff
 #todo: add code to find arduino dynamically
