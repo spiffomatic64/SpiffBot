@@ -1,3 +1,5 @@
+#! python2
+
 import pygame
 import twitch_bot_utils
 import win32api

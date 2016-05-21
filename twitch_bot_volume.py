@@ -1,9 +1,9 @@
-import win32com
+#! python2
+
 from comtypes import *
 import comtypes.client
 from ctypes import POINTER
 from ctypes.wintypes import DWORD, BOOL
-import twitch_bot_utils
 
 MMDeviceApiLib = \
     GUID('{2FDAAFA3-7523-4F66-9957-9D5E7FE698F6}')

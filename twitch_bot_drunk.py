@@ -1,10 +1,11 @@
-import win32api, win32con
-import ctypes
+#! python2
+
+import win32api
 import time
 import random
 import argparse
 import logging
-import twitch_bot_utils
+import sys
 
 #constants
 import ctypes
@@ -52,7 +53,7 @@ def SendInput(*inputs):
     
 INPUT_MOUSE = 0
 INPUT_KEYBOARD = 1
-INPUT_HARDWARD = 2
+INPUT_HARDWARE = 2
     
 def Input(structure):
     if isinstance(structure, MOUSEINPUT):

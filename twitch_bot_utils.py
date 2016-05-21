@@ -1,9 +1,10 @@
+#! python2
+
 import logging
 import datetime
 import time
-import html_colors
+import twitch_bot_colors
 import random
-import pygame
 import threading
 import socket
 import string
@@ -51,10 +52,10 @@ class irc_connection:
             hide_msg = "!hide "
         self.conn.send ( 'PRIVMSG #%s :%s%s\r\n' % (self.streamer,hide_msg,msg.encode('utf-8')) )  
         
-    def add_msgParser(msg_parser):
+    def add_msgParser(self,msg_parser):
         self.msg_parsers.append(msg_parser)
         
-    def add_ircPasers(irc_parser):
+    def add_ircPasers(self,irc_parser):
         self.irc_parsers.append(irc_parser)
         
     def irc_thread(self):
@@ -113,7 +114,7 @@ class notification:
             return round(elapsed)
             
         
-    def update_throttle(throttle):
+    def update_throttle(self,throttle):
         self.throttle = throttle
 
 #return scary-0 or normal-1 dependant on the current day (>=4 is between thurs and sunday)
@@ -153,15 +154,15 @@ def bounds(input):
     
 #return a color from a 255 rainbow palette
 def Wheel(input):
-    WheelPos = 255 - int(round(input));
+    WheelPos = 255 - int(round(input))
     if WheelPos < 85:
-        return [255 - WheelPos * 3, 0, WheelPos * 3];
+        return [255 - WheelPos * 3, 0, WheelPos * 3]
     elif WheelPos < 170:
-        WheelPos -= 85;
-        return [0, WheelPos * 3, 255 - WheelPos * 3];
+        WheelPos -= 85
+        return [0, WheelPos * 3, 255 - WheelPos * 3]
     else:
-        WheelPos -= 170;
-        return [WheelPos * 3, 255 - WheelPos * 3, 0];
+        WheelPos -= 170
+        return [WheelPos * 3, 255 - WheelPos * 3, 0]
 
 #parse a string for a single color (returned as a list)
 def convertcolor(input,random_color):
@@ -178,7 +179,7 @@ def convertcolor(input,random_color):
         return stuff
     
     #look for html color
-    for key, value in sorted(html_colors.colors.iteritems()):
+    for key, value in sorted(twitch_bot_colors.colors.iteritems()):
         if input.find ( key.lower() ) != -1:
             stuff.append(bounds(int("0x"+value[0:2],0)))
             stuff.append(bounds(int("0x"+value[2:4],0)))

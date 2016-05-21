@@ -1,6 +1,6 @@
 import mysql.connector
 import datetime
-import twitch_bot_utils
+import logging
 
 class twitchdb:
 

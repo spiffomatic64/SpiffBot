@@ -1,3 +1,5 @@
+#! python2
+
 """GIFImage by Matthew Roe"""
 
 from PIL import Image

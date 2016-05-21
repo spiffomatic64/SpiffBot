@@ -1,8 +1,10 @@
+#! python2
+
 import pygame.time
 import serial
 import serial.tools.list_ports
-import twitch_bot_utils
 import time
+import logging
 
 
 class twitch_serial:

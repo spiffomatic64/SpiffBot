@@ -1,3 +1,5 @@
+#! python2
+
 import ctypes
 import time
 import win32api

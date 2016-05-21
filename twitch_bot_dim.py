@@ -1,5 +1,6 @@
+#! python2
+
 import pygame
-import twitch_bot_utils
 import win32api
 import win32gui
 import win32con
@@ -7,6 +8,7 @@ import time
 import random
 import argparse
 import logging
+import sys
 
 def check_range(arg):
     try:
