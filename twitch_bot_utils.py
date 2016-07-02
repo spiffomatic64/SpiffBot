@@ -10,6 +10,9 @@ import socket
 import string
 import os 
 import pygame
+import requests
+import json
+import twitch_auth
 
 class irc_connection:
     
@@ -55,7 +58,7 @@ class irc_connection:
     def add_msgParser(self,msg_parser):
         self.msg_parsers.append(msg_parser)
         
-    def add_ircPasers(self,irc_parser):
+    def add_ircParser(self,irc_parser):
         self.irc_parsers.append(irc_parser)
         
     def irc_thread(self):
@@ -83,7 +86,7 @@ class irc_connection:
                             data = ""
                             for part in parts:
                                 data = data + part + " "
-                            data = data.lower()
+                            data = data[1:]
                             logging.log(logging.INFO,"User: %s Message: %s" % (user,data))
                             for parser in self.msg_parsers:
                                 if parser(user,data):
@@ -238,6 +241,17 @@ def pygame_user_wait(duration):
         time.sleep(0.5)
         pygame.display.update()
     return
+
+def twitch_profile(data):
+    f = open('profile.txt', 'a')
+    if data == -1:
+        f.truncate()
+    else:
+        f.write("%s\n" % data)
+    f.close()
+
+def inBetween(stuff, first, last):
+    return stuff[stuff.find(first) + len(first):stuff.find(last)]
    
 #Need to move scare system to module first   
 '''def user_wait(duration):

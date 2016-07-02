@@ -1,9 +1,11 @@
 import socket
 import time
+import subprocess
 
-bot_username = "botuser"
-channel = "channel"
-oauth = "xxxxxxxxxxxxxxxxxxxxxx"
+
+bot_username = "spiffbot"
+channel = "spiffomatic64"
+oauth = "drqvq0h2jruebvxz1ufzgciyw8a488"
 
 network = 'irc.twitch.tv'
 port = 6667
@@ -36,6 +38,10 @@ while True:
             print "user: %s command: %s" % (user,command) #debug
             if command=="!test": #check if they said !test
                 irc.send ( 'PRIVMSG #%s :test to you too!\r\n' % channel )  
+            else:
+                p = subprocess.Popen(["py", "C:\\Users\\spiffomatic64\\Documents\\GitHub\\SpiffBot\\vlc_test.py" , command[1:]])
+                print "py vlctest.py %s" % command[1:]
+                p.wait()
         for part in parts: #grab the entire message and put it into data
             data = data + part + " "
         data = data.lower() #(set data to lowercase for easier parsing)
