@@ -69,17 +69,13 @@ class twitch_serial:
     def get_pixels(self):
         pixels = {}
         self.flushInput()
-        self.write("#000%c0" % chr(252))
-        logging.log(logging.INFO, "WriteLine: #000%c" % 252)
+        self.write("#000%c" % chr(252))
         self.wait()
         self.writing = True
-        line = self.ser.readline()
-        logging.log(logging.INFO, "Readline: %s" % line)
 
         if self.Enabled:
             for x in range( 0, 30 ):
                 line = self.ser.readline()
-                logging.log(logging.INFO, "Readline: %d %s" % (x,line))
                 line = line.split(",")
                 pixels.update( {line[0] : [ int(line[1]),int(line[2]),int(line[3]) ] } )
         self.writing = False

@@ -1,5 +1,7 @@
 #! python2
 
+#TODO: Add user queue
+
 import logging
 import twitch_bot_utils
 import pygame
@@ -8,7 +10,6 @@ import time
 import random
 import re
 import twitch_bot_colors
-
 
 class lights:
     def __init__(self, ser, irc, event):
@@ -365,8 +366,8 @@ class lights:
                     self.set_animating(0)
                     return
                 pygame.time.wait(10)
-            pygame.time.wait(500)
         self.set_animating(0)
+        self.modedefault()
         return
 
     def centerchase(self, r, g, b, num=6):

@@ -204,10 +204,11 @@ class Player(Tk.Frame):
 
         # update the time on the slider
         tyme = self.player.get_time()
-        if tyme > 100:
-            self.SetVolume(75)
+
         if tyme > 5000:
             self.fade_away()
+        elif tyme > 100:
+            self.SetVolume(75)
 
     def volume_sel(self, evt):
         if self.player == None:
@@ -229,13 +230,21 @@ class Player(Tk.Frame):
         print('Error: %s', errormessage)
 
     # need to add a color/chroma based wipe here
-    def fade_away(self):
+    def fade_away_old(self):
         alpha = self.parent.attributes("-alpha")
         if alpha > 0:
             alpha -= 0.01
             self.parent.attributes("-alpha", alpha)
             self.SetVolume(int(alpha * 50))
             self.after(100, self.fade_away)
+        else:
+            _quit()
+
+    def fade_away(self):
+        cur_vol = self.player.audio_get_volume()
+        print(cur_vol)
+        if cur_vol > 0:
+            self.player.audio_set_volume(cur_vol - 5)
         else:
             _quit()
 

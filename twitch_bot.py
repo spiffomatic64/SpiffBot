@@ -30,8 +30,8 @@ irc = twitch_bot_utils.irc_connection("irc.twitch.tv", "6667", twitch_auth.get_b
                                       twitch_auth.get_oauth(), twitch_auth.get_streamer())
 
 user_parsers = twitch_user_parsers.userParsers(db,irc)
-#ser = twitch_bot_serial.twitch_serial(115200)
-#lights = twitch_bot_lights.lights(ser,irc,1)
+ser = twitch_bot_serial.twitch_serial(115200)
+lights = twitch_bot_lights.lights(ser,irc,0)
 
 #TODO: Add parsers via config file
 #TODO: Look into enabling/disabling parsers in real time(monitor config file)
@@ -40,7 +40,7 @@ irc.add_msgParser(user_parsers.last_seen)
 irc.add_msgParser(user_parsers.introHandler)
 irc.add_msgParser(user_parsers.streamIdHandler)
 irc.add_msgParser(user_parsers.brbHandler)
-#irc.add_msgParser(lights.parser)
+irc.add_msgParser(lights.parser)
 
 time.sleep(1)
 logging.log(logging.INFO, "READY!")
